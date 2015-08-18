@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r593 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r593%20-%20trunk/Sources&In-Reply-To=%3C200909021256.n82Cuedq025625%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000199.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r593 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r593%20-%20trunk/Sources&In-Reply-To=%3C200909021256.n82Cuedq025625%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r593 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep  2 14:56:40 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000199.html">[pe-commits] r594 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2009-09-02 14:56:40 +0200 (Wed, 02 Sep 2009)
+New Revision: 593
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=593&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=593&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.cpp
+Log:
+closing pe-bug #16094
+* SaveAs wasn't actually saving the file, unless it was dirty to begin with.
+  Now we explicitly set the doc dirty when saving it under a different name.
+  
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-08-08 10:06:23 UTC (rev 592)
++++ trunk/Sources/CDoc.cpp	2009-09-02 12:56:40 UTC (rev 593)
+@@ -236,6 +236,9 @@
+ 		FailOSErr(e.GetRef(&amp;eref));
+ 		fDocIO-&gt;SetEntryRef(&amp;eref);
+ 
++		if (!IsDirty())
++			SetDirty(true);
++
+ 		Save();
+ 		NameChanged();
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000199.html">[pe-commits] r594 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

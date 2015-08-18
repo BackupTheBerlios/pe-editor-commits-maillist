@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r565 - trunk/lpe
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r565%20-%20trunk/lpe&In-Reply-To=%3C200905012322.n41NM2G8012045%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000160.html">
+   <LINK REL="Next"  HREF="000162.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r565 - trunk/lpe</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r565%20-%20trunk/lpe&In-Reply-To=%3C200905012322.n41NM2G8012045%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r565 - trunk/lpe">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sat May  2 01:22:02 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000160.html">[pe-commits] r564 - trunk/Languages/Sources
+</A></li>
+        <LI>Next message: <A HREF="000162.html">[pe-commits] r566 - trunk/lpe
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#161">[ date ]</a>
+              <a href="thread.html#161">[ thread ]</a>
+              <a href="subject.html#161">[ subject ]</a>
+              <a href="author.html#161">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-02 01:22:01 +0200 (Sat, 02 May 2009)
+New Revision: 565
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=565&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=565&amp;view=rev</A>
+
+Modified:
+   trunk/lpe/lpe.cpp
+Log:
+gcc 4 fixes.
+
+
+Modified: trunk/lpe/lpe.cpp
+===================================================================
+--- trunk/lpe/lpe.cpp	2009-05-01 23:07:24 UTC (rev 564)
++++ trunk/lpe/lpe.cpp	2009-05-01 23:22:01 UTC (rev 565)
+@@ -34,16 +34,18 @@
+ */
+ 
+ #include &lt;vector&gt;
+-#include &lt;cstdio&gt;
+-#include &lt;cstdarg&gt;
+ 
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;stdarg.h&gt;
++
+ #include &lt;Message.h&gt;
+ #include &lt;Roster.h&gt;
+ #include &lt;String.h&gt;
+ 
+ const long msg_CommandLineOpen = 'Cmdl';
+ 
+-static vector&lt;int&gt; threads;
++static std::vector&lt;int&gt; threads;
+ 
+ void DoError(const char *e, ...);
+ void Usage();
+@@ -178,7 +180,7 @@
+ 		}
+ 	}
+ 	
+-	vector&lt;int&gt;::iterator ti;
++	std::vector&lt;int&gt;::iterator ti;
+ 	
+ 	for (ti = threads.begin(); ti != threads.end(); ti++)
+ 	{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000160.html">[pe-commits] r564 - trunk/Languages/Sources
+</A></li>
+	<LI>Next message: <A HREF="000162.html">[pe-commits] r566 - trunk/lpe
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#161">[ date ]</a>
+              <a href="thread.html#161">[ thread ]</a>
+              <a href="subject.html#161">[ subject ]</a>
+              <a href="author.html#161">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

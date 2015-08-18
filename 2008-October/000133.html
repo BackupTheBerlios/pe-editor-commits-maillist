@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r543 - trunk/Languages/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r543%20-%20trunk/Languages/Sources&In-Reply-To=%3C200810091446.m99EkThZ007421%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000132.html">
+   <LINK REL="Next"  HREF="000134.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r543 - trunk/Languages/Sources</H1>
+    <B>axeld at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r543%20-%20trunk/Languages/Sources&In-Reply-To=%3C200810091446.m99EkThZ007421%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r543 - trunk/Languages/Sources">axeld at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  9 16:46:30 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000132.html">[pe-commits] r542 - trunk/doc
+</A></li>
+        <LI>Next message: <A HREF="000134.html">[pe-commits] r544 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: axeld
+Date: 2008-10-09 16:46:29 +0200 (Thu, 09 Oct 2008)
+New Revision: 543
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=543&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=543&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/Lout_Language.cpp
+   trunk/Languages/Sources/Lout_Popup.l
+Log:
+* Factored the path retrieval out of AddSysDataBase() and AddSysInclude() to
+  GetLoutDirectory().
+* Improved the code by using BPath instead of doing ugly string stuff.
+* Now uses find_directory() for retrieving the lout data directory, instead of
+  hard coded paths. It now also uses the B_COMMON_ETC_DIRECTORY as a possible
+  source, and thus incorporates the last missing piece of Scott's diff.
+* Minor coding style cleanup.
+
+
+Modified: trunk/Languages/Sources/Lout_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/Lout_Language.cpp	2008-10-09 14:24:38 UTC (rev 542)
++++ trunk/Languages/Sources/Lout_Language.cpp	2008-10-09 14:46:29 UTC (rev 543)
+@@ -58,7 +58,8 @@
+ static inline bool
+ isOperator(char c)
+ {
+-	switch (c) {
++	switch (c)
++	{
+ 		case '/': 
+ 			return true;	// Can be: /, // or ^/
+ 		case '|': 
+
+Modified: trunk/Languages/Sources/Lout_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Lout_Popup.l	2008-10-09 14:24:38 UTC (rev 542)
++++ trunk/Languages/Sources/Lout_Popup.l	2008-10-09 14:46:29 UTC (rev 543)
+@@ -37,7 +37,7 @@
+ 
+   Caveats:
+     - This assumes that lout's data is installed under:
+-      &quot;/boot/home/config/etc/lout/&quot;
++      &quot;/boot/home/config/etc/lout/&quot; or &quot;/boot/common/etc/lout/&quot;
+       *but*
+       if the enviromental variable &quot;$LOUTLIB&quot; is found, it's value is used
+       instead (make sure it is correct!).
+@@ -194,12 +194,49 @@
+ }
+ 
+ 
++static bool PathExists(const BPath&amp; path)
++{
++	BEntry entry(path.Path(), true);
++	return entry.Exists();
++}
++
++
++static status_t GetLoutDirectory(const char* subDir, BPath&amp; path)
++{
++	static const char* kLoutDir = getenv(&quot;LOUTLIB&quot;);
++
++	if (kLoutDir != NULL)
++	{
++		path.SetTo(kLoutDir);
++		path.Append(subDir);
++	}
++
++	if (kLoutDir == NULL || !PathExists(path))
++	{
++		if (find_directory(B_USER_CONFIG_DIRECTORY, &amp;path) == B_OK)
++		{
++			path.Append(&quot;etc/lout&quot;);
++			path.Append(subDir);
++		}
++
++		if (!PathExists(path))
++		{
++			if (find_directory(B_COMMON_ETC_DIRECTORY, &amp;path) == B_OK)
++			{
++				path.Append(&quot;lout&quot;);
++				path.Append(subDir);
++			}
++			if (!PathExists(path))
++				return B_ENTRY_NOT_FOUND;
++		}
++	}
++
++	return B_OK;
++}
++
++
+ static void AddSysDataBase(CLanguageProxy&amp; proxy)
+ {
+-	static const char* kLoutDataDir = &quot;/boot/home/config/etc/lout/data/&quot;;
+-	static const size_t kLoutDataDirLen = strlen(kLoutDataDir);
+-	static const char* kLoutLib = getenv(&quot;LOUTLIB&quot;);
+-
+ 	char *s, *i = yytext;
+ 
+ 	s = strrchr(i, '}');
+@@ -211,35 +248,21 @@
+ 	s++;
+ 
+ 	s = trimstring(s);
+-	char* tmp;
+ 
+-	if (kLoutLib != NULL) {
+-		tmp = (char*) calloc(1, strlen(kLoutLib) + 6 + strlen(s) + 4);
+-		if (!tmp)
+-			return;
+-		strcat(tmp, kLoutLib);
+-		strcat(tmp, &quot;/data/&quot;);
+-	}
+-	else {
+-		tmp = (char*) calloc(1, kLoutDataDirLen + strlen(s) + 4);
+-		if (!tmp)
+-			return;
+-		strcat(tmp, kLoutDataDir);
+-	}
++	BPath path;
++	if (GetLoutDirectory(&quot;data&quot;, path) != B_OK)
++		return;
+ 
+-	strcat(tmp, s);
+-	strcat(tmp, &quot;.ld&quot;);
+-	proxy.AddInclude(s, tmp);
+-	free(tmp);
++	BString name = s;
++	name &lt;&lt; &quot;.ld&quot;;
++	path.Append(name.String());
++
++	proxy.AddInclude(s, path.Path());
+ }
+ 
+ 
+ static void AddSysInclude(CLanguageProxy&amp; proxy)
+ {
+-	static const char* kLoutIncludeDir = &quot;/boot/home/config/etc/lout/include/&quot;;
+-	static const size_t kLoutIncludeDirLen = strlen(kLoutIncludeDir);
+-	static const char* kLoutLib = getenv(&quot;LOUTLIB&quot;);
+-
+ 	char *s, *i = yytext;
+ 
+ 	s = strrchr(i, '}');
+@@ -253,23 +276,13 @@
+ 	s = trimstring(s);
+ 	char* tmp;
+ 
+-	if (kLoutLib != NULL) {
+-		tmp = (char*) calloc(1, strlen(kLoutLib) + 9 + strlen(s) + 4);
+-		if (!tmp)
+-			return;
+-		strcat(tmp, kLoutLib);
+-		strcat(tmp, &quot;/include/&quot;);
+-	}
+-	else {
+-		tmp = (char*) calloc(1, kLoutIncludeDirLen + strlen(s) + 4);
+-		if (!tmp)
+-			return;
+-		strcat(tmp, kLoutIncludeDir);
+-	}
++	BPath path;
++	if (GetLoutDirectory(&quot;include&quot;, path) != B_OK)
++		return;
+ 
+-	strcat(tmp, s);
+-	proxy.AddInclude(s, tmp);
+-	free(tmp);
++	path.Append(s);
++
++	proxy.AddInclude(s, path.Path());
+ }
+ 
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000132.html">[pe-commits] r542 - trunk/doc
+</A></li>
+	<LI>Next message: <A HREF="000134.html">[pe-commits] r544 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

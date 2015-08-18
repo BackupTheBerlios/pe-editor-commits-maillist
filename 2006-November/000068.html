@@ -1,0 +1,1083 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r475 - in trunk/Languages: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r475%20-%20in%20trunk/Languages%3A%20Resources%20Sources&In-Reply-To=%3C200611281129.kASBTwGs013169%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000067.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r475 - in trunk/Languages: Resources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r475%20-%20in%20trunk/Languages%3A%20Resources%20Sources&In-Reply-To=%3C200611281129.kASBTwGs013169%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r475 - in trunk/Languages: Resources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 28 12:29:58 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000067.html">[pe-commits] r474 - in trunk: Languages/Sources Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#68">[ date ]</a>
+              <a href="thread.html#68">[ thread ]</a>
+              <a href="subject.html#68">[ subject ]</a>
+              <a href="author.html#68">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-28 12:29:56 +0100 (Tue, 28 Nov 2006)
+New Revision: 475
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=475&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=475&amp;view=rev</A>
+
+Added:
+   trunk/Languages/Resources/keywords.html-css-js-php
+   trunk/Languages/Resources/keywords.html-css-js-php.r
+   trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp
+   trunk/Languages/Sources/HtmlCssJsPhp_Popup.cpp
+Removed:
+   trunk/Languages/Resources/keywords.html-js-php
+   trunk/Languages/Resources/keywords.html-js-php.r
+   trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+   trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+Modified:
+   trunk/Languages/Resources/Jamfile
+   trunk/Languages/Sources/Jamfile
+Log:
+* Now all relevant (file) names reflect the addition of CSS support
+
+
+Modified: trunk/Languages/Resources/Jamfile
+===================================================================
+--- trunk/Languages/Resources/Jamfile	2006-11-28 11:03:02 UTC (rev 474)
++++ trunk/Languages/Resources/Jamfile	2006-11-28 11:29:56 UTC (rev 475)
+@@ -8,7 +8,7 @@
+ 	keywords.diff.r
+ 	keywords.g.r
+ 	keywords.html-js.r
+-	keywords.html-js-php.r
++	keywords.html-css-js-php.r
+ 	keywords.html.r
+ 	keywords.jam.r
+ 	keywords.java.r
+
+Copied: trunk/Languages/Resources/keywords.html-css-js-php (from rev 471, trunk/Languages/Resources/keywords.html-js-php)
+
+Copied: trunk/Languages/Resources/keywords.html-css-js-php.r (from rev 471, trunk/Languages/Resources/keywords.html-js-php.r)
+===================================================================
+--- trunk/Languages/Resources/keywords.html-js-php.r	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Languages/Resources/keywords.html-css-js-php.r	2006-11-28 11:29:56 UTC (rev 475)
+@@ -0,0 +1,2 @@
++read 'KeyW' (0, &quot;keywords.html-css-js-php&quot;)
++	&quot;keywords.html-css-js-php&quot;;
+
+Deleted: trunk/Languages/Resources/keywords.html-js-php
+
+Deleted: trunk/Languages/Resources/keywords.html-js-php.r
+
+Copied: trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp (from rev 474, trunk/Languages/Sources/HtmlJsPhp_Language.cpp)
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-28 11:03:02 UTC (rev 474)
++++ trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp	2006-11-28 11:29:56 UTC (rev 475)
+@@ -0,0 +1,1647 @@
++/*	$Id: HtmlJs_Language.cpp 453 2006-11-19 02:22:01Z hoern $
++
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++	Created: 12/07/97 22:01:11 by Maarten Hekkelman
++*/
++
++#include &lt;cctype&gt;
++#include &lt;cstring&gt;
++#include &lt;stack&gt;
++#include &quot;CLanguageAddOn.h&quot;
++#include &quot;HColorUtils.h&quot;
++
++#define DEBUG_PHP 0
++const bool CASE_SENSITIVE_PHP  = true;
++const bool CASE_SENSITIVE_JS   = true;
++const bool CASE_SENSITIVE_TAG  = true;
++const bool CASE_SENSITIVE_ATTR = true;
++
++
++enum Language {
++	kLanguageHtml,
++	kLanguageJs,
++	kLanguagePhp
++};
++
++_EXPORT const char kLanguageName[]         = &quot;HTML-CSS-JS-PHP&quot;;
++_EXPORT const char kLanguageExtensions[]   = &quot;html;htm;php&quot;;
++_EXPORT const char kLanguageCommentStart[] = &quot;&lt;!--&quot;;
++_EXPORT const char kLanguageCommentEnd[]   = &quot;--&gt;&quot;;
++_EXPORT const char kLanguageKeywordFile[]  = &quot;keywords.html-css-js-php&quot;;
++_EXPORT const int16 kInterfaceVersion      = 2;
++
++enum {
++	START = 0,
++		TAG_START,
++		TAG_KEYWORD_START,
++		TAG_KEYWORD_END,
++		TAG,
++		TAG_STRING_DOUBLE_QUOTES,
++		TAG_STRING_SINGLE_QUOTES,
++		TAG_ATTRIBUTE,
++		SPECIAL,
++		COMMENT_DTD,
++		COMMENT,
++	STYLESHEET,
++		CSS_COMMENT,
++		CSS_DEFINITION,
++	JAVASCRIPT,
++		JS_COMMENT_MULTI_LINE,
++		JS_COMMENT_SINGLE_LINE,
++		JS_IDENTIFIER,
++		JS_STRING_SINGLE_QUOTES,
++		JS_STRING_DOUBLE_QUOTES,
++	PHP_SCRIPT,
++		PHP_IDENTIFIER,
++		PHP_COMMENT_MULTI_LINE,
++		PHP_COMMENT_SINGLE_LINE,
++		PHP_STRING_DOUBLE_QUOTES,
++		PHP_STRING_SINGLE_QUOTES
++};
++
++enum {
++	kKwHtmlTag			= 1,	// Set 1
++	kKwHtmlAttribute	= 2,	// Set 2
++	kKwJsLanguage		= 4,	// Set 3
++	kKwJsConstants		= 8,	// Set 4
++	kKwPhpLanguage		= 16,	// Set 5
++	kKwPhpFunctions		= 32,	// Set 6
++	kKwPhpConstants		= 64,	// Set 7
++	kKwUserset1			= 128,	// Set 8
++	kKwUserset2			= 256,	// Set 9
++	kKwUserset3			= 512,	// Set 10
++	kKwUserset4			= 1024,	// Set 11
++	//
++	kKwUsersets			= kKwUserset1|kKwUserset2|kKwUserset3|kKwUserset4,
++	kKwJs				= kKwJsLanguage|kKwJsConstants,
++	kKwPhp				= kKwPhpLanguage|kKwPhpFunctions|kKwPhpConstants
++};
++
++// Color configuration
++enum {
++	kColHtmlComment					= kColorComment1,
++	kColHtmlDtd						= kColorComment2,
++	kColHtmlEntity					= kColorCharConst,
++	kColHtmlAttribute				= kColorAttribute,
++	kColHtmlTagStringDoubleQuotes	= kColorString1,
++	kColHtmlTagStringSingleQuotes	= kColorString2,
++	//
++	kColCssText						= kColorPreprocessor1,
++	//
++	kColJsStringDoubleQuotes		= kColorString1,
++	kColJsStringSingleQuotes		= kColorString2,
++	kColJsComment					= kColorComment2,
++	kColJsCommentL					= kColorComment1,
++	//
++	kColPhpLanguage					= kColorKeyword1,
++	kColPhpFunction					= kColorKeyword2,
++	kColPhpConstants				= kColorCharConst,
++	kColPhpStringDoubleQuotes		= kColorString1,
++	kColPhpStringSingleQuotes		= kColorString2,
++	kColPhpComment					= kColorComment2,
++	kColPhpCommentL					= kColorComment1,
++};
++
++#pragma mark Debug-Functions
++
++
++#if DEBUG_PHP
++
++void DEB_PrintState(const int state, const char c, const char *sub=&quot;&quot;)
++{
++	const char* name = NULL;
++	switch (state)
++	{
++		case START:						name = &quot;START&quot;; break;
++		case TAG_START:					name = &quot;TAG_START&quot;; break;
++		case TAG_KEYWORD_START:			name = &quot;TAG_KEYWORD_START&quot;; break;
++		case TAG_KEYWORD_END:			name = &quot;TAG_KEYWORD_END&quot;; break;
++		case TAG:						name = &quot;TAG&quot;; break;
++		case TAG_STRING_DOUBLE_QUOTES:	name = &quot;TAG_STRING_DOUBLE_QUOTES&quot;; break;
++		case TAG_STRING_SINGLE_QUOTES:	name = &quot;TAG_STRING_SINGLE_QUOTES&quot;; break;
++		case TAG_ATTRIBUTE:				name = &quot;TAG_ATTRIBUTE&quot;; break;
++		case SPECIAL:					name = &quot;SPECIAL&quot;; break;
++		case COMMENT_DTD:				name = &quot;COMMENT_DTD&quot;; break;
++		case COMMENT:					name = &quot;COMMENT&quot;; break;
++		case STYLESHEET:				name = &quot;STYLESHEET&quot;; break;
++		case CSS_COMMENT:				name = &quot;CSS_COMMENT&quot;; break;
++		case CSS_DEFINITION:			name = &quot;CSS_DEFINITION&quot;; break;
++		case JAVASCRIPT:				name = &quot;JAVASCRIPT&quot;; break;
++		case JS_COMMENT_MULTI_LINE:		name = &quot;JS_COMMENT_MULTI_LINE&quot;; break;
++		case JS_COMMENT_SINGLE_LINE:	name = &quot;JS_COMMENT_SINGLE_LINE&quot;; break;
++		case JS_IDENTIFIER:				name = &quot;JS_IDENTIFIER&quot;; break;
++		case JS_STRING_SINGLE_QUOTES:	name = &quot;JS_STRING_SINGLE_QUOTES&quot;; break;
++		case JS_STRING_DOUBLE_QUOTES:	name = &quot;JS_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_SCRIPT:				name = &quot;PHP_SCRIPT&quot;; break;
++		case PHP_IDENTIFIER:			name = &quot;PHP_IDENTIFIER&quot;; break;
++		case PHP_COMMENT_MULTI_LINE:	name = &quot;PHP_COMMENT_MULTI_LINE&quot;; break;
++		case PHP_COMMENT_SINGLE_LINE:	name = &quot;PHP_COMMENT_SINGLE_LINE&quot;; break;
++		case PHP_STRING_DOUBLE_QUOTES:	name = &quot;PHP_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_STRING_SINGLE_QUOTES:	name = &quot;PHP_STRING_SINGLE_QUOTES&quot;; break;
++	}
++	if (name)
++	{
++		printf(&quot;### %s(%s)&quot;, name, sub);
++		printf(isprint(c) ? &quot; [%c]&quot; : &quot; [0x%02X]&quot;, c);
++		printf(&quot;\n&quot;);
++	}
++}
++
++void DEB_PrintSetKw(const int state, int keyword)
++{
++	const char* name = NULL;
++	switch (state)
++	{
++		case START:						name = &quot;START&quot;; break;
++		case TAG_START:					name = &quot;TAG_START&quot;; break;
++		case TAG_KEYWORD_START:			name = &quot;TAG_KEYWORD_START&quot;; break;
++		case TAG_KEYWORD_END:			name = &quot;TAG_KEYWORD_END&quot;; break;
++		case TAG:						name = &quot;TAG&quot;; break;
++		case TAG_STRING_DOUBLE_QUOTES:	name = &quot;TAG_STRING_DOUBLE_QUOTES&quot;; break;
++		case TAG_STRING_SINGLE_QUOTES:	name = &quot;TAG_STRING_SINGLE_QUOTES&quot;; break;
++		case TAG_ATTRIBUTE:				name = &quot;TAG_ATTRIBUTE&quot;; break;
++		case SPECIAL:					name = &quot;SPECIAL&quot;; break;
++		case COMMENT_DTD:				name = &quot;COMMENT_DTD&quot;; break;
++		case COMMENT:					name = &quot;COMMENT&quot;; break;
++		case STYLESHEET:				name = &quot;STYLESHEET&quot;; break;
++		case CSS_COMMENT:				name = &quot;CSS_COMMENT&quot;; break;
++		case CSS_DEFINITION:			name = &quot;CSS_DEFINITION&quot;; break;
++		case JAVASCRIPT:				name = &quot;JAVASCRIPT&quot;; break;
++		case JS_COMMENT_MULTI_LINE:		name = &quot;JS_COMMENT_MULTI_LINE&quot;; break;
++		case JS_COMMENT_SINGLE_LINE:	name = &quot;JS_COMMENT_SINGLE_LINE&quot;; break;
++		case JS_IDENTIFIER:				name = &quot;JS_IDENTIFIER&quot;; break;
++		case JS_STRING_SINGLE_QUOTES:	name = &quot;JS_STRING_SINGLE_QUOTES&quot;; break;
++		case JS_STRING_DOUBLE_QUOTES:	name = &quot;JS_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_SCRIPT:				name = &quot;PHP_SCRIPT&quot;; break;
++		case PHP_IDENTIFIER:			name = &quot;PHP_IDENTIFIER&quot;; break;
++		case PHP_COMMENT_MULTI_LINE:	name = &quot;PHP_COMMENT_MULTI_LINE&quot;; break;
++		case PHP_COMMENT_SINGLE_LINE:	name = &quot;PHP_COMMENT_SINGLE_LINE&quot;; break;
++		case PHP_STRING_DOUBLE_QUOTES:	name = &quot;PHP_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_STRING_SINGLE_QUOTES:	name = &quot;PHP_STRING_SINGLE_QUOTES&quot;; break;
++	}
++	const char* kwname = NULL;
++	switch (keyword)
++	{
++		case kKwHtmlTag:		kwname = &quot;HtmlTag&quot;; break;
++		case kKwHtmlAttribute:	kwname = &quot;HtmlAttribute&quot;; break;
++		case kKwJsLanguage:		kwname = &quot;JsLanguage&quot;; break;
++		case kKwJsConstants:	kwname = &quot;JsConstants&quot;; break;
++		case kKwPhpLanguage:	kwname = &quot;PhpLanguage&quot;; break;
++		case kKwPhpFunctions:	kwname = &quot;PhpFunctions&quot;; break;
++		case kKwPhpConstants:	kwname = &quot;PhpConstants&quot;; break;
++		case kKwUserset1:		kwname = &quot;Userset1&quot;; break;
++		case kKwUserset2:		kwname = &quot;Userset2&quot;; break;
++		case kKwUserset3:		kwname = &quot;Userset3&quot;; break;
++		case kKwUserset4:		kwname = &quot;Userset4&quot;; break;
++	}
++	//
++	if (name)
++	{
++		if (kwname)
++		{
++			printf(&quot;    IsKeyword: &lt;%s&gt;\n&quot;, kwname);
++		}
++		else
++		{
++			printf(&quot;    IsKeyword: &lt;%i&gt;\n&quot;, keyword);
++		}
++	}
++}
++
++const char* DEB_StateName(int state)
++{
++	switch (state)
++	{
++		case START:						return &quot;START&quot;;
++		case TAG_START:					return &quot;TAG_START&quot;;
++		case TAG_KEYWORD_START:			return &quot;TAG_KEYWORD_START&quot;;
++		case TAG_KEYWORD_END:			return &quot;TAG_KEYWORD_END&quot;;
++		case TAG:						return &quot;TAG&quot;;
++		case TAG_STRING_DOUBLE_QUOTES:	return &quot;TAG_STRING_DOUBLE_QUOTES&quot;;
++		case TAG_STRING_SINGLE_QUOTES:	return &quot;TAG_STRING_SINGLE_QUOTES&quot;;
++		case TAG_ATTRIBUTE:				return &quot;TAG_ATTRIBUTE&quot;;
++		case SPECIAL:					return &quot;SPECIAL&quot;;
++		case COMMENT_DTD:				return &quot;COMMENT_DTD&quot;;
++		case COMMENT:					return &quot;COMMENT&quot;;
++		case STYLESHEET:				return &quot;STYLESHEET&quot;;
++		case CSS_COMMENT:				return &quot;CSS_COMMENT&quot;;
++		case CSS_DEFINITION:			return &quot;CSS_DEFINITION&quot;;
++		case JAVASCRIPT:				return &quot;JAVASCRIPT&quot;;
++		case JS_COMMENT_MULTI_LINE:		return &quot;JS_COMMENT_MULTI_LINE&quot;;
++		case JS_COMMENT_SINGLE_LINE:	return &quot;JS_COMMENT_SINGLE_LINE&quot;;
++		case JS_IDENTIFIER:				return &quot;JS_IDENTIFIER&quot;;
++		case JS_STRING_SINGLE_QUOTES:	return &quot;JS_STRING_SINGLE_QUOTES&quot;;
++		case JS_STRING_DOUBLE_QUOTES:	return &quot;JS_STRING_DOUBLE_QUOTES&quot;;
++		case PHP_SCRIPT:				return &quot;PHP_SCRIPT&quot;;
++		case PHP_IDENTIFIER:			return &quot;PHP_IDENTIFIER&quot;;
++		case PHP_COMMENT_MULTI_LINE:	return &quot;PHP_COMMENT_MULTI_LINE&quot;;
++		case PHP_COMMENT_SINGLE_LINE:	return &quot;PHP_COMMENT_SINGLE_LINE&quot;;
++		case PHP_STRING_DOUBLE_QUOTES:	return &quot;PHP_STRING_DOUBLE_QUOTES&quot;;
++		case PHP_STRING_SINGLE_QUOTES:	return &quot;PHP_STRING_SINGLE_QUOTES&quot;;
++		default:						return &quot;UNKOWN&quot;;
++	}
++}
++
++#else
++
++	#define DEB_PrintState
++	#define DEB_StateName
++	#define DEB_PrintSetKw
++
++#endif
++
++
++#pragma mark Support
++
++
++//#define GETCHAR  (c = (i++ &lt; size) ? text[i - 1] : 0)
++inline char get_char(int &amp;i, int &amp;size, const char *text)
++{
++	return (i++ &lt; size) ? text[i-1] : 0;
++}
++
++
++#pragma mark ColorLine
++
++
++_EXPORT void ColorLine(CLanguageProxy&amp; proxy, int&amp; state)
++{
++	const char *text = proxy.Text();
++	int size = proxy.Size();
++	char c;					// Current character
++	int nxt = 0,			// Position after current character in text (i)
++		beg = 0,			// (s)
++		kws = 0,			//
++		forceState = START,	//
++		color,				//
++		kwc;				// Keywordcode
++	bool leave = false, esc = false, script = false, percent = false, style = false;
++
++	proxy.SetColor(0, kColorText);
++
++	if (size &lt;= 0)
++		return;
++
++	script = (state &gt;= JAVASCRIPT);
++	percent = false;
++
++#if DEBUG_PHP
++	printf(&quot;#############################################################################\nColorLine(%s:%s)\n%s\n&quot;, DEB_StateName(state), script ? &quot;IsScript&quot; : &quot;NoScript&quot;, text);
++#endif
++
++	while (!leave)
++	{
++		c = get_char(nxt, size, text);
++
++		switch (state)
++		{
++			case START:
++				DEB_PrintState(state, c);
++				if (c == '&lt;')
++					state = TAG_START;
++				else if (c == '&amp;')
++					state = SPECIAL;
++				else if (c == 0 || c == '\n')
++					leave = true;
++
++				if ((leave || state != START) &amp;&amp; beg &lt; nxt)
++				{
++					proxy.SetColor(beg, kColorText);
++					beg = nxt-1;
++				}
++				break;
++
++			case TAG_START:
++				DEB_PrintState(state, c);
++				if (c == '/')
++					state = TAG_KEYWORD_END;
++				else if (c == '!')
++				{
++					state = COMMENT_DTD;
++					forceState = START;
++				}
++				else if (c == '?' || c == '%')
++				{
++					proxy.SetColor(beg, kColorTag);
++					beg = nxt;
++
++					if (strncasecmp(text+beg, &quot;php&quot;, 3) == 0)
++					{
++						proxy.SetColor(beg, kColorTag);
++						beg = (nxt += 3);
++					}
++
++					state = PHP_SCRIPT;
++					percent = (c == '%');
++				}
++				else if (isalpha(c))
++				{
++					proxy.SetColor(beg, kColorTag);
++					beg = nxt-1;
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), 1);
++					state = TAG_KEYWORD_START;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColorTag);
++					leave = true;
++				}
++				else if (!isspace(c))
++				{
++					nxt--;
++					state = TAG;
++				}
++				break;
++
++			case TAG_KEYWORD_END:
++				DEB_PrintState(state, c);
++				if (isalpha(c))
++				{
++					proxy.SetColor(beg, kColorTag);
++					beg = nxt-1;
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), 1);
++					state = TAG_KEYWORD_START;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColorTag);
++					leave = true;
++				}
++				else if (!isspace(c))
++				{
++					nxt--;
++					state = TAG;
++				}
++				break;
++
++			case TAG_KEYWORD_START:
++				DEB_PrintState(state, c);
++				if (!isalnum(c) &amp;&amp; c != '-')
++				{
++					switch (kwc = proxy.IsKeyword(kws, kKwHtmlTag|kKwUsersets))
++					{
++						case kKwHtmlTag:  color = kColorTag;      break;
++						case kKwUserset1: color = kColorUserSet1; break;
++						case kKwUserset2: color = kColorUserSet2; break;
++						case kKwUserset3: color = kColorUserSet3; break;
++						case kKwUserset4: color = kColorUserSet4; break;
++						default:          color = kColorText;     break;
++					}
++					proxy.SetColor(beg, color);
++					DEB_PrintSetKw(state, kwc);
++
++					if (text[beg-1] != '/')
++					{
++						if (strncasecmp(text+beg, &quot;script&quot;, 6) == 0)
++							script = true;
++						else if (strncasecmp(text+beg, &quot;style&quot;, 5) == 0)
++							style = true;
++					}
++					state = TAG;
++					beg = --nxt;
++				}
++				else if (kws)
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), kws);
++				break;
++
++			case TAG:
++				DEB_PrintState(state, c);
++				switch (c)
++				{
++					case 0:
++					case '\n':
++						proxy.SetColor(beg, kColorTag);
++						leave = true;
++						break;
++					case '&gt;':
++						proxy.SetColor(beg, kColorTag);
++						beg = nxt;
++						proxy.SetColor(beg, kColorText);
++						if (script)
++							state = JAVASCRIPT;
++						else if (style)
++							state = STYLESHEET;
++						else
++							state = START;
++						break;
++					case '&quot;':
++						proxy.SetColor(beg, kColorTag);
++						beg = nxt-1;
++						state = TAG_STRING_DOUBLE_QUOTES;
++						break;
++					case '\'':
++						proxy.SetColor(beg, kColorTag);
++						beg = nxt-1;
++						state = TAG_STRING_SINGLE_QUOTES;
++						break;
++					case '!':
++						if (nxt == beg+2)
++						{
++							proxy.SetColor(beg, kColorTag);
++							state = COMMENT_DTD;
++							forceState = START;
++						}
++						break;
++					default:
++						if (isalpha(c))
++						{
++							proxy.SetColor(beg, kColorTag);
++							beg = nxt-1;
++							kws = proxy.Move(CASE_SENSITIVE_ATTR ? c : tolower(c), 1);
++							state = TAG_ATTRIBUTE;
++						}
++						break;
++				}
++				break;
++
++			case TAG_STRING_DOUBLE_QUOTES:
++				DEB_PrintState(state, c);
++				if (c == '&quot;')
++				{
++					proxy.SetColor(beg, kColHtmlTagStringDoubleQuotes);
++					beg = nxt;
++					state = TAG;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					proxy.SetColor(beg, kColHtmlTagStringDoubleQuotes);
++					leave = true;
++				}
++				break;
++
++			case TAG_STRING_SINGLE_QUOTES:
++				DEB_PrintState(state, c);
++				if (c == '\'')
++				{
++					proxy.SetColor(beg, kColHtmlTagStringSingleQuotes);
++					beg = nxt;
++					state = TAG;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					proxy.SetColor(beg, kColHtmlTagStringSingleQuotes);
++					leave = true;
++				}
++				break;
++
++			case TAG_ATTRIBUTE:
++				DEB_PrintState(state, c);
++				if (!isalnum(c) &amp;&amp; c != '-')
++				{
++					switch (kwc = proxy.IsKeyword(kws, kKwHtmlAttribute|kKwUsersets))
++					{
++						case kKwHtmlAttribute: color = kColHtmlAttribute; break;
++						case kKwUserset1:      color = kColorUserSet1;    break;
++						case kKwUserset2:      color = kColorUserSet2;    break;
++						case kKwUserset3:      color = kColorUserSet3;    break;
++						case kKwUserset4:      color = kColorUserSet4;    break;
++						default:               color = kColorText;        break;
++					}
++					proxy.SetColor(beg, color);
++					DEB_PrintSetKw(state, kwc);
++
++					beg = --nxt;
++					state = TAG;
++				}
++				else if (kws)
++					kws = proxy.Move(CASE_SENSITIVE_ATTR ? c : tolower(c), kws);
++				break;
++
++			case SPECIAL:
++				DEB_PrintState(state, c);
++				if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColorText);
++					state = START;
++					leave = true;
++				}
++				else if (c == ';')
++				{
++					proxy.SetColor(beg, kColHtmlEntity);
++					beg = nxt;
++					state = START;
++				}
++				else if (isspace(c))
++					state = START;
++				break;
++
++			case COMMENT_DTD:
++				DEB_PrintState(state, c);
++				if (c == '-' &amp;&amp; text[nxt] == '-' &amp;&amp; nxt == beg+3 &amp;&amp; text[nxt-2] == '!' &amp;&amp; text[nxt-3] == '&lt;')
++				{
++					proxy.SetColor(beg, kColHtmlDtd);
++					beg = nxt-1;
++					state = COMMENT;
++				}
++				else if (c == '&gt;')
++				{
++					proxy.SetColor(beg, kColHtmlDtd);
++					beg = nxt;
++					state = forceState;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColHtmlDtd);
++					leave = true;
++				}
++				break;
++
++			case COMMENT:
++				DEB_PrintState(state, c);
++				if (beg == 0 &amp;&amp; c == ':')
++				{
++					if (strncasecmp(text+nxt, &quot;javascript&quot;, 10) == 0)
++						forceState = JAVASCRIPT;
++					else if (strncasecmp(text+nxt, &quot;php&quot;, 3) == 0)
++						forceState = PHP_SCRIPT;
++				}
++				else if (c == '-' &amp;&amp; text[nxt] == '-')
++				{
++					proxy.SetColor(beg, kColHtmlComment);
++					beg = ++nxt;
++					state = COMMENT_DTD;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColHtmlComment);
++					leave = true;
++				}
++				break;
++
++			case STYLESHEET:
++				DEB_PrintState(state, c);
++
++				if (c == '&lt;' &amp;&amp; text[nxt] == '/')
++				{
++					if (strncasecmp(text+nxt+1, &quot;style&quot;, 5) == 0)
++					{
++						nxt++;
++						state = TAG_START;
++					}
++				}
++				else if (c == '/' &amp;&amp; text[nxt] == '*')
++					state = CSS_COMMENT;
++//				else if (isalpha(c))
++//				{
++//					kws = proxy.Move(CASE_SENSITIVE_JS ? c : tolower(c), 1);
++//					state = JS_IDENTIFIER;
++//				}
++				else if (c == '{')
++					state = CSS_DEFINITION;
++				else if (c == 0 || c == '\n')
++					leave = true;
++
++				if ((leave || state != STYLESHEET) &amp;&amp; beg &lt; nxt)
++				{
++					proxy.SetColor(beg, kColCssText);
++					beg = nxt-1;
++				}
++				break;
++
++			case CSS_COMMENT:
++				DEB_PrintState(state, c);
++				if ((beg == 0 || nxt &gt; beg+1) &amp;&amp; c == '*' &amp;&amp; text[nxt] == '/')
++				{
++					proxy.SetColor(beg, kColJsComment);
++					beg = nxt+1;
++					state = STYLESHEET;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColJsComment);
++					leave = true;
++				}
++				break;
++
++			case CSS_DEFINITION:
++				DEB_PrintState(state, c);
++				if (c == '}')
++				{
++					state = STYLESHEET;
++				}
++				else if (c == 0 || c == '\n')
++					leave = true;
++				break;
++
++			case JAVASCRIPT:
++				DEB_PrintState(state, c);
++				script = false;
++
++				if (c == '&lt;' &amp;&amp; strncasecmp(text+nxt, &quot;!--&quot;, 3) == 0)
++				{
++					proxy.SetColor(beg, kColorTag);
++					proxy.SetColor(nxt+1, kColorComment1);
++					nxt += 3;
++					beg = nxt;
++				}
++				else if (c == '&lt;' &amp;&amp; text[nxt] == '/')
++				{
++					if (strncasecmp(text+nxt+1, &quot;script&quot;, 6) == 0)
++					{
++						nxt++;
++						state = TAG_START;
++					}
++				}
++				else if (c == '/' &amp;&amp; text[nxt] == '*')
++					state = JS_COMMENT_MULTI_LINE;
++				else if (c == '/' &amp;&amp; text[nxt] == '/')
++					state = JS_COMMENT_SINGLE_LINE;
++				else if (isalpha(c))
++				{
++					kws = proxy.Move(CASE_SENSITIVE_JS ? c : tolower(c), 1);
++					state = JS_IDENTIFIER;
++				}
++				else if (c == '\'')
++					state = JS_STRING_SINGLE_QUOTES;
++				else if (c == '&quot;')
++					state = JS_STRING_DOUBLE_QUOTES;
++				else if (c == 0 || c == '\n')
++					leave = true;
++
++				if ((leave || state != JAVASCRIPT) &amp;&amp; beg &lt; nxt)
++				{
++					proxy.SetColor(beg, kColorText);
++					beg = nxt-1;
++				}
++				break;
++
++			case JS_COMMENT_MULTI_LINE:
++				DEB_PrintState(state, c);
++				if ((beg == 0 || nxt &gt; beg+1) &amp;&amp; c == '*' &amp;&amp; text[nxt] == '/')
++				{
++					proxy.SetColor(beg, kColJsComment);
++					beg = nxt+1;
++					state = JAVASCRIPT;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColJsComment);
++					leave = true;
++				}
++				break;
++
++			case JS_COMMENT_SINGLE_LINE:
++				DEB_PrintState(state, c);
++				if (c == '-' &amp;&amp; text[nxt] == '-')
++				{
++					proxy.SetColor(beg, kColJsCommentL);
++					beg = nxt+1;
++					state = TAG;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					proxy.SetColor(beg, kColJsCommentL);
++					state = JAVASCRIPT;
++					leave = true;
++				}
++				break;
++
++			case JS_IDENTIFIER:
++				DEB_PrintState(state, c);
++				if (!isalnum(c) &amp;&amp; c != '_')
++				{
++					if (nxt &gt; beg+1 &amp;&amp; (kwc = proxy.IsKeyword(kws, kKwJs|kKwUsersets)) != 0)
++					{
++						switch (kwc)
++						{
++							case kKwJsLanguage:  color = kColorKeyword1;  break;
++							case kKwJsConstants: color = kColorCharConst; break;
++							case kKwUserset1:    color = kColorUserSet1;  break;
++							case kKwUserset2:    color = kColorUserSet2;  break;
++							case kKwUserset3:    color = kColorUserSet3;  break;
++							case kKwUserset4:    color = kColorUserSet4;  break;
++							default:             color = kColorText;      break;
++						}
++						proxy.SetColor(beg, color);
++						DEB_PrintSetKw(state, kwc);
++					}
++					else
++					{
++						proxy.SetColor(beg, kColorText);
++					}
++
++					beg = --nxt;
++					state = JAVASCRIPT;
++				}
++				else if (kws)
++					kws = proxy.Move(CASE_SENSITIVE_JS ? c : tolower(c), kws);
++				break;
++
++			case JS_STRING_SINGLE_QUOTES:
++			case JS_STRING_DOUBLE_QUOTES:
++				DEB_PrintState(state, c);
++				if (!esc &amp;&amp;
++					((state == JS_STRING_SINGLE_QUOTES &amp;&amp; c == '\'') ||
++					(state == JS_STRING_DOUBLE_QUOTES &amp;&amp; c == '&quot;')))
++				{
++					proxy.SetColor(beg, (state == JS_STRING_SINGLE_QUOTES) ? kColJsStringSingleQuotes : kColJsStringDoubleQuotes);
++					beg = nxt;
++					state = JAVASCRIPT;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					if (text[nxt-2] == '\\' &amp;&amp; text[nxt-3] != '\\')
++					{
++						proxy.SetColor(beg, (state == JS_STRING_SINGLE_QUOTES) ? kColJsStringSingleQuotes : kColJsStringDoubleQuotes);
++					}
++					else
++					{
++						proxy.SetColor(beg, kColorText);
++						state = JAVASCRIPT;
++					}
++
++					beg = size;
++					leave = true;
++				}
++				else
++					esc = !esc &amp;&amp; (c == '\\');
++				break;
++
++			case PHP_SCRIPT:
++				DEB_PrintState(state, c);
++				if (((c == '?' &amp;&amp; !percent) || (c == '%' &amp;&amp; percent)) &amp;&amp; text[nxt] == '&gt;')
++				{
++					proxy.SetColor(beg, kColorTag);
++					beg = ++nxt;
++					state = START;
++				}
++				else if (isalpha(c))
++				{
++					kws = proxy.Move(CASE_SENSITIVE_PHP ? c : tolower(c), 1);
++					state = PHP_IDENTIFIER;
++				}
++				else if (c == '&quot;')
++					state = PHP_STRING_DOUBLE_QUOTES;
++				else if (c == '\'')
++					state = PHP_STRING_SINGLE_QUOTES;
++				else if (c == '#' || (c == '/' &amp;&amp; text[nxt] == '/'))
++					state = PHP_COMMENT_SINGLE_LINE;
++				else if (c == '/' &amp;&amp; text[nxt] == '*')
++					state = PHP_COMMENT_MULTI_LINE;
++				else if (c == 0 || c == '\n')
++					leave = true;
++
++				if ((leave || state != START) &amp;&amp; beg &lt; nxt)
++				{
++					proxy.SetColor(beg, kColorText);
++					beg = nxt-1;
++				}
++				break;
++
++			case PHP_IDENTIFIER:
++				if (!isalnum(c) &amp;&amp; c != '_')
++				{
++					if (nxt &gt; beg+1 &amp;&amp; (kwc = proxy.IsKeyword(kws, kKwPhp|kKwUsersets)))
++					{
++						DEB_PrintState(state, c, &quot;KWD&quot;);
++						switch (kwc)
++						{
++							case kKwPhpLanguage:   color = kColPhpLanguage;  break;
++							case kKwPhpFunctions:  color = kColPhpFunction;  break;
++							case kKwPhpConstants:  color = kColPhpConstants; break;
++							case kKwUserset1:      color = kColorUserSet1;   break;
++							case kKwUserset2:      color = kColorUserSet2;   break;
++							case kKwUserset3:      color = kColorUserSet3;   break;
++							case kKwUserset4:      color = kColorUserSet4;   break;
++							default:               color = kColorText;       break;
++						}
++						proxy.SetColor(beg, color);
++						DEB_PrintSetKw(state, kwc);
++					}
++					else
++					{
++						DEB_PrintState(state, c, &quot;TXT&quot;);
++						proxy.SetColor(beg, kColorText);
++					}
++
++					beg = --nxt;
++					state = PHP_SCRIPT;
++				}
++				else if (kws)
++					DEB_PrintState(state, c, &quot;MOV&quot;);
++					kws = proxy.Move(CASE_SENSITIVE_PHP ? c : tolower(c), kws);
++				break;
++
++			case PHP_STRING_DOUBLE_QUOTES:
++				DEB_PrintState(state, c);
++				if (!esc &amp;&amp; c == '&quot;')
++				{
++					proxy.SetColor(beg, kColPhpStringDoubleQuotes);
++					beg = nxt;
++					state = PHP_SCRIPT;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					proxy.SetColor(beg, kColPhpStringDoubleQuotes);
++					beg = size;
++					leave = true;
++				}
++				else
++					esc = !esc &amp;&amp; (c == '\\');
++				break;
++
++			case PHP_STRING_SINGLE_QUOTES:
++				DEB_PrintState(state, c);
++				if (!esc &amp;&amp; c == '\'')
++				{
++					proxy.SetColor(beg, kColPhpStringSingleQuotes);
++					beg = nxt;
++					state = PHP_SCRIPT;
++				}
++				else if (c == '\n' || c == 0)
++				{
++					proxy.SetColor(beg, kColPhpStringSingleQuotes);
++					beg = size;
++					leave = true;
++				}
++				else
++					esc = !esc &amp;&amp; (c == '\\');
++				break;
++
++			case PHP_COMMENT_MULTI_LINE:
++				DEB_PrintState(state, c);
++				if ((beg == 0 || nxt &gt; beg+1) &amp;&amp; c == '*' &amp;&amp; text[nxt] == '/')
++				{
++					proxy.SetColor(beg, kColPhpComment);
++					beg = nxt+1;
++					state = PHP_SCRIPT;
++				}
++				else if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColPhpComment);
++					leave = true;
++				}
++				else if (((percent &amp;&amp; c == '%') || (!percent &amp;&amp; c == '?')) &amp;&amp;
++					text[nxt] == '&gt;')
++				{
++					proxy.SetColor(beg, kColPhpComment);
++					beg = nxt-1;
++					proxy.SetColor(beg, kColorTag);
++					beg = ++nxt;
++					state = START;
++				}
++				break;
++
++			case PHP_COMMENT_SINGLE_LINE:
++				DEB_PrintState(state, c);
++				if (c == 0 || c == '\n')
++				{
++					proxy.SetColor(beg, kColPhpCommentL);
++					state = PHP_SCRIPT;
++					leave = true;
++				}
++				else if (((percent &amp;&amp; c == '%') || (!percent &amp;&amp; c == '?')) &amp;&amp;
++					text[nxt] == '&gt;')
++				{
++					proxy.SetColor(beg, kColPhpCommentL);
++					beg = nxt-1;
++					proxy.SetColor(beg, kColorTag);
++					beg = ++nxt;
++					state = START;
++				}
++				break;
++
++			default:	// error condition, gracefully leave the loop
++				leave = true;
++				break;
++		}
++	}
++
++#if DEBUG_PHP
++	printf(&quot;--&gt; (%s:%s)\n&quot;, DEB_StateName(state), script ? &quot;IsScript&quot; : &quot;NoScript&quot;);
++#endif
++
++//	if (script)
++//		state |= 0x8000;
++//
++//	if (percent)
++//		state |= 0x4000;
++} /* ColorLine */
++// 
++
++#pragma mark FindNextWord
++
++
++const unsigned char kWordWrapTable[] =
++	{
++		0x84, 0x85, 0x80, 0x00, 0x83, 0x83,
++		0x00, 0x02, 0x80, 0x00, 0x00, 0x00,
++		0x00, 0x86, 0x00, 0x00, 0x83, 0x00,
++		0x00, 0x86, 0x00, 0x00, 0x00, 0x00,
++		0x84, 0x85, 0x80, 0x00, 0x83, 0x83,
++		0x84, 0x86, 0x00, 0x00, 0x83, 0x83
++	};
++
++int FindNextWord(const CLanguageProxy&amp; proxy)
++{
++	int mark = 0, i = 0;
++	int unicode, state, len;
+
+[... truncated: 706 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000067.html">[pe-commits] r474 - in trunk: Languages/Sources Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#68">[ date ]</a>
+              <a href="thread.html#68">[ thread ]</a>
+              <a href="subject.html#68">[ subject ]</a>
+              <a href="author.html#68">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

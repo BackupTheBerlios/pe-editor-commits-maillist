@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r517 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r517%20-%20trunk/Sources&In-Reply-To=%3C200804131455.m3DEt28R004417%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000110.html">
+   <LINK REL="Next"  HREF="000113.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r517 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r517%20-%20trunk/Sources&In-Reply-To=%3C200804131455.m3DEt28R004417%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r517 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 13 16:55:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000110.html">[pe-commits] r516 - branches/model-based-editing/Sources
+</A></li>
+        <LI>Next message: <A HREF="000113.html">[pe-commits] r518 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-04-13 16:55:02 +0200 (Sun, 13 Apr 2008)
+New Revision: 517
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=517&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=517&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CFilterChoiceDialog.cpp
+Log:
+* added scroll-wheel support to function popup
+
+
+Modified: trunk/Sources/CFilterChoiceDialog.cpp
+===================================================================
+--- trunk/Sources/CFilterChoiceDialog.cpp	2008-04-12 12:34:19 UTC (rev 516)
++++ trunk/Sources/CFilterChoiceDialog.cpp	2008-04-13 14:55:02 UTC (rev 517)
+@@ -17,6 +17,8 @@
+ #include &quot;HColorUtils.h&quot;
+ #include &quot;HDialogViews.h&quot;
+ #include &quot;HError.h&quot;
++#include &quot;KeyBindings.h&quot;
++#include &quot;Prefs.h&quot;
+ 
+ // internal messages
+ enum {
+@@ -525,6 +527,35 @@
+ 		case MSG_FILTER_MODIFIED:
+ 			_SetFilter(fFilterStringControl-&gt;Text());
+ 			break;
++		case B_MOUSE_WHEEL_CHANGED:
++		{
++			// the wheel that have changed may *not* be the vertical one,
++			// so we check:
++			float y;
++			if (message-&gt;FindFloat(&quot;be:wheel_delta_y&quot;, &amp;y) == B_OK &amp;&amp; y != 0)
++			{
++				float delta 
++					= 20.0 * gPrefs-&gt;GetPrefInt(prf_I_ScrollwheelLines, 3);
++				BScrollBar* vScroller = fChoicesList-&gt;ScrollBar(B_VERTICAL);
++				float minVal, maxVal;
++				vScroller-&gt;GetRange(&amp;minVal, &amp;maxVal);
++				float value = vScroller-&gt;Value();
++				if (y &lt; 0) 
++				{
++					value -= delta;
++					value = max(minVal, value);
++				}
++				else 
++				{
++					value += delta;
++					value = min(maxVal, value);
++				}
++				vScroller-&gt;SetValue(value);
++			}
++			else
++				HDialog::MessageReceived(message);
++			break;
++		}
+ 		default:
+ 			BWindow::MessageReceived(message);
+ 			break;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000110.html">[pe-commits] r516 - branches/model-based-editing/Sources
+</A></li>
+	<LI>Next message: <A HREF="000113.html">[pe-commits] r518 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

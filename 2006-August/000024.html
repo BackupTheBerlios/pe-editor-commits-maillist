@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r433 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r433%20-%20trunk/Sources&In-Reply-To=%3C200608070925.k779P6ss027338%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000023.html">
+   <LINK REL="Next"  HREF="000025.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r433 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r433%20-%20trunk/Sources&In-Reply-To=%3C200608070925.k779P6ss027338%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r433 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 11:25:06 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000023.html">[pe-commits] r432 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000025.html">[pe-commits] r434 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#24">[ date ]</a>
+              <a href="thread.html#24">[ thread ]</a>
+              <a href="subject.html#24">[ subject ]</a>
+              <a href="author.html#24">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 11:25:05 +0200 (Mon, 07 Aug 2006)
+New Revision: 433
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=433&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=433&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/PApp.cpp
+Log:
+* fixed some more coding style violations
+* removed debug output
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-07 09:17:00 UTC (rev 432)
++++ trunk/Sources/CDocIO.cpp	2006-08-07 09:25:05 UTC (rev 433)
+@@ -436,7 +436,8 @@
+ 		&amp;&amp; node.SetTo(&amp;entry) == B_OK
+ 		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) {
++		if (sfDocListLock.Lock()) 
++		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]++ == 0)
+ 				watch_node(&amp;directoryNodeRef, B_WATCH_DIRECTORY, be_app);
+ 			sfDocListLock.Unlock();
+@@ -453,7 +454,8 @@
+ 		&amp;&amp; node.SetTo(&amp;entry) == B_OK
+ 		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) {
++		if (sfDocListLock.Lock()) 
++		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]-- == 1)
+ 				watch_node(&amp;directoryNodeRef, B_STOP_WATCHING, be_app);
+ 			sfDocListLock.Unlock();
+@@ -525,14 +527,11 @@
+ 			if (msg-&gt;FindString(&quot;name&quot;, &amp;name) == B_OK)
+ 				fEntryRef-&gt;set_name(name);
+ 
+-printf(&quot;detected changed name of &lt;%s:%Ld&gt;\n&quot;, name, fNodeRef.node);
+-
+ 			fDoc-&gt;NameChanged();
+ 			break;
+ 		}
+ 		case B_ENTRY_REMOVED:
+ 		{
+-printf(&quot;detected removal of &lt;%s:%Ld&gt;\n&quot;, fEntryRef-&gt;name, fNodeRef.node);
+ 			StopWatchingFile(false);
+ 				// We don't want to stop monitoring the directory; BTW, it
+ 				// will get automatically updated on next save, the monitoring
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-08-07 09:17:00 UTC (rev 432)
++++ trunk/Sources/PApp.cpp	2006-08-07 09:25:05 UTC (rev 433)
+@@ -747,7 +747,8 @@
+ 				break;
+ 			}
+ 	
+-			case B_NODE_MONITOR: {
++			case B_NODE_MONITOR: 
++			{
+ 				CDoc::HandleFolderNodeMonitorMsg(msg);
+ 				break;
+ 			}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000023.html">[pe-commits] r432 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000025.html">[pe-commits] r434 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#24">[ date ]</a>
+              <a href="thread.html#24">[ thread ]</a>
+              <a href="subject.html#24">[ subject ]</a>
+              <a href="author.html#24">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

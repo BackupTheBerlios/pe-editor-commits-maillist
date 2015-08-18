@@ -1,0 +1,922 @@
+From zooey at mail.berlios.de  Wed Feb 13 20:07:36 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 13 Feb 2008 20:07:36 +0100
+Subject: [pe-commits] r487 - trunk/build
+Message-ID: <200802131907.m1DJ7ake027102@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-13 20:07:36 +0100 (Wed, 13 Feb 2008)
+New Revision: 487
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=487&view=rev
+
+Modified:
+   trunk/build/BuildSettings
+Log:
+* applied patch from Francois Revol that allows Pe to be compiled
+  on Zeta, too (thanks!)
+
+
+
+Modified: trunk/build/BuildSettings
+===================================================================
+--- trunk/build/BuildSettings	2008-01-17 17:33:16 UTC (rev 486)
++++ trunk/build/BuildSettings	2008-02-13 19:07:36 UTC (rev 487)
+@@ -29,6 +29,12 @@
+ 	if $(haveZeta)	{
+ 		LINKLIBS += -lzeta ;
+ 	}
++	# check for pcre...
++	local haveHeadersPcre = [ GLOB /boot/develop/headers/pcre : pcre.h ] ;
++	if $(haveHeadersPcre)	{
++		CCFLAGS += -isystem /boot/develop/headers/pcre ;
++		C++FLAGS += -isystem /boot/develop/headers/pcre ;
++	}
+ }
+ 
+ # Use copyattr for copying.
+
+
+
+From axeld at mail.berlios.de  Wed Feb 20 12:31:13 2008
+From: axeld at mail.berlios.de (axeld at BerliOS)
+Date: Wed, 20 Feb 2008 12:31:13 +0100
+Subject: [pe-commits] r488 - trunk/Sources
+Message-ID: <200802201131.m1KBVDPF012338@sheep.berlios.de>
+
+Author: axeld
+Date: 2008-02-20 12:31:04 +0100 (Wed, 20 Feb 2008)
+New Revision: 488
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=488&view=rev
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+* Storing the tab stops is no longer part of the "restore font" setting; it's
+  now always stored with the file if it's different from the current setting.
+* Minor cleanup; we're now using the TabStop() method instead of referencing
+  fTabStop everywhere.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2008-02-13 19:07:36 UTC (rev 487)
++++ trunk/Sources/PText.cpp	2008-02-20 11:31:04 UTC (rev 488)
+@@ -248,13 +248,13 @@
+ 	fLineHeight = ceil(fFH.ascent + fFH.descent + fFH.leading);
+ 	fMetrics = CFontStyle::Locate(ff, fs, fFont.Size());
+ 
+-	fTabWidth = fTabStops * StringWidth(" ", 1);
++	fTabWidth = TabStops() * StringWidth(" ", 1);
+ 	fDefaultCharWidth = StringWidth("m", 1);
+ 
+ 	if (Window())
+ 	{
+ 		PToolBar *toolBar = Doc()->ToolBar();
+-		if (toolBar) toolBar->SetTabWidth(fTabWidth, fTabStops);
++		if (toolBar) toolBar->SetTabWidth(fTabWidth, TabStops());
+ 	}
+ 
+ 	RecalculateLineBreaks();
+@@ -424,7 +424,7 @@
+ {
+ 	fStatus = status;
+ //	fStatus->SetHScroll(3);
+-//	fStatus->SetTabWidth(fTabWidth, fTabStops);
++//	fStatus->SetTabWidth(fTabWidth, TabStops());
+ } /* PText::SetStatus */
+ 
+ void PText::WindowActivated(bool active)
+@@ -447,10 +447,11 @@
+ 	const char *s1, *s2;
+ 	bool b;
+ 
++	if (msg.FindInt32("tabstop", &i) == B_OK)
++		fTabStops = i;
++
+ 	if (gRestoreFont)
+ 	{
+-		if (msg.FindInt32("tabstop", &i) == B_OK)
+-			fTabStops = i;
+ 		if (msg.FindBool("show tabs", &b) == B_OK)
+ 			ShowTabStops(b);
+ 
+@@ -522,7 +523,8 @@
+ 
+ void PText::CollectSettings(BMessage& msg)
+ {
+-	FailOSErr(msg.AddInt32("tabstop", fTabStops));
++	if (TabStops() != gPrefs->GetPrefInt(prf_I_SpacesPerTab, 4))
++		FailOSErr(msg.AddInt32("tabstop", TabStops()));
+ 	FailOSErr(msg.AddBool("show tabs", Doc()->ToolBar()->ShowsTabs()));
+ 
+ 	FailOSErr(msg.AddInt32("fontkind", fFontKind));
+@@ -566,7 +568,7 @@
+ 
+ 	anchor = min(fAnchor, fCaret);
+ 	caret = max(fAnchor, fCaret);
+-	tabs = fTabStops;
++	tabs = TabStops();
+ 	flags = 0x01000000;
+ 	fontsize = (long)fFont.Size();
+ 	fFont.GetFamilyAndStyle(&font, &style);
+@@ -725,7 +727,7 @@
+ 			MoveBy(0, -kTabStopHeight);
+ 		}
+ 
+-		toolBar->SetTabWidth(fTabWidth, fTabStops);
++		toolBar->SetTabWidth(fTabWidth, TabStops());
+ 		toolBar->SetShowsTabs(show);
+ 		toolBar->Draw(toolBar->Bounds());
+ 	}
+@@ -794,7 +796,7 @@
+ 				}
+ 				else if (fText[nb] == '\t')
+ 				{
+-					nw = (((w + sw) / fTabStops) + 1) * fTabStops;
++					nw = (((w + sw) / TabStops()) + 1) * TabStops();
+ 					w = nw;
+ 
+ 					if (w > fWrapWidth)
+@@ -1622,7 +1624,7 @@
+ 	else
+ 		fHScrollBar->SetRange(0, 100000);
+ 
+-	fHScrollBar->SetSteps(fTabWidth/fTabStops, fBounds.Width() / 2);
++	fHScrollBar->SetSteps(fTabWidth / TabStops(), fBounds.Width() / 2);
+ } /* PText::AdjustScrollBars */
+ 
+ void PText::ScrollToCaret(bool keepContext)
+@@ -2854,7 +2856,7 @@
+ 	{
+ 		if (fText[i] == '\t')
+ 		{
+-			col = ((col / fTabStops) + 1) * fTabStops;
++			col = ((col / TabStops()) + 1) * TabStops();
+ 			i++;
+ 		}
+ 		else
+@@ -2882,7 +2884,7 @@
+ 		if (fText[result] == '\t')
+ 		{
+ 			result++;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+@@ -3112,7 +3114,7 @@
+ 		if (fText[startOffset] == '\t')
+ 		{
+ 			startOffset += 1;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+@@ -3128,7 +3130,7 @@
+ 		if (fText[endOffset] == '\t')
+ 		{
+ 			endOffset += 1;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+
+
+
+From axeld at mail.berlios.de  Thu Feb 21 18:01:23 2008
+From: axeld at mail.berlios.de (axeld at BerliOS)
+Date: Thu, 21 Feb 2008 18:01:23 +0100
+Subject: [pe-commits] r489 - trunk/Sources
+Message-ID: <200802211701.m1LH1NQ3026139@sheep.berlios.de>
+
+Author: axeld
+Date: 2008-02-21 18:01:22 +0100 (Thu, 21 Feb 2008)
+New Revision: 489
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=489&view=rev
+
+Modified:
+   trunk/Sources/PApp.cpp
+Log:
+This is supposed to change the default of the worksheet setting to "false", ie.
+don't show a worksheet on startup.
+
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2008-02-20 11:31:04 UTC (rev 488)
++++ trunk/Sources/PApp.cpp	2008-02-21 17:01:22 UTC (rev 489)
+@@ -237,7 +237,7 @@
+ 		gPopupFuncs			= gPrefs->GetPrefInt(prf_I_ShowTypes,			1);
+ 		gPopupSorted		= gPrefs->GetPrefInt(prf_I_SortPopup,			0);
+ 		gRedirectStdErr		= gPrefs->GetPrefInt(prf_I_RedirectStdErr,		1);
+-		gUseWorksheet		= gPrefs->GetPrefInt(prf_I_Worksheet,			1);
++		gUseWorksheet		= gPrefs->GetPrefInt(prf_I_Worksheet,			0);
+ 		gRestorePosition	= gPrefs->GetPrefInt(prf_I_RestorePosition,		1);
+ 		gRestoreFont		= gPrefs->GetPrefInt(prf_I_RestoreFont,			1);
+ 		gRestoreSelection	= gPrefs->GetPrefInt(prf_I_RestoreSelection,	1);
+
+
+
+From zooey at mail.berlios.de  Wed Feb 27 22:42:01 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 27 Feb 2008 22:42:01 +0100
+Subject: [pe-commits] r490 - trunk/Sources
+Message-ID: <200802272142.m1RLg18x018520@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-27 22:42:00 +0100 (Wed, 27 Feb 2008)
+New Revision: 490
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=490&view=rev
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+Log:
+* more patches for Zeta-1.2 compatibility from Francois Revol - thanks\!
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2008-02-21 17:01:22 UTC (rev 489)
++++ trunk/Sources/CDocIO.cpp	2008-02-27 21:42:00 UTC (rev 490)
+@@ -199,6 +199,7 @@
+ 	return true;
+ }
+ 
++#ifndef B_ZETA_VERSION_1_2_0 // maybe even B_ZETA_VERSION_1_1_0
+ bool operator< (const node_ref& left, const node_ref& right)
+ {
+ 	if (left.node < right.node)
+@@ -206,6 +207,7 @@
+ 	else
+ 		return left.device < right.device;
+ }
++#endif
+ 
+ 
+ // #pragma mark - CDocIO
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2008-02-21 17:01:22 UTC (rev 489)
++++ trunk/Sources/CDocIO.h	2008-02-27 21:42:00 UTC (rev 490)
+@@ -9,6 +9,7 @@
+ 
+ #include <map>
+ 
++#include <BeBuild.h>
+ #include <Locker.h>
+ 
+ #include "CFtpStream.h"
+@@ -53,7 +54,9 @@
+ 	return fLastSaved;
+ }
+ 
++#ifndef B_ZETA_VERSION_1_2_0 // maybe even B_ZETA_VERSION_1_1_0
+ bool operator< (const node_ref& left, const node_ref& right);
++#endif
+ 
+ class CLocalDocIO : public CDocIO
+ {
+
+
+
+From zooey at mail.berlios.de  Wed Feb 27 22:43:25 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 27 Feb 2008 22:43:25 +0100
+Subject: [pe-commits] r491 - trunk/Extensions
+Message-ID: <200802272143.m1RLhPsR018650@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-27 22:43:25 +0100 (Wed, 27 Feb 2008)
+New Revision: 491
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=491&view=rev
+
+Modified:
+   trunk/Extensions/Jamfile
+Log:
+* added BeHappy and ConvertTabs extensions from Francois Revol - thanks\!
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-02-27 21:42:00 UTC (rev 490)
++++ trunk/Extensions/Jamfile	2008-02-27 21:43:25 UTC (rev 491)
+@@ -21,6 +21,13 @@
+ # </pe-src>
+ 
+ # <pe-src>
++PeExtension BeHappy 
++	: BeHappy.cpp 
++	: libhekkel.so be $(STDC++LIB) 
++	;
++# </pe-src>
++
++# <pe-src>
+ PeExtension Copy\ Lines\ Containing 
+ 	: CopyContaining.cpp 
+ 	: libhekkel.so pcreposix $(RX_LIB) be $(STDC++LIB) 
+@@ -36,6 +43,20 @@
+ # </pe-src>
+ 
+ # <pe-src>
++PeExtension Expand\ Tabs
++	: ConvertTabs.cpp 
++	: libhekkel.so be $(STDC++LIB) 
++	;
++# </pe-src>
++
++# <pe-src>
++PeExtension Replace\ As\ Tabs
++	: ConvertTabs.cpp 
++	: libhekkel.so be $(STDC++LIB) 
++	;
++# </pe-src>
++
++# <pe-src>
+ PeExtension HeaderGuard
+ 	: HeaderGuard.cpp 
+ 	: be
+
+
+
+From zooey at mail.berlios.de  Wed Feb 27 22:45:11 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 27 Feb 2008 22:45:11 +0100
+Subject: [pe-commits] r492 - trunk/Extensions
+Message-ID: <200802272145.m1RLjBUL018796@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-27 22:45:11 +0100 (Wed, 27 Feb 2008)
+New Revision: 492
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=492&view=rev
+
+Added:
+   trunk/Extensions/BeHappy.cpp
+   trunk/Extensions/ConvertTabs.cpp
+Log:
+* added BeHappy and ConvertTabs extensions from Francois Revol - thanks\!
+
+Added: trunk/Extensions/BeHappy.cpp
+===================================================================
+--- trunk/Extensions/BeHappy.cpp	2008-02-27 21:43:25 UTC (rev 491)
++++ trunk/Extensions/BeHappy.cpp	2008-02-27 21:45:11 UTC (rev 492)
+@@ -0,0 +1,152 @@
++//
++// BeHappy: looks up the selected text against BeBook inside BeHappy.
++//
++// Based from BeBookFetch by Oscar Lesta.
++//
++// new bugs by Fran?ois Revol.
++//
++
++#include "PeAddOn.h"
++
++#define kBeHappySig		"application/x-vnd.STertois.BeHappy"
++
++static team_id gBeHappyTeam = -1;
++
++//------------------------------------------------------------------------------
++
++status_t
++TellBeHappy(const char *topic)
++{
++	status_t err;
++	int32 lastWindow = 0;
++	
++	BMessenger msgr(kBeHappySig, gBeHappyTeam);
++	// if we didn't start it yet or it's gone...
++	if (gBeHappyTeam < 0 || !msgr.IsValid()) {
++		// start it
++		err = be_roster->Launch(kBeHappySig, (BMessage *)NULL, &gBeHappyTeam);
++		if (err < B_OK) {
++			MStopAlert("Can't launch BeHappy!").Go();
++			return err;
++		}
++		// leave it some time to start
++		snooze(100000);
++		msgr = BMessenger(kBeHappySig, gBeHappyTeam);
++	}
++	
++	// XXX: lastWindow = (hey count Window) -1
++	
++	// set which book to use
++	BMessage m1(B_SET_PROPERTY);
++	m1.AddSpecifier("Book");
++	m1.AddString("data", "Be Book");
++	m1.AddSpecifier("Window", lastWindow);
++	err = msgr.SendMessage(&m1);
++	if (err < B_OK)
++		return err;
++
++	// some more time to load the book...
++	snooze(500000);
++
++	// send the search string
++	BMessage m2(B_SET_PROPERTY);
++	m2.AddSpecifier("Topic");
++	m2.AddString("data", topic);
++	m2.AddSpecifier("Window", lastWindow);
++	BMessage reply;
++	err = msgr.SendMessage(&m2, &reply, 0);
++	if (err < B_OK)
++		return err;
++
++	// see if the text was found
++	if (reply.FindInt32("error", &err) < B_OK)
++		return EINVAL;
++	if (err < B_OK)
++		return err;
++	
++	return err;
++}
++
++
++//------------------------------------------------------------------------------
++//	#pragma mark - Addon Entry
++
++#if __INTEL__
++	extern "C" _EXPORT long perform_edit(MTextAddOn* addon);
++#else
++	#pragma export on
++	extern "C" {
++		long perform_edit(MTextAddOn* addon);
++	}
++	#pragma export reset
++#endif
++
++
++long
++perform_edit(MTextAddOn* addon)
++{
++	status_t err;
++	long selStart;
++	long selEnd;
++
++	addon->GetSelection(&selStart, &selEnd);
++
++	if (selEnd <= selStart)
++		return B_ERROR;
++
++	int length = selEnd - selStart;
++
++	// Do NOT run the query if we have less than 3 chars. It works, but takes
++	// ages and produces an useless giant popup menu.
++	if (length < 3) {
++		MIdeaAlert("The text selection is too short.\n"
++					"Please select at least three characters.").Go();
++		return B_ERROR;
++	}
++
++	BString selection;
++	selection.SetTo(addon->Text() + selStart, length);
++
++    // Limit the size of the search string to 30 chars, and make sure it is
++    // worth of searching for (name of: function/variable/error code, etc.).
++	int pos = 0;
++	while ((pos < length) || pos < 30) {
++		if (!isalnum(selection[pos]) && (selection[pos] != '_')) break;
++		pos++;
++	}
++
++	if (!pos) return B_ERROR;
++
++	selection.Truncate(pos);
++
++	if (selection.CountChars() < 3) {
++		MIdeaAlert("The text selection is too short.\n"
++					"Make sure that the selection doesn't contains punctuation "
++					"marks or other symbols.").Go();
++		return B_ERROR;
++	}
++
++	err = TellBeHappy(selection.String());
++	if (err >= B_OK)
++		return B_OK;
++
++	// No results... Lets try the same selection as a function name...
++	BString funcname(selection.String());
++	funcname += "()";
++	err = TellBeHappy(funcname.String());
++	if (err >= B_OK)
++		return B_OK;
++
++	// Still nothing? Lets Slap a B on the front and check for Classes!
++	BString section("B");
++	section += selection.String();
++	err = TellBeHappy(section.String());
++	if (err >= B_OK)
++		return B_OK;
++
++	BString message("Nothing was found by BeHappy for: ");
++	message += selection.String();
++	MInfoAlert(message.String()).Go();
++
++	return B_OK;
++}
+
+Added: trunk/Extensions/ConvertTabs.cpp
+===================================================================
+--- trunk/Extensions/ConvertTabs.cpp	2008-02-27 21:43:25 UTC (rev 491)
++++ trunk/Extensions/ConvertTabs.cpp	2008-02-27 21:45:11 UTC (rev 492)
+@@ -0,0 +1,180 @@
++/*
++ * Convert Tabs Add-on for Pe editor
++ *
++ * Copyright (C) 2008 by Fran?ois Revol, <revol at free.fr>
++ *
++ * Derived from:
++ * Convert Tabs Add-on for BeIDE's editor
++ *
++ * Copyright (C) 2008 by Anthony Lee <don.anthony.lee at gmail.com>
++ * Distributed under the terms of the MIT License.
++ */
++
++#include <be/kernel/image.h>
++#include <be/support/String.h>
++#include <be/storage/Path.h>
++#include <be/storage/FindDirectory.h>
++#include <be/storage/File.h>
++#include <be/interface/Alert.h>
++#include <be/interface/Window.h>
++
++#include "PeAddOn.h"
++
++static bool sIsReplaceAddon = false;
++
++
++// # this doesn't work in the Jamfile...
++// (both object names are the same)
++// ObjectC++Flags Replace\ As\ Tabs : -DEXPAND_TABS=1 ;
++// so we check at run time.
++static void DetermineAddon(void)
++{
++	int32 cookie = 0;
++	image_info info;
++
++	// determine which addon we are
++	while (get_next_image_info(0, &cookie, &info) == B_OK) {
++		if ((char *)&DetermineAddon >= (char *)info.text && 
++			(char *)&DetermineAddon < ((char *)info.text + info.text_size)) {
++			if (strstr(info.name, "Replace As Tabs"))
++				sIsReplaceAddon = true;
++			break;
++		}
++	}
++}
++
++
++static int32 GetTabSize(MTextAddOn *addon)
++{
++	char *p = NULL;
++	int32 tabstop = 4;
++
++	// note it breaks if you changed the tabstop but didn't save the file again yet...
++	try {
++		attr_info ai;
++		entry_ref ref;
++		if (addon->GetRef(ref) >= B_OK) {
++			BFile file(&ref, B_READ_ONLY);
++			if (file.GetAttrInfo("pe-info", &ai) == B_NO_ERROR)
++			{
++				p = (char *)malloc(ai.size);
++				FailNil(p);
++
++				FailIOErr(file.ReadAttr("pe-info", ai.type, 0, p, ai.size));
++
++				BMessage settings;
++				settings.Unflatten(p);
++				if (settings.FindInt32("tabstop", &tabstop) < B_OK)
++					tabstop = 4;
++			}
++		}
++	}
++	catch (HErr& e) {}
++	free(p);
++	return tabstop;
++}
++
++
++static void ConvertTabs(MTextAddOn *addon, BString &str)
++{
++	int32 tab_size = GetTabSize(addon);
++	int32 found;
++
++	for(int32 pos = 0; pos < str.Length(); pos = found + 1)
++	{
++		found = str.FindFirst('\n', pos);
++		if(found < 0) found = str.Length();
++
++		BString line;
++		line.SetTo(str.String() + pos, found - pos);
++
++//#ifdef EXPAND_TABS
++		if (!sIsReplaceAddon) {
++			int32 index;
++			while((index = line.FindFirst('\t')) >= 0)
++			{
++				int32 width = 0;
++				for(int32 k = 0; k < index; k++)
++				{
++					// FIXME: special multi-bytes character
++					uint8 c = *((uint8*)(line.String() + k));
++					if(c < 0x80) width += 1;
++					else if(c < 0xc0 || c >= 0xfe) continue;
++					else if(c < 0xe0) { width += 2; k += 1; }
++					else if(c < 0xf0) { width += 2; k += 2; }
++					else if(c < 0xf8) { width += 2; k += 3; }
++					else if(c < 0xfc) { width += 2; k += 4; }
++					else if(c < 0xfe) { width += 2; k += 5; }
++				}
++
++				line.Remove(index, 1);
++				line.Insert(' ', tab_size - width % tab_size, index);
++			}
++		} else {
++//#else // REPLACE_AS_TABS
++			int32 count = 0;
++			for(int32 k = 0; k < line.Length(); k++)
++			{
++				if(line[k] == '\t') continue;
++				if(line[k] != ' ') break;
++				if(++count < tab_size) continue;
++				count = 0;
++				line.Remove(k - tab_size + 1, tab_size);
++				k -= tab_size - 1;
++				line.Insert('\t', 1, k);
++			}
++		}
++//#endif
++
++		str.Remove(pos, found - pos);
++		str.Insert(line, pos);
++		found = pos + line.Length();
++	}
++}
++
++
++static void ShowErrors(const char *msg)
++{
++	BAlert *alert = new BAlert("Convert Tabs", msg, "Quit", NULL, NULL,
++							   B_WIDTH_AS_USUAL, B_STOP_ALERT);
++	alert->Lock();
++	alert->SetLook(B_TITLED_WINDOW_LOOK);
++	alert->SetFeel(B_NORMAL_WINDOW_FEEL);
++	alert->Unlock();
++	alert->Go((BInvoker*)NULL);
++}
++
++
++extern "C" _EXPORT status_t perform_edit(MTextAddOn *addon)
++{
++	DetermineAddon();
++	
++	//if(addon->IsEditable() == false) return B_ERROR;
++
++	int32 startIDX = 0, endIDX = 0;
++	addon->GetSelection(&startIDX, &endIDX);
++	if(endIDX <= startIDX)
++	{
++		ShowErrors("No selection!!!");
++		return B_ERROR;
++	}
++
++	BString str;
++	str.SetTo(addon->Text() + startIDX, endIDX - startIDX);
++	if(str.Length() != endIDX - startIDX)
++	{
++		ShowErrors("Unknown error!!!");
++		return B_ERROR;
++	}
++
++	ConvertTabs(addon, str);
++
++	if(str.Compare(addon->Text() + startIDX, endIDX - startIDX) != 0)
++	{
++		addon->Delete();
++		addon->Insert(str.String());
++		addon->Select(startIDX, startIDX + str.Length());
++	}
++
++	return B_NO_ERROR;
++}
+
+
+
+From zooey at mail.berlios.de  Wed Feb 27 23:37:13 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 27 Feb 2008 23:37:13 +0100
+Subject: [pe-commits] r493 - trunk/Extensions
+Message-ID: <200802272237.m1RMbDjx023761@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-27 23:37:12 +0100 (Wed, 27 Feb 2008)
+New Revision: 493
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=493&view=rev
+
+Modified:
+   trunk/Extensions/BeHappy.cpp
+Log:
+* corrected app-signature of BeHappy to match the one I have sitting on my
+  disk (which is the one from BeBits, it seems: version 1.06).
+
+Hey, Francois: what hacked up version of BeHappy *are* you using?
+
+
+Modified: trunk/Extensions/BeHappy.cpp
+===================================================================
+--- trunk/Extensions/BeHappy.cpp	2008-02-27 21:45:11 UTC (rev 492)
++++ trunk/Extensions/BeHappy.cpp	2008-02-27 22:37:12 UTC (rev 493)
+@@ -8,7 +8,7 @@
+ 
+ #include "PeAddOn.h"
+ 
+-#define kBeHappySig		"application/x-vnd.STertois.BeHappy"
++#define kBeHappySig		"application/x.vnd-STertois.BeHappy"
+ 
+ static team_id gBeHappyTeam = -1;
+ 
+@@ -121,7 +121,7 @@
+ 
+ 	if (selection.CountChars() < 3) {
+ 		MIdeaAlert("The text selection is too short.\n"
+-					"Make sure that the selection doesn't contains punctuation "
++					"Make sure that the selection doesn't contain punctuation "
+ 					"marks or other symbols.").Go();
+ 		return B_ERROR;
+ 	}
+
+
+
+From stippi at mail.berlios.de  Thu Feb 28 10:40:05 2008
+From: stippi at mail.berlios.de (stippi at BerliOS)
+Date: Thu, 28 Feb 2008 10:40:05 +0100
+Subject: [pe-commits] r494 - trunk/Sources
+Message-ID: <200802280940.m1S9e5tN007971@sheep.berlios.de>
+
+Author: stippi
+Date: 2008-02-28 10:40:04 +0100 (Thu, 28 Feb 2008)
+New Revision: 494
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=494&view=rev
+
+Modified:
+   trunk/Sources/PStatus.cpp
+Log:
+Tiny style cleanup... just noticed when doing svn up/diff.
+
+
+Modified: trunk/Sources/PStatus.cpp
+===================================================================
+--- trunk/Sources/PStatus.cpp	2008-02-27 22:37:12 UTC (rev 493)
++++ trunk/Sources/PStatus.cpp	2008-02-28 09:40:04 UTC (rev 494)
+@@ -152,7 +152,7 @@
+ 		
+ 		where.y = Bounds().bottom + 1;
+ 		BMenuItem *i = popup.Go(ConvertToScreen(where), true, false, ConvertToScreen(Bounds()));
+-		
++
+ 		if (i)
+ 		{
+ 			free(s);
+
+
+
+From stippi at mail.berlios.de  Thu Feb 28 10:50:32 2008
+From: stippi at mail.berlios.de (stippi at BerliOS)
+Date: Thu, 28 Feb 2008 10:50:32 +0100
+Subject: [pe-commits] r495 - trunk/build
+Message-ID: <200802280950.m1S9oWjT008902@sheep.berlios.de>
+
+Author: stippi
+Date: 2008-02-28 10:50:32 +0100 (Thu, 28 Feb 2008)
+New Revision: 495
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=495&view=rev
+
+Modified:
+   trunk/build/BuildSettings
+Log:
+Don't check for libzeta.so in the system, but check for it in the dev env
+lib folder. This is needed to make an R5 build using the R5 dev tools on
+ZETA.
+
+
+Modified: trunk/build/BuildSettings
+===================================================================
+--- trunk/build/BuildSettings	2008-02-28 09:40:04 UTC (rev 494)
++++ trunk/build/BuildSettings	2008-02-28 09:50:32 UTC (rev 495)
+@@ -25,7 +25,7 @@
+ 		LINKLIBS += -lnet ;
+ 	}
+ 	# check for Zeta...
+-	local haveZeta = [ GLOB /boot/beos/system/lib : libzeta.so ] ;
++	local haveZeta = [ GLOB /boot/develop/lib/x86 : libzeta.so ] ;
+ 	if $(haveZeta)	{
+ 		LINKLIBS += -lzeta ;
+ 	}
+
+
+
+From stippi at mail.berlios.de  Thu Feb 28 11:01:16 2008
+From: stippi at mail.berlios.de (stippi at BerliOS)
+Date: Thu, 28 Feb 2008 11:01:16 +0100
+Subject: [pe-commits] r496 - trunk/Resources
+Message-ID: <200802281001.m1SA1Gej011271@sheep.berlios.de>
+
+Author: stippi
+Date: 2008-02-28 11:01:16 +0100 (Thu, 28 Feb 2008)
+New Revision: 496
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=496&view=rev
+
+Modified:
+   trunk/Resources/pe.types.rsrc
+Log:
+Don't know if it is supposed to make a difference... I changed the resource
+id of the vector icon to 101. Using the Haiku build tools mimeset, the
+vector icon is now written to the attributes.
+
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+
+
+From zooey at mail.berlios.de  Thu Feb 28 23:00:00 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Thu, 28 Feb 2008 23:00:00 +0100
+Subject: [pe-commits] r497 - trunk/Extensions
+Message-ID: <200802282200.m1SM00Il025306@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-02-28 22:59:59 +0100 (Thu, 28 Feb 2008)
+New Revision: 497
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=497&view=rev
+
+Modified:
+   trunk/Extensions/BeHappy.cpp
+Log:
+* Applied improvement to BeHappy extension by Francois, now both
+  known app-signatures are supported.
+* Added a loop to the code that invokes BeHappy as it didn't work on
+  my machine the first time round (it simply took too long). Now there's
+  one second breathing space, that should be enough I suppose.
+
+
+Modified: trunk/Extensions/BeHappy.cpp
+===================================================================
+--- trunk/Extensions/BeHappy.cpp	2008-02-28 10:01:16 UTC (rev 496)
++++ trunk/Extensions/BeHappy.cpp	2008-02-28 21:59:59 UTC (rev 497)
+@@ -8,7 +8,8 @@
+ 
+ #include "PeAddOn.h"
+ 
+-#define kBeHappySig		"application/x.vnd-STertois.BeHappy"
++#define kBeHappySig		"application/x-vnd.STertois.BeHappy"
++#define kBeHappySigAlt	"application/x.vnd-STertois.BeHappy"
+ 
+ static team_id gBeHappyTeam = -1;
+ 
+@@ -20,18 +21,23 @@
+ 	status_t err;
+ 	int32 lastWindow = 0;
+ 	
+-	BMessenger msgr(kBeHappySig, gBeHappyTeam);
++	BMessenger msgr(NULL, gBeHappyTeam);
+ 	// if we didn't start it yet or it's gone...
+ 	if (gBeHappyTeam < 0 || !msgr.IsValid()) {
+ 		// start it
+ 		err = be_roster->Launch(kBeHappySig, (BMessage *)NULL, &gBeHappyTeam);
+ 		if (err < B_OK) {
+-			MStopAlert("Can't launch BeHappy!").Go();
+-			return err;
++			err = be_roster->Launch(kBeHappySigAlt, (BMessage *)NULL, &gBeHappyTeam);
++			if (err < B_OK)
++				return B_LAUNCH_FAILED;
+ 		}
+ 		// leave it some time to start
+-		snooze(100000);
+-		msgr = BMessenger(kBeHappySig, gBeHappyTeam);
++		for(int i=0; i<10; ++i) {
++			snooze(100000);
++			msgr = BMessenger(NULL, gBeHappyTeam);
++			if (msgr.IsValid())
++				break;
++		}
+ 	}
+ 	
+ 	// XXX: lastWindow = (hey count Window) -1
+@@ -144,6 +150,11 @@
+ 	if (err >= B_OK)
+ 		return B_OK;
+ 
++	if (err == B_LAUNCH_FAILED) {
++		MStopAlert("Can't launch BeHappy!").Go();
++		return B_OK;
++	}
++	
+ 	BString message("Nothing was found by BeHappy for: ");
+ 	message += selection.String();
+ 	MInfoAlert(message.String()).Go();
+
+
+

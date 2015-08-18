@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] question : packaging libs for pe-editior
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-March/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20question%20%3A%20packaging%20libs%20for%20pe-editior&In-Reply-To=%3C20090306153101.26494.2%40bee.hirschkaefer.site%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000141.html">
+   <LINK REL="Next"  HREF="000144.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] question : packaging libs for pe-editior</H1>
+    <B>pecvs at hirschkaefer.de</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20question%20%3A%20packaging%20libs%20for%20pe-editior&In-Reply-To=%3C20090306153101.26494.2%40bee.hirschkaefer.site%3E"
+       TITLE="[pe-commits] question : packaging libs for pe-editior">pecvs at hirschkaefer.de
+       </A><BR>
+    <I>Fri Mar  6 15:31:01 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000141.html">[pe-commits] question : packaging libs for pe-editior
+</A></li>
+        <LI>Next message: <A HREF="000144.html">[pe-commits] error in Jamrules
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#142">[ date ]</a>
+              <a href="thread.html#142">[ thread ]</a>
+              <a href="subject.html#142">[ subject ]</a>
+              <a href="author.html#142">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+On 2009-03-06 at 14:21:56 [+0100], Matt Madia &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">mattmadia at gmail.com</A>&gt; wrote:
+&gt;<i> I've made a built-in-Haiku-gcc2 binary of Pe.
+</I>&gt;<i> Looking at objdump -p Pe/Pe,
+</I>&gt;<i> libpcre.so.0 is needed and it's included in Pe/lib
+</I>&gt;<i> This package is available at :
+</I>&gt;<i> <A HREF="http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3-gcc2-2009-03-05.zip">http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3-gcc2-2009-03-05.zip</A>
+</I>&gt;<i> 
+</I>&gt;<i> A ticket has been made with a patch to update OptionalPackages:
+</I>&gt;<i> <A HREF="http://dev.haiku-os.org/ticket/3517">http://dev.haiku-os.org/ticket/3517</A>
+</I>&gt;<i> 
+</I>&gt;<i> In the current Pe package:
+</I>&gt;<i> <A HREF="http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3.zip">http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3.zip</A>
+</I>&gt;<i> It includes Pe/lib/libpcre.so and libpcreposix.so
+</I>&gt;<i> Looking at objump -p for it's Pe/Pe,  Pe/lib/libhekkel.so, and
+</I>&gt;<i> Pe/lib/libpcre.so,  I do not see mention of libpcreposix.so
+</I>&gt;<i> 
+</I>&gt;<i> So, do I need to modify my haiku-gcc2 package to include
+</I>&gt;<i> Pe/lib/libpcreposix.so. ?
+</I>
+No - libpcreposix.so contains a POSIX-compatible wrapper for PCRE, which is not 
+being used by Pe at all (I have checked all Extensions and Languages, too).
+
+&gt;<i> Also looking at pcre-7.8/.libs,   there's a libpcrecpp.so  does that
+</I>&gt;<i> also need to be included?
+</I>
+No, the version of pcre that was current when Pe started to use it (5.0, IIRC) did 
+not provide any C++-interface, which I think is what libpcrecpp.so contains. So Pe 
+uses the C-interface and does not need libpcrecpp.so.
+
+Summing it up: Pe just requires libpcre.so.
+
+cheers,
+    Oliver
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000141.html">[pe-commits] question : packaging libs for pe-editior
+</A></li>
+	<LI>Next message: <A HREF="000144.html">[pe-commits] error in Jamrules
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#142">[ date ]</a>
+              <a href="thread.html#142">[ thread ]</a>
+              <a href="subject.html#142">[ subject ]</a>
+              <a href="author.html#142">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

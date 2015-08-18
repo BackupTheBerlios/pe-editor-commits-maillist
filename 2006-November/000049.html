@@ -1,0 +1,1111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r456 - in trunk: Languages/Sources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r456%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611201624.kAKGOVwB022793%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000048.html">
+   <LINK REL="Next"  HREF="000050.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r456 - in trunk: Languages/Sources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r456%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611201624.kAKGOVwB022793%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r456 - in trunk: Languages/Sources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 20 17:24:31 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000048.html">[pe-commits] r455 - in trunk: Languages/Resources Languages/Sources	Sources
+</A></li>
+        <LI>Next message: <A HREF="000050.html">[pe-commits] r457 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-20 17:24:27 +0100 (Mon, 20 Nov 2006)
+New Revision: 456
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=456&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=456&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/Antlr_Language.cpp
+   trunk/Languages/Sources/Asm_Language.cpp
+   trunk/Languages/Sources/Cpp_Language.cpp
+   trunk/Languages/Sources/D_Language.cpp
+   trunk/Languages/Sources/Diff_Language.cpp
+   trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+   trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+   trunk/Languages/Sources/HtmlJs_Language.cpp
+   trunk/Languages/Sources/Html_Language.cpp
+   trunk/Languages/Sources/Jam_Language.cpp
+   trunk/Languages/Sources/Java_Language.cpp
+   trunk/Languages/Sources/Lout_Language.cpp
+   trunk/Languages/Sources/Lua_Language.cpp
+   trunk/Languages/Sources/Mathematica_Language.cpp
+   trunk/Languages/Sources/Oberon_Language.cpp
+   trunk/Languages/Sources/Pascal_Language.cpp
+   trunk/Languages/Sources/Perl_Language.cpp
+   trunk/Languages/Sources/Python_Language.cpp
+   trunk/Languages/Sources/Rez_Language.cpp
+   trunk/Languages/Sources/Shell_Language.cpp
+   trunk/Languages/Sources/Sql_Language.cpp
+   trunk/Languages/Sources/Tex_Language.cpp
+   trunk/Sources/CFilterChoiceDialog.cpp
+   trunk/Sources/CKeywords.cpp
+   trunk/Sources/CLangIntf.cpp
+   trunk/Sources/CLangIntf.h
+   trunk/Sources/CLanguageAddOn.cpp
+   trunk/Sources/CLanguageAddOn.h
+   trunk/Sources/CMessageItem.cpp
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/HColorUtils.cpp
+   trunk/Sources/HColorUtils.h
+   trunk/Sources/PAbout.cpp
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+* Replaced redundant language color constants with system wide constants
+* Unified naming of color constants. Now all start with kColor...
+* Replaced all occurences of &quot;KeyWord&quot; with &quot;Keyword&quot;
+
+
+Modified: trunk/Languages/Sources/Antlr_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/Antlr_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/Antlr_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -33,8 +33,9 @@
+ 	Created: 12/07/97 22:01:11 by Maarten Hekkelman
+ */
+ 
++#include &lt;stack&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &lt;stack&gt;
++#include &quot;HColorUtils.h&quot;
+ 
+ extern &quot;C&quot; {
+ _EXPORT const char kLanguageName[] = &quot;Antlr&quot;;
+@@ -62,9 +63,9 @@
+ 	bool leave = false;
+ 	
+ 	if (state == COMMENT || state == LCOMMENT)
+-		proxy.SetColor(0, kLCommentColor);
++		proxy.SetColor(0, kColorComment1);
+ 	else
+-		proxy.SetColor(0, kLTextColor);
++		proxy.SetColor(0, kColorText);
+ 	
+ 	if (size &lt;= 0)
+ 		return;
+@@ -107,7 +108,7 @@
+ 					
+ 				if (leave || (state != START &amp;&amp; s &lt; i))
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					s = i - 1;
+ 				}
+ 				break;
+@@ -115,19 +116,19 @@
+ 			case COMMENT:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+-					proxy.SetColor(s - 1, kLCommentColor);
++					proxy.SetColor(s - 1, kColorComment1);
+ 					s = i + 1;
+ 					state = START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s - 1, kLCommentColor);
++					proxy.SetColor(s - 1, kColorComment1);
+ 					leave = true;
+ 				}
+ 				break;
+ 
+ 			case LCOMMENT:
+-				proxy.SetColor(s - 1, kLCommentColor);
++				proxy.SetColor(s - 1, kColorComment1);
+ 				leave = true;
+ 				if (text[size - 1] == '\n')
+ 					state = START;
+@@ -138,21 +139,21 @@
+ 				{
+ 					int kwc;
+ 
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0)
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1); break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ //							default:	ASSERT(false);
+ 						}
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 					}
+ 					
+ 					s = --i;
+@@ -172,7 +173,7 @@
+ 				}
+ 				else
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					s = --i;
+ 					state = START;
+ 				}	
+@@ -183,21 +184,21 @@
+ 				{
+ 					int kwc;
+ 
+-					if (i &gt; s + 2 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0)
++					if (i &gt; s + 2 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1); break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ //							default:	ASSERT(false);
+ 						}
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 					}
+ 					
+ 					state = strncmp(text+i-8, &quot;include&quot;, 7) ? START : INCL1;
+@@ -222,13 +223,13 @@
+ 			case INCL2:
+ 				if (c == '&quot;')
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					s = i;
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					leave = true;
+ 					state = START;
+ 				}	
+@@ -237,13 +238,13 @@
+ 			case INCL3:
+ 				if (c == '&gt;')
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					s = i;
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					leave = true;
+ 					state = START;
+ 				}	
+@@ -252,7 +253,7 @@
+ 			case STRING:
+ 				if (c == '&quot;' &amp;&amp; !esc)
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					s = i;
+ 					state = START;
+ 				}
+@@ -260,11 +261,11 @@
+ 				{
+ 					if (text[i - 2] == '\\' &amp;&amp; text[i - 3] != '\\')
+ 					{
+-						proxy.SetColor(s, kLStringColor);
++						proxy.SetColor(s, kColorString1);
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						state = START;
+ 					}
+ 					
+@@ -278,7 +279,7 @@
+ 			case CHAR_CONST:
+ 				if (c == '\t' || c == '\n' || c == 0)	// don't like this
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					s = i;
+ 					state = START;
+ 				}
+@@ -286,13 +287,13 @@
+ 				{
+ 					if (cc_cnt != 1 &amp;&amp; cc_cnt != 2 &amp;&amp; cc_cnt != 4)
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						s = --i;
+ 						state = START;
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLCharConstColor);
++						proxy.SetColor(s, kColorCharConst);
+ 						s = i;
+ 						state = START;
+ 					}
+
+Modified: trunk/Languages/Sources/Asm_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/Asm_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/Asm_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -4,8 +4,9 @@
+ // TODO: there are too many flavours of asm. Try to find a minimum common
+ //       denominator? (#include's, #define's, //-style comments, etc)
+ 
++#include &lt;stack&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &lt;stack&gt;
++#include &quot;HColorUtils.h&quot;
+ 
+ extern &quot;C&quot; {
+ _EXPORT const char kLanguageName[] = &quot;ASM-x86&quot;;
+@@ -65,9 +66,9 @@
+ 	bool hex_num = false;
+ 
+ 	if (state == COMMENT || state == LCOMMENT)
+-		proxy.SetColor(0, kLCommentColor);
++		proxy.SetColor(0, kColorComment1);
+ 	else
+-		proxy.SetColor(0, kLTextColor);
++		proxy.SetColor(0, kColorText);
+ 
+ 	if (size &lt;= 0)
+ 		return;
+@@ -113,7 +114,7 @@
+ 
+ 				if (leave || (state != START &amp;&amp; s &lt; i))
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					s = i - 1;
+ 				}
+ 			break;
+@@ -121,19 +122,19 @@
+ 			case COMMENT:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+-					proxy.SetColor(s - 1, kLCommentColor);
++					proxy.SetColor(s - 1, kColorComment1);
+ 					s = i + 1;
+ 					state = START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s - 1, kLCommentColor);
++					proxy.SetColor(s - 1, kColorComment1);
+ 					leave = true;
+ 				}
+ 			break;
+ 
+ 			case LCOMMENT:
+-				proxy.SetColor(s - 1, kLCommentColor);
++				proxy.SetColor(s - 1, kColorComment1);
+ 				leave = true;
+ 				if (text[size - 1] == '\n')
+ 					state = START;
+@@ -144,20 +145,20 @@
+ 				{
+ 					int kwc;
+ 
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0)
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1); break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ 						}
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 					}
+ 
+ 					s = --i;
+@@ -170,13 +171,13 @@
+ 			case STRING:
+ 				if (c == '&quot;')
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					s = i;
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					state = START;
+ 					s = size;
+ 					leave = true;
+@@ -185,7 +186,7 @@
+ 
+ 			case NUMERIC:
+ 			{
+-				proxy.SetColor(s, kLNumberColor);
++				proxy.SetColor(s, kColorNumber1);
+ 				if (isNumeric(text[i - 1]) || (hex_num &amp;&amp; isHexNum(text[i - 1])))
+ 					;
+ 				else
+@@ -205,7 +206,7 @@
+ 
+ 			case OPERATOR:
+ 			{
+-				proxy.SetColor(s, kLOperatorColor);
++				proxy.SetColor(s, kColorOperator1);
+ 				if (isOperator(text[i - 1]))
+ 					;
+ 				else
+@@ -219,7 +220,7 @@
+ 
+ 			case SYMBOL:
+ 			{
+-				proxy.SetColor(s, kLSeparatorColor);
++				proxy.SetColor(s, kColorSeparator1);
+ 				if (isSymbol(text[i - 1]))
+ 					;
+ 				else
+
+Modified: trunk/Languages/Sources/Cpp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/Cpp_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/Cpp_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -39,8 +39,9 @@
+ 
+ */
+ 
++#include &lt;stack&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &lt;stack&gt;
++#include &quot;HColorUtils.h&quot;
+ 
+ extern &quot;C&quot; {
+ _EXPORT const char kLanguageName[] = &quot;C/C++&quot;;
+@@ -169,9 +170,9 @@
+ 	state = state &amp; STATE_MASK;
+ 	
+ 	if (state == COMMENT || state == LCOMMENT)
+-		proxy.SetColor(0, kLCommentColor);
++		proxy.SetColor(0, kColorComment1);
+ 	else
+-		proxy.SetColor(0, kLTextColor);
++		proxy.SetColor(0, kColorText);
+ 	
+ 	if (size &lt;= 0)
+ 		return;
+@@ -183,7 +184,7 @@
+ 		switch (state) {
+ 			case START:
+ 				s = i - 1;
+-				proxy.SetColor(s, kLTextColor);
++				proxy.SetColor(s, kColorText);
+ 				if (c == '#')
+ 				{
+ 					kws = proxy.Move(c, 1);
+@@ -231,19 +232,19 @@
+ 			case COMMENT:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+-					proxy.SetColor(s, kLCommentColor);
++					proxy.SetColor(s, kColorComment1);
+ 					i++;
+ 					state = START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kLCommentColor);
++					proxy.SetColor(s, kColorComment1);
+ 					leave = true;
+ 				}
+ 				break;
+ 
+ 			case LCOMMENT:
+-				proxy.SetColor(s, kLCommentColor);
++				proxy.SetColor(s, kColorComment1);
+ 				leave = true;
+ 				if (text[size - 1] == '\n')
+ 					state = START;
+@@ -254,20 +255,20 @@
+ 				{
+ 					int kwc;
+ 
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0)
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1); break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ //							default:	ASSERT(false);
+ 						}
+ 					}
+ 					else
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 					
+ 					i--;
+ 					state = START;
+@@ -286,7 +287,7 @@
+ 				}
+ 				else
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					i--;
+ 					state = START;
+ 				}	
+@@ -297,15 +298,15 @@
+ 				{
+ 					int kwc;
+ 
+-					if (i &gt; s + 2 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0)
++					if (i &gt; s + 2 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1); break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ //							default:	ASSERT(false);
+ 						}
+ 
+@@ -325,7 +326,7 @@
+ 								&amp;&amp; (k + 1 == size || text[k + 1] == 0
+ 									|| isspace(text[k + 1])))
+ 							{
+-								proxy.SetColor(s, kLCommentColor);
++								proxy.SetColor(s, kColorComment1);
+ 								state = IF_ZERO;
+ 								ifZeroCounter = 1;
+ 								leave = true;
+@@ -334,7 +335,7 @@
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 					}
+ 					
+ 					if (state != IF_ZERO)
+@@ -362,12 +363,12 @@
+ 			case INCL2:
+ 				if (c == '&quot;')
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					leave = true;
+ 					state = START;
+ 				}	
+@@ -376,12 +377,12 @@
+ 			case INCL3:
+ 				if (c == '&gt;')
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					leave = true;
+ 					state = START;
+ 				}	
+@@ -390,18 +391,18 @@
+ 			case STRING:
+ 				if (c == '&quot;' &amp;&amp; !esc)
+ 				{
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					state = START;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+ 					if (text[i - 2] == '\\' &amp;&amp; text[i - 3] != '\\')
+ 					{
+-						proxy.SetColor(s, kLStringColor);
++						proxy.SetColor(s, kColorString1);
+ 					}
+ 					else
+ 					{
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						state = START;
+ 					}
+ 					leave = true;
+@@ -415,12 +416,12 @@
+ 					|| (c == '\'' &amp;&amp; !esc &amp;&amp; (cc_cnt == 0 || cc_cnt &gt; 5)))
+ 				{
+ 					// invalid char constant - either invalid char or too short/long
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					state = START;
+ 				}
+ 				else if (c == '\'' &amp;&amp; !esc)
+ 				{
+-					proxy.SetColor(s, kLCharConstColor);
++					proxy.SetColor(s, kColorCharConst);
+ 					state = START;
+ 				}
+ 				else
+@@ -434,7 +435,7 @@
+ 
+ 			case NUMERIC:
+ 			{
+-				proxy.SetColor(s, kLNumberColor);
++				proxy.SetColor(s, kColorNumber1);
+ 				if (isNumeric(text[i-1]) || (hex_num &amp;&amp; isHexNum(text[i - 1])))
+ 					;
+ 				else
+@@ -453,7 +454,7 @@
+ 
+ 			case OPERATOR:
+ 			{
+-				proxy.SetColor(s, kLOperatorColor);
++				proxy.SetColor(s, kColorOperator1);
+ 				if (isOperator(text[i-1]))
+ 					;
+ 				else
+@@ -466,7 +467,7 @@
+ 			
+ 			case SYMBOL:
+ 			{
+-				proxy.SetColor(s, kLSeparatorColor);
++				proxy.SetColor(s, kColorSeparator1);
+ 				if (isSymbol(text[i-1]))
+ 					;
+ 				else
+@@ -481,7 +482,7 @@
+ 			{
+ 				if (isspace(c))
+ 					break;
+-				proxy.SetColor(i - 1, kLCommentColor);
++				proxy.SetColor(i - 1, kColorComment1);
+ 				if (c == '#')
+ 				{
+ 					// get the preprocessor keyword
+@@ -542,7 +543,7 @@
+ 
+ 			case IF_ZERO_COMMENT:
+ 			{
+-				proxy.SetColor(i - 1, kLCommentColor);
++				proxy.SetColor(i - 1, kColorComment1);
+ 				int commentEnd;
+ 				if (find_comment_end(text + i - 1, size - i + 1, commentEnd)) {
+ 					i += commentEnd + 1;
+
+Modified: trunk/Languages/Sources/D_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/D_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/D_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -40,6 +40,7 @@
+ */
+ 
+ #include &quot;CLanguageAddOn.h&quot;
++#include &quot;HColorUtils.h&quot;
+ 
+ 
+ extern &quot;C&quot; {
+@@ -120,9 +121,9 @@
+ 		return;
+ 
+ 	switch (state) {
+-		case COMMENT1:	proxy.SetColor(0, kLCommentColor);		break;
+-		case COMMENT2:	proxy.SetColor(0, kLAltCommentColor);	break;
+-		default:		proxy.SetColor(0, kLTextColor);			break;
++		case COMMENT1:	proxy.SetColor(0, kColorComment1); break;
++		case COMMENT2:	proxy.SetColor(0, kColorComment2); break;
++		default:		proxy.SetColor(0, kColorText);     break;
+ 	}
+ 
+ 	const char* text = proxy.Text();
+@@ -141,7 +142,7 @@
+ 		switch (state) {
+ 			case START:
+ 				s = i - 1;
+-				proxy.SetColor(s, kLTextColor);
++				proxy.SetColor(s, kColorText);
+ 
+ 				if (isalpha(c) || c == '_') {
+ 					kws = proxy.Move(c, 1);
+@@ -188,28 +189,28 @@
+ 
+ 			case COMMENT1:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/') {
+-					proxy.SetColor(s, kLCommentColor);
++					proxy.SetColor(s, kColorComment1);
+ 					i++;
+ 					state = START;
+ 				} else if (c == 0 || c == '\n') {
+-					proxy.SetColor(s, kLCommentColor);
++					proxy.SetColor(s, kColorComment1);
+ 					leave = true;
+ 				}
+ 			break;
+ 
+ 			case COMMENT2:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '+' &amp;&amp; text[i] == '/') {
+-					proxy.SetColor(s, kLAltCommentColor);
++					proxy.SetColor(s, kColorComment2);
+ 					i++;
+ 					state = START;
+ 				} else if (c == 0 || c == '\n') {
+-					proxy.SetColor(s, kLAltCommentColor);
++					proxy.SetColor(s, kColorComment2);
+ 					leave = true;
+ 				}
+ 			break;
+ 
+ 			case LCOMMENT:
+-				proxy.SetColor(s, kLCommentColor);
++				proxy.SetColor(s, kColorComment1);
+ 				leave = true;
+ 				if (text[size - 1] == '\n')
+ 					state = START;
+@@ -219,17 +220,17 @@
+ 				if (!isalnum(c) &amp;&amp; c != '_') {
+ 					int kwc;
+ 
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyWord(kws)) != 0) {
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0) {
+ 						switch (kwc) {
+-							case 1:	proxy.SetColor(s, kLKeyWordColor); break;
+-							case 2:	proxy.SetColor(s, kLUser1); break;
+-							case 3:	proxy.SetColor(s, kLUser2); break;
+-							case 4:	proxy.SetColor(s, kLUser3); break;
+-							case 5:	proxy.SetColor(s, kLUser4); break;
++							case 1:	proxy.SetColor(s, kColorKeyword1);  break;
++							case 2:	proxy.SetColor(s, kColorUserSet1); break;
++							case 3:	proxy.SetColor(s, kColorUserSet2); break;
++							case 4:	proxy.SetColor(s, kColorUserSet3); break;
++							case 5:	proxy.SetColor(s, kColorUserSet4); break;
+ 						}
+ 					}
+ 					else
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 
+ 					i--;
+ 					state = START;
+@@ -240,7 +241,7 @@
+ 
+ 			case SPECIAL_TOKEN:
+ 				if (c == '\n' || c == 0) {
+-					proxy.SetColor(s, kLPreProcessorColor);
++					proxy.SetColor(s, kColorPreprocessor1);
+ 					state = START;
+ 					leave = true;
+ 				}
+@@ -248,13 +249,13 @@
+ 
+ 			case STRING1:
+ 				if (c == '&quot;' &amp;&amp; !esc) {
+-					proxy.SetColor(s, kLStringColor);
++					proxy.SetColor(s, kColorString1);
+ 					state = START;
+ 				} else if (c == '\n' || c == 0) {
+ 					if (text[i - 2] == '\\' &amp;&amp; text[i - 3] != '\\') {
+-						proxy.SetColor(s, kLStringColor);
++						proxy.SetColor(s, kColorString1);
+ 					} else {
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						state = START;
+ 					}
+ 					leave = true;
+@@ -265,13 +266,13 @@
+ 
+ 			case STRING2:
+ 				if (c == '`' &amp;&amp; !esc) {
+-					proxy.SetColor(s, kLAltStringColor);
++					proxy.SetColor(s, kColorString2);
+ 					state = START;
+ 				} else if (c == '\n' || c == 0) {
+ 					if (text[i - 2] == '\\' &amp;&amp; text[i - 3] != '\\') {
+-						proxy.SetColor(s, kLAltStringColor);
++						proxy.SetColor(s, kColorString2);
+ 					} else {
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						state = START;
+ 					}
+ 					leave = true;
+@@ -283,10 +284,10 @@
+ 					(c == '\'' &amp;&amp; !esc &amp;&amp; (cc_cnt == 0 || cc_cnt &gt; 8)))
+ 				{
+ 					// invalid char constant - either invalid char or too short/long
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					state = START;
+ 				} else if (c == '\'' &amp;&amp; !esc) {
+-					proxy.SetColor(s, kLCharConstColor);
++					proxy.SetColor(s, kColorCharConst);
+ 					state = START;
+ 				} else {
+ 					if (!esc)
+@@ -297,7 +298,7 @@
+ 			break;
+ 
+ 			case NUMERIC:
+-				proxy.SetColor(s, kLNumberColor);
++				proxy.SetColor(s, kColorNumber1);
+ 				if (!(isdigit(text[i - 1]) || (hex_num &amp;&amp; isxdigit(text[i - 1]))))
+ 				{
+ 					if (text[i - 1] == '.' &amp;&amp; floating_point == false &amp;&amp; hex_num == false)
+@@ -313,7 +314,7 @@
+ 			break;
+ 
+ 			case OPERATOR:
+-				proxy.SetColor(s, kLOperatorColor);
++				proxy.SetColor(s, kColorOperator1);
+ 				if (!isOperator(text[i - 1])) {
+ 					i--;
+ 					state = START;
+@@ -321,7 +322,7 @@
+ 			break;
+ 
+ 			case SYMBOL:
+-				proxy.SetColor(s, kLSeparatorColor);
++				proxy.SetColor(s, kColorSeparator1);
+ 				if (!isSymbol(text[i - 1])) {
+ 					i--;
+ 					state = START;
+
+Modified: trunk/Languages/Sources/Diff_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/Diff_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/Diff_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -33,8 +33,9 @@
+  * each diffed file, too.
+  */
+ 
++#include &lt;String.h&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &lt;String.h&gt;
++#include &quot;HColorUtils.h&quot;
+ 
+ extern &quot;C&quot; {
+ _EXPORT const char kLanguageName[] = &quot;Diff&quot;;
+@@ -54,13 +55,13 @@
+ {
+ 	if (strncmp(proxy.Text(), &quot;diff&quot;, 4) == 0
+ 	|| strncmp(proxy.Text(), &quot;@@&quot;, 2) == 0) {
+-		proxy.SetColor(0, kLCommentColor);
++		proxy.SetColor(0, kColorComment1);
+ 	} else if (*proxy.Text() == '-' || *proxy.Text() == '&lt;') {
+-		proxy.SetColor(0, kLStringColor);
++		proxy.SetColor(0, kColorString1);
+ 	} else if (*proxy.Text() == '+' || *proxy.Text() == '&gt;') {
+-		proxy.SetColor(0, kLErrorColor);
++		proxy.SetColor(0, kColorError1);
+ 	} else
+-		proxy.SetColor(0, kLTextColor);
++		proxy.SetColor(0, kColorText);
+ }
+ 
+ // #pragma mark - function scanning
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-20 01:19:52 UTC (rev 455)
++++ trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-20 16:24:27 UTC (rev 456)
+@@ -33,10 +33,11 @@
+ 	Created: 12/07/97 22:01:11 by Maarten Hekkelman
+ */
+ 
+-#include &quot;CLanguageAddOn.h&quot;
+ #include &lt;cctype&gt;
+ #include &lt;cstring&gt;
+ #include &lt;stack&gt;
++#include &quot;CLanguageAddOn.h&quot;
++#include &quot;HColorUtils.h&quot;
+ 
+ using namespace std;
+ 
+@@ -64,29 +65,29 @@
+ _EXPORT const char kLanguageKeywordFile[] = &quot;keywords.html-js-php&quot;;
+ 
+ //	--- Available Colors ---
+-//	kLTextColor
+-//	kLKeyWordColor,				kLAltKeyWordColor,
+-//	kLCommentColor,				kLAltCommentColor,
+-//	kLStringColor,				kLAltStringColor,
+-//	kLCharConstColor,
+-//	kLTagColor,
+-//	kLSystemIdentifierColor,	kLUserIdentifierColor,
+-//	kLNumberColor,				kLAltNumberColor,
+-//	kLPreProcessorColor,		kLAltProcessorColor,
+-//	kLErrorColor,				kLAltErrorColor,
+-//	kLOperatorColor,			kLAltOperatorColor,
+-//	kLSeparatorColor,			kLAltSeparatorColor,
+-//	kLUser1, kLUser2, kLUser3, kLUser4,
++//	kColorText
++//	kColorKeyword1,				kColorKeyword2,
++//	kColorComment1,				kColorComment2,
++//	kColorString1,				kColorString2,
++//	kColorCharConst,
++//	kColorTag,
++//	kColorIdentifierSystem,	kColorIdentifierUser,
++//	kColorNumber1,				kColorNumber2,
++//	kColorPreprocessor1,		kColorPreprocessor2,
++//	kColorError1,				kColorError2,
++//	kColorOperator1,			kColorOperator2,
++//	kColorSeparator1,			kColorSeparator2,
++//	kColorUserSet1, kColorUserSet2, kColorUserSet3, kColorUserSet4,
+ 
+ // Translate from pepper-colors to pe-colors
+ enum {
+-	kLngColorHtmlKeyword	= kLAltKeyWordColor,
+-	kLngColorHtmlAttribute	= kLAltKeyWordColor,
+-	kLngColorJsKeyword		= kLKeyWordColor,
+-	kLngColorPhpKeyword		= kLKeyWordColor,
+-	kLngColorSpecialChar	= kLUser4,
+-	kLngColorTagString		= kLStringColor,
+-	kLngColorPhpFunction	= kLUser4
++	kLngColorHtmlKeyword	= kColorKeyword2,
++	kLngColorHtmlAttribute	= kColorKeyword2,
++	kLngColorJsKeyword		= kColorKeyword1,
++	kLngColorPhpKeyword		= kColorKeyword1,
++	kLngColorSpecialChar	= kColorUserSet4,
++	kLngColorTagString		= kColorString1,
++	kLngColorPhpFunction	= kColorUserSet4
+ };
+ 
+ enum {
+@@ -286,7 +287,7 @@
+ 	int color, kwc;
+ 	bool leave = false, esc = false, script = false, percent = false;
+ 	
+-	proxy.SetColor(0, kLTextColor);
++	proxy.SetColor(0, kColorText);
+ 	
+ 	if (size &lt;= 0)
+ 		return;
+@@ -315,7 +316,7 @@
+ 					
+ 				if ((leave || state != START) &amp;&amp; s &lt; i)
+ 				{
+-					proxy.SetColor(s, kLTextColor);
++					proxy.SetColor(s, kColorText);
+ 					s = i - 1;
+ 				}
+ 				break;
+@@ -331,7 +332,7 @@
+ 				}
+ 				else if (c == '?' || c == '%')
+ 				{
+-					proxy.SetColor(s, kLTagColor);
++					proxy.SetColor(s, kColorTag);
+ 					s = i;
+ 					
+ 					if (strncasecmp(text + s, &quot;php&quot;, 3) == 0)
+@@ -345,14 +346,14 @@
+ 				}
+ 				else if (isalpha(c))
+ 				{
+-					proxy.SetColor(s, kLTagColor);
++					proxy.SetColor(s, kColorTag);
+ 					s = i - 1;
+ 					kws = proxy.Move(tolower(c), 1);
+ 					state = TAGSTARTKEYWORD;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kLTagColor);
++					proxy.SetColor(s, kColorTag);
+ 					leave = true;
+ 				}
+ 				else if (!isspace(c))
+@@ -366,14 +367,14 @@
+ 				DEB_PrintState(state, c);
+ 				if (isalpha(c))
+ 				{
+-					proxy.SetColor(s, kLTagColor);
++					proxy.SetColor(s, kColorTag);
+ 					s = i - 1;
+ 					kws = proxy.Move(tolower(c), 1);
+ 					state = TAGSTARTKEYWORD;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kLTagColor);
++					proxy.SetColor(s, kColorTag);
+ 					leave = true;
+ 				}
+ 				else if (!isspace(c))
+@@ -387,14 +388,14 @@
+ 				DEB_PrintState(state, c);
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+-					switch (kwc = proxy.IsKeyWord(kws))
++					switch (kwc = proxy.IsKeyword(kws))
+ 					{
+-						case kKwHtmlTag:   color = kLKeyWordColor; break;
+-						case kKwUserset1:  color = kLUser1; break;
+-						case kKwUserset2:  color = kLUser2; break;
+-						case kKwUserset3:  color = kLUser3; break;
+-						case kKwUserset4:  color = kLUser4; break;
+-						default:           color = kLTagColor; break;
++						case kKwHtmlTag:  color = kColorKeyword1; break;
++						case kKwUserset1: color = kColorUserSet1; break;
++						case kKwUserset2: color = kColorUserSet2; break;
++						case kKwUserset3: color = kColorUserSet3; break;
++						case kKwUserset4: color = kColorUserSet4; break;
++						default:          color = kColorTag;      break;
+ 					}
+ 					proxy.SetColor(s, color);
+ 					DEB_PrintSetKw(state, kwc);
+@@ -415,32 +416,32 @@
+ 				{
+ 					case 0:
+ 					case '\n':
+-						proxy.SetColor(s, kLTagColor);
++						proxy.SetColor(s, kColorTag);
+ 						leave = true;
+ 						break;
+ 					case '&gt;':
+-						proxy.SetColor(s, kLTagColor);
++						proxy.SetColor(s, kColorTag);
+ 						s = i;
+-						proxy.SetColor(s, kLTextColor);
++						proxy.SetColor(s, kColorText);
+ 						if (script)
+ 							state = JAVASCRIPT;
+ 						else
+ 							state = START;
+ 						break;
+ 					case '&quot;':
+-						proxy.SetColor(s, kLTagColor);
++						proxy.SetColor(s, kColorTag);
+ 						s = i - 1;
+ 						state = TAGSTRING1;
+ 						break;
+ 					case '\'':
+-						proxy.SetColor(s, kLTagColor);
++						proxy.SetColor(s, kColorTag);
+ 						s = i - 1;
+ 						state = TAGSTRING2;
+ 						break;
+ 					case '!':
+ 						if (i == s + 2)
+ 						{
+-							proxy.SetColor(s, kLTagColor);
++							proxy.SetColor(s, kColorTag);
+ 							state = COMMENT_DTD;
+ 							forceState = START;
+ 						}
+@@ -448,7 +449,7 @@
+ 					default:
+ 						if (isalpha(c))
+ 						{
+-							proxy.SetColor(s, kLTagColor);
++							proxy.SetColor(s, kColorTag);
+ 							s = i - 1;
+ 							kws = proxy.Move(tolower(c), 1);
+ 							state = TAGATTRIBUTE;
+@@ -491,14 +492,14 @@
+ 				DEB_PrintState(state, c);
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+
+[... truncated: 3598 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000048.html">[pe-commits] r455 - in trunk: Languages/Resources Languages/Sources	Sources
+</A></li>
+	<LI>Next message: <A HREF="000050.html">[pe-commits] r457 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

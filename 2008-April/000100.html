@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r506 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r506%20-%20trunk/Sources&In-Reply-To=%3C200804082134.m38LYF2q015020%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000099.html">
+   <LINK REL="Next"  HREF="000101.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r506 - trunk/Sources</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r506%20-%20trunk/Sources&In-Reply-To=%3C200804082134.m38LYF2q015020%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r506 - trunk/Sources">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr  8 23:34:15 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000099.html">[pe-commits] r505 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000101.html">[pe-commits] r507 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#100">[ date ]</a>
+              <a href="thread.html#100">[ thread ]</a>
+              <a href="subject.html#100">[ subject ]</a>
+              <a href="author.html#100">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-08 23:34:14 +0200 (Tue, 08 Apr 2008)
+New Revision: 506
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=506&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=506&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Some preliminary work for sending metadata to the print driver (function index as bookmarks).
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2008-04-08 18:25:53 UTC (rev 505)
++++ trunk/Sources/PText.cpp	2008-04-08 21:34:14 UTC (rev 506)
+@@ -5423,6 +5423,86 @@
+ 
+ #pragma mark - Printing
+ 
++struct PrintFunctionRef {
++	int32 offset;
++	int32 line;
++	int32 page;
++	int32 level;
++	bool italic;
++	bool separator;
++	BString name;
++	BString params;
++};
++
++struct PrintFunctionScanHandler : public CFunctionScanHandler {
++	PrintFunctionScanHandler(bool sorted, int whichVal)
++		: sorted(sorted)
++		, which(whichVal)
++		, functionLevel(0)
++	{
++	}
++
++	void AddFunction(const char *name, const char *match, int offset,
++		bool italic, uint32 nestLevel, const char *params)
++	{
++		if (which != kFunctionsOnly)
++			return;
++
++		struct PrintFunctionRef *ref = new struct PrintFunctionRef;
++		ref-&gt;offset = offset;
++		ref-&gt;line = -1;//Offset2Line(offset);
++		ref-&gt;page = -1;
++		ref-&gt;level = functionLevel;
++		ref-&gt;italic = italic;
++		ref-&gt;separator = false;
++		ref-&gt;name = name;
++
++		functions.AddItem(ref);
++	}
++
++	void AddInclude(const char *name, const char *open, bool italic)
++	{
++		// we don't care
++	}
++
++	void AddSeparator(const char* name)
++	{
++		if (which != kFunctionsOnly)
++			return;
++
++		struct PrintFunctionRef *ref = new struct PrintFunctionRef;
++		ref-&gt;offset = -1;
++		ref-&gt;line = -1;
++		ref-&gt;page = -1;
++		ref-&gt;level = 0;
++		ref-&gt;italic = false;
++		ref-&gt;separator = false;
++		ref-&gt;name = name;
++
++		if (!sorted) {
++			// strip unnamed separators if followed by other separators:
++			struct PrintFunctionRef *last = static_cast&lt;struct PrintFunctionRef *&gt;(functions.LastItem());
++			if (last &amp;&amp; last-&gt;separator /*&amp;&amp; last-&gt;name.Length() == 0*/) {
++				if (functions.RemoveItem(last))
++					delete last;
++			}
++			functions.AddItem(ref);
++		}
++		functionLevel = 1;
++	}
++
++	static int CompareFunc(const void *a, const void* b)
++	{
++		return strcasecmp((*(const struct PrintFunctionRef **)a)-&gt;name.String(),
++								(*(const struct PrintFunctionRef **)b)-&gt;name.String());
++	}
++
++	BList functions;
++	bool sorted;
++	int which;
++	int32 functionLevel;
++};
++
+ status_t PText::PageSetup()
+ {
+ 	BPrintJob printJob(Window()-&gt;Title());
+@@ -5460,6 +5540,20 @@
+ 	result = printJob.ConfigJob();
+ 	FailOSErr(result);
+ 
++	// for later use (by PDF Writer)
++	/*
++	PrintFunctionScanHandler bookmarkHandler(false, kFunctionsOnly);
++	ScanForFunctions(bookmarkHandler);
++
++	for (int32 i = 0; i &lt; bookmarkHandler.functions.CountItems(); i++) {
++		struct PrintFunctionRef *ref;
++		ref = (struct PrintFunctionRef *)bookmarkHandler.functions.ItemAt(i);
++		fprintf(stderr, &quot;ref[%ld]: {%d, %d, %d, %d, %d, %d, '%s'}\n&quot;, i, 
++			ref-&gt;offset, ref-&gt;line, ref-&gt;page, ref-&gt;level, ref-&gt;italic, ref-&gt;separator, ref-&gt;name.String());
++
++	}
++	*/
++
+ 	// information from printJob
+ 	BRect printableRect = printJob.PrintableRect();	
+ 	int32 firstPage = printJob.FirstPage();
+@@ -5511,7 +5605,10 @@
+ 	
+ fprintf(stderr, &quot;pagesInDocument = %d\n&quot;, pagesInDocument);
+ fprintf(stderr, &quot;linesInDocument = %d\n&quot;, linesInDocument);
++
++	// let's do it!
+ 	printJob.BeginJob();
++	
+ 	if (LineCount() &gt; 0 &amp;&amp; Size() &gt; 0) {
+ 		int32 printLine = firstLine;
+ 		while (printLine &lt;= lastLine) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000099.html">[pe-commits] r505 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000101.html">[pe-commits] r507 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#100">[ date ]</a>
+              <a href="thread.html#100">[ thread ]</a>
+              <a href="subject.html#100">[ subject ]</a>
+              <a href="author.html#100">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

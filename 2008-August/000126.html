@@ -1,0 +1,646 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r537 - in branches/model-based-editing: Extensions	Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r537%20-%20in%20branches/model-based-editing%3A%20Extensions%0A%09Sources&In-Reply-To=%3C200808191105.m7JB5NTv030173%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r537 - in branches/model-based-editing: Extensions	Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r537%20-%20in%20branches/model-based-editing%3A%20Extensions%0A%09Sources&In-Reply-To=%3C200808191105.m7JB5NTv030173%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r537 - in branches/model-based-editing: Extensions	Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 19 13:05:23 CEST 2008</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#126">[ date ]</a>
+              <a href="thread.html#126">[ thread ]</a>
+              <a href="subject.html#126">[ subject ]</a>
+              <a href="author.html#126">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-08-19 13:05:20 +0200 (Tue, 19 Aug 2008)
+New Revision: 537
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=537&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=537&amp;view=rev</A>
+
+Added:
+   branches/model-based-editing/Extensions/HeaderHeader.cpp
+Modified:
+   branches/model-based-editing/Extensions/Jamfile
+   branches/model-based-editing/Extensions/WebPaste.cpp
+   branches/model-based-editing/Sources/CFilterChoiceDialog.cpp
+   branches/model-based-editing/Sources/PText.cpp
+   branches/model-based-editing/Sources/Prefs.h
+Log:
+* merged changes from trunk up to r528
+
+
+
+Copied: branches/model-based-editing/Extensions/HeaderHeader.cpp (from rev 528, trunk/Extensions/HeaderHeader.cpp)
+
+Modified: branches/model-based-editing/Extensions/Jamfile
+===================================================================
+--- branches/model-based-editing/Extensions/Jamfile	2008-08-12 12:53:38 UTC (rev 536)
++++ branches/model-based-editing/Extensions/Jamfile	2008-08-19 11:05:20 UTC (rev 537)
+@@ -64,6 +64,13 @@
+ # &lt;/pe-src&gt;
+ 
+ # &lt;pe-src&gt;
++PeExtension HeaderHeader
++	: HeaderHeader.cpp 
++	: libhekkel.so &lt;nogrist&gt;pe be tracker $(STDC++LIB)
++	;
++# &lt;/pe-src&gt;
++
++# &lt;pe-src&gt;
+ PeExtension ImageToC
+ 	: ImageToC.cpp 
+ 	: libhekkel.so &lt;nogrist&gt;pe be translation
+
+Modified: branches/model-based-editing/Extensions/WebPaste.cpp
+===================================================================
+--- branches/model-based-editing/Extensions/WebPaste.cpp	2008-08-12 12:53:38 UTC (rev 536)
++++ branches/model-based-editing/Extensions/WebPaste.cpp	2008-08-19 11:05:20 UTC (rev 537)
+@@ -80,6 +80,7 @@
+ 	do {
+ 		len = Length();
+ 		char *buf = LockBuffer(len + 4096);
++		memset(buf + len, 0, 4096);
+ 		buf += len;
+ 		int got = fread(buf, 1, 4096, fFile);
+ 		//fprintf(stderr, &quot;got %d\n&quot;, got);
+
+Modified: branches/model-based-editing/Sources/CFilterChoiceDialog.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CFilterChoiceDialog.cpp	2008-08-12 12:53:38 UTC (rev 536)
++++ branches/model-based-editing/Sources/CFilterChoiceDialog.cpp	2008-08-19 11:05:20 UTC (rev 537)
+@@ -17,6 +17,8 @@
+ #include &quot;HColorUtils.h&quot;
+ #include &quot;HDialogViews.h&quot;
+ #include &quot;HError.h&quot;
++#include &quot;KeyBindings.h&quot;
++#include &quot;Prefs.h&quot;
+ 
+ // internal messages
+ enum {
+@@ -525,6 +527,35 @@
+ 		case MSG_FILTER_MODIFIED:
+ 			_SetFilter(fFilterStringControl-&gt;Text());
+ 			break;
++		case B_MOUSE_WHEEL_CHANGED:
++		{
++			// the wheel that have changed may *not* be the vertical one,
++			// so we check:
++			float y;
++			if (message-&gt;FindFloat(&quot;be:wheel_delta_y&quot;, &amp;y) == B_OK &amp;&amp; y != 0)
++			{
++				float delta 
++					= 20.0 * gPrefs-&gt;GetPrefInt(prf_I_ScrollwheelLines, 3);
++				BScrollBar* vScroller = fChoicesList-&gt;ScrollBar(B_VERTICAL);
++				float minVal, maxVal;
++				vScroller-&gt;GetRange(&amp;minVal, &amp;maxVal);
++				float value = vScroller-&gt;Value();
++				if (y &lt; 0) 
++				{
++					value -= delta;
++					value = max(minVal, value);
++				}
++				else 
++				{
++					value += delta;
++					value = min(maxVal, value);
++				}
++				vScroller-&gt;SetValue(value);
++			}
++			else
++				HDialog::MessageReceived(message);
++			break;
++		}
+ 		default:
+ 			BWindow::MessageReceived(message);
+ 			break;
+
+Modified: branches/model-based-editing/Sources/PText.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PText.cpp	2008-08-12 12:53:38 UTC (rev 536)
++++ branches/model-based-editing/Sources/PText.cpp	2008-08-19 11:05:20 UTC (rev 537)
+@@ -169,7 +169,7 @@
+ };
+ 
+ 
+-//	#pragma mark - class PText
++// #pragma mark - class PText
+ 
+ 
+ PText::PText(BRect frame, BScrollBar *bars[], const char *ext)
+@@ -751,7 +751,7 @@
+ 	return dynamic_cast&lt;PDoc*&gt;(Window());
+ } // PText::Doc
+ 
+-#pragma mark - Wrap
++// // #pragma mark - Wrap
+ 
+ int PText::FindLineBreak(int offset, bool hard)
+ {
+@@ -995,7 +995,7 @@
+ 	RestyleDirtyLines(0);
+ } /* PText::RecalculateLineBreaks */
+ 
+-#pragma mark - Undo
++// #pragma mark - Undo
+ 
+ void PText::Undo()
+ {
+@@ -1104,7 +1104,7 @@
+ 	fLastSavedStateCmd = NULL;
+ } // PText::FlushUndo
+ 
+-#pragma mark - Text
++// #pragma mark - Text
+ 
+ void PText::CopyBlock(char*&amp; s, int from, int to)
+ {
+@@ -1341,7 +1341,7 @@
+ 	fStatus-&gt;SetOffset(fCaret);
+ } /* PText::TypeString */
+ 
+-#pragma mark - Split
++// #pragma mark - Split
+ 
+ const g_unit_t
+ 	kSplitMinimum = 50;
+@@ -1577,7 +1577,7 @@
+ 	Window()-&gt;UpdateIfNeeded();
+ } /* PText::FrameMoved */
+ 
+-#pragma mark - Scroll
++// #pragma mark - Scroll
+ 
+ void PText::AdjustScrollBars()
+ {
+@@ -1860,7 +1860,7 @@
+ 	Doc()-&gt;ToolBar()-&gt;SetHOffset(-p.x + 3);
+ } /* PText::ScrollTo */
+ 
+-#pragma mark - Mouse
++// #pragma mark - Mouse
+ 
+ void PText::MouseDown(BPoint where)
+ {
+@@ -2171,94 +2171,66 @@
+ {
+ 	fWindowActive = Window()-&gt;IsActive();
+ 
+-	char *s = NULL;
+-	ssize_t sl;
+-
+ 	if (msg-&gt;HasData(&quot;text/plain&quot;, B_MIME_TYPE))
+ 	{
+-		char *t;
++		char *s;
++		ssize_t sl;
+ 
+-		FailOSErr(msg-&gt;FindData(&quot;text/plain&quot;, B_MIME_TYPE, (const void**)&amp;t, &amp;sl));
+-		s = new char[sl];
+-		FailNil(s);
+-		memcpy(s, t, sl);
+-	}
+-	else if (msg-&gt;HasRef(&quot;refs&quot;))
+-	{
+-		entry_ref ref;
+-
+-		FailOSErr(msg-&gt;FindRef(&quot;refs&quot;, &amp;ref));
+-
+-		BFile file;
+-		FailOSErr(file.SetTo(&amp;ref, B_READ_ONLY));
+-
+-		key_info ki;
+-		if (get_key_info(&amp;ki) == B_OK &amp;&amp; ki.modifiers &amp; (B_COMMAND_KEY | B_OPTION_KEY))
+-			be_app-&gt;RefsReceived(msg);
+-		else
++		FailOSErr(msg-&gt;FindData(&quot;text/plain&quot;, B_MIME_TYPE, (const void**)&amp;s, &amp;sl));
++		if (s)
+ 		{
+-			char m[B_MIME_TYPE_LENGTH];
+-			BNodeInfo(&amp;file).GetType(m);
+-
+-			if (strncmp(m, &quot;text/&quot;, 5) == 0)
++			int offset;
++			if (msg-&gt;IsSourceRemote() || msg-&gt;IsSystem() || sfDragSource != this)
++				offset = -1;
++			else if (fDragButtons &amp; B_TERTIARY_MOUSE_BUTTON)
++				offset = -1;
++			else if (fDragButtons &amp; B_SECONDARY_MOUSE_BUTTON)
+ 			{
+-				sl = file.Seek(0, SEEK_END);
+-				file.Seek(0, SEEK_SET);
+-
+-				s = new char[sl];
+-				if (file.Read(s, sl) != sl)
+-					THROW((&quot;Read Error&quot;));
++				BPopUpMenu popup(&quot;copy or move&quot;);
++				popup.SetFont(be_plain_font);
++				popup.AddItem(new BMenuItem(&quot;Move&quot;, NULL));
++				popup.AddItem(new BMenuItem(&quot;Copy&quot;, NULL));
++				BMenuItem *item = popup.Go(msg-&gt;DropPoint(), false, true);
++	
++				if (!item)
++				{
++					HideCaret();
++					fAnchor = fSavedAnchor;
++					fCaret = fSavedCaret;
++					return;
++				}
++	
++				if (popup.IndexOf(item) == 0)
++					offset = fDragStart;
++				else
++					offset = -1;
+ 			}
+-		}
+-	}
+-
+-	if (s)
+-	{
+-		int offset;
+-		if (msg-&gt;IsSourceRemote() || msg-&gt;IsSystem() || sfDragSource != this)
+-			offset = -1;
+-		else if (fDragButtons &amp; B_TERTIARY_MOUSE_BUTTON)
+-			offset = -1;
+-		else if (fDragButtons &amp; B_SECONDARY_MOUSE_BUTTON)
+-		{
+-			BPopUpMenu popup(&quot;copy or move&quot;);
+-			popup.SetFont(be_plain_font);
+-			popup.AddItem(new BMenuItem(&quot;Move&quot;, NULL));
+-			popup.AddItem(new BMenuItem(&quot;Copy&quot;, NULL));
+-			BMenuItem *item = popup.Go(msg-&gt;DropPoint(), false, true);
+-
+-			if (!item)
+-			{
+-				HideCaret();
+-				fAnchor = fSavedAnchor;
+-				fCaret = fSavedCaret;
+-				return;
+-			}
+-
+-			if (popup.IndexOf(item) == 0)
+-				offset = fDragStart;
+ 			else
+-				offset = -1;
+-		}
+-		else
+-			offset = fDragStart;
+-
+-		if (offset == -1 || fCaret &lt; offset || fCaret &gt; offset + sl)
+-		{
+-			if (sfDragSource == this)
++				offset = fDragStart;
++	
++			if (offset == -1 || fCaret &lt; offset || fCaret &gt; offset + sl)
+ 			{
+-				int a, c;
+-
+-				a = Offset2Line(fSavedAnchor);
+-				c = Offset2Line(fSavedCaret);
+-				TouchLines(min(a, c), max(a, c));
++				if (sfDragSource == this)
++				{
++					int a, c;
++	
++					a = Offset2Line(fSavedAnchor);
++					c = Offset2Line(fSavedCaret);
++					TouchLines(min(a, c), max(a, c));
++				}
++				RegisterCommand(new PDropCmd(this, s, sl, offset, fCaret));
+ 			}
+-			RegisterCommand(new PDropCmd(this, s, sl, offset, fCaret));
+ 		}
+-
+-		if (msg-&gt;HasRef(&quot;refs&quot;))
+-			delete s;
+ 	}
++	else if (msg-&gt;HasRef(&quot;refs&quot;))
++	{
++		// open all dropped files as documents:
++		BMessage openMsg(B_REFS_RECEIVED);
++		entry_ref ref;
++		for(int32 i=0; msg-&gt;FindRef(&quot;refs&quot;, i, &amp;ref) == B_OK; ++i)
++			openMsg.AddRef(&quot;refs&quot;, &amp;ref);
++		be_app_messenger.SendMessage(&amp;openMsg);
++	}
+ } /* PText::HandleDrop */
+ 
+ bool PText::WaitMouseMoved(BPoint where)
+@@ -2283,7 +2255,7 @@
+ 	return true;
+ } /* PText::WaitMouseMoved */
+ 
+-#pragma mark - Function Popup
++// #pragma mark - Function Popup
+ 
+ class CSeparatorItem : public BMenuItem
+ {
+@@ -2565,7 +2537,7 @@
+ 		ShowFunctionMenu(ConvertToScreen(where), kFunctionsOnly);
+ } /* PText::ShowContextualMenu */
+ 
+-#pragma mark - Lines
++// #pragma mark - Lines
+ 
+ void PText::OffsetLineBreaks(int bytes, int line)
+ {
+@@ -3144,7 +3116,7 @@
+ 	}
+ } // PText::BlockOffsetsForLine
+ 
+-#pragma mark - Language
++// #pragma mark - Language
+ 
+ int PText::FindWord(int key, bool subWord)
+ {
+@@ -3362,7 +3334,7 @@
+ 	}
+ } /* PText::HashLines */
+ 
+-#pragma mark - Keys
++// #pragma mark - Keys
+ 
+ void PText::KeyDown(const char *bytes, int32 numBytes)
+ {
+@@ -3970,7 +3942,7 @@
+ 	if (s) free(s);
+ } /* PText::GlossaryButton */
+ 
+-#pragma mark - Find
++// #pragma mark - Find
+ 
+ void PText::Find(unsigned long msgWhat, void *args)
+ {
+@@ -4408,7 +4380,7 @@
+ 	}
+ } /* PText::IncSearchKey */
+ 
+-#pragma mark - Exec
++// #pragma mark - Exec
+ 
+ const int kBufferSize = 4096;
+ 
+@@ -4620,7 +4592,7 @@
+ 	return 0;
+ } /* PExec::Execute */
+ 
+-#pragma mark -
++// #pragma mark -
+ 
+ void PText::ExecuteSelection()
+ {
+@@ -4681,7 +4653,7 @@
+ 	CharKeyDown(&quot;\n&quot;, 1);
+ } /* PText::PrepareForOutput */
+ 
+-#pragma mark - Draw
++// #pragma mark - Draw
+ 
+ void PText::Draw(BRect updateRect)
+ {
+@@ -5422,7 +5394,7 @@
+ 		Draw(b);
+ } /* PText::ShiftLinesPart2 */
+ 
+-#pragma mark - Printing
++// #pragma mark - Printing
+ 
+ struct PrintFunctionRef {
+ 	int32 offset;
+@@ -5578,16 +5550,16 @@
+ 	}
+ 
+ 	fprintf(stderr, &quot;printableRect = {%f, %f, %f, %f}\n&quot;, printableRect.left, printableRect.top, printableRect.right, printableRect.bottom);
+-	fprintf(stderr, &quot;firstLine = %d\n&quot;, firstLine);
+-	fprintf(stderr, &quot;lastLine = %d\n&quot;, lastLine);
+-	fprintf(stderr, &quot;pagesInDocument = %d\n&quot;, pagesInDocument);
+-	fprintf(stderr, &quot;linesInDocument = %d\n&quot;, linesInDocument);
++	fprintf(stderr, &quot;firstLine = %ld\n&quot;, firstLine);
++	fprintf(stderr, &quot;lastLine = %ld\n&quot;, lastLine);
++	fprintf(stderr, &quot;pagesInDocument = %ld\n&quot;, pagesInDocument);
++	fprintf(stderr, &quot;linesInDocument = %ld\n&quot;, linesInDocument);
+ 
+ 	int32 currentLine = 0;
+ 	while (currentLine &lt; linesInDocument)
+ 	{
+ 		float currentHeight = 0;
+-		fprintf(stderr, &quot;currentLine = %d\n&quot;, currentLine);
++		fprintf(stderr, &quot;currentLine = %ld\n&quot;, currentLine);
+ 		// smallest of remaining lines or number of lines fitting the page
+ 		int32 lines = (int32)(MIN((1 + linesInDocument - currentLine), printableRect.Height() / fLineHeight));
+ 		currentHeight += fLineHeight * lines;
+@@ -5611,8 +5583,8 @@
+ 	}
+ 
+ 	
+-	fprintf(stderr, &quot;pagesInDocument = %d\n&quot;, pagesInDocument);
+-	fprintf(stderr, &quot;linesInDocument = %d\n&quot;, linesInDocument);
++	fprintf(stderr, &quot;pagesInDocument = %ld\n&quot;, pagesInDocument);
++	fprintf(stderr, &quot;linesInDocument = %ld\n&quot;, linesInDocument);
+ 
+ 	// let's do it!
+ 	printJob.BeginJob();
+@@ -5622,7 +5594,7 @@
+ 		int32 printLine = firstLine;
+ 		while (printLine &lt;= lastLine)
+ 		{
+-			fprintf(stderr, &quot;printLine = %d, lastLine = %d\n&quot;, printLine, lastLine);
++			fprintf(stderr, &quot;printLine = %ld, lastLine = %ld\n&quot;, printLine, lastLine);
+ 			float currentHeight = 0;
+ 			int32 firstLineOnPage = printLine;
+ 			// smallest of remaining lines or number of lines fitting the page
+@@ -5649,7 +5621,7 @@
+ 	return B_OK;
+ } /* PText::Print */
+ 
+-#pragma mark - Commands
++// #pragma mark - Commands
+ 
+ BFilePanel *gCwdPanel = NULL;
+ 
+
+Modified: branches/model-based-editing/Sources/Prefs.h
+===================================================================
+--- branches/model-based-editing/Sources/Prefs.h	2008-08-12 12:53:38 UTC (rev 536)
++++ branches/model-based-editing/Sources/Prefs.h	2008-08-19 11:05:20 UTC (rev 537)
+@@ -19,32 +19,32 @@
+ const char* const prf_X_SearchPath				= &quot;searchpath&quot;;
+ const char* const prf_X_StdErrPattern			= &quot;stderrpattern&quot;;
+ 
+-const char* const prf_C_Low						= &quot;low color&quot;;
+-const char* const prf_C_Text					= &quot;text color&quot;;
++const char* const prf_C_Attribute				= &quot;attribute color&quot;;
++const char* const prf_C_CharConst				= &quot;char constant color&quot;;
+ const char* const prf_C_Comment1				= &quot;comment color&quot;;
+ const char* const prf_C_Comment2				= &quot;alt comment color&quot;;
+ const char* const prf_C_Error1					= &quot;error color&quot;;
+ const char* const prf_C_Error2					= &quot;alt error color&quot;;
++const char* const prf_C_IdentifierSystem		= &quot;system identifier color&quot;;
++const char* const prf_C_IdentifierUser			= &quot;user identifier color&quot;;
++const char* const prf_C_Invisibles				= &quot;invisibles color&quot;;
++const char* const prf_C_Keyword1				= &quot;keyword color&quot;;
+ const char* const prf_C_Keyword2				= &quot;alt keyword color&quot;;
++const char* const prf_C_Low						= &quot;low color&quot;;
++const char* const prf_C_Mark					= &quot;mark color&quot;;
+ const char* const prf_C_Number1					= &quot;number color&quot;;
+ const char* const prf_C_Number2					= &quot;alt number color&quot;;
+ const char* const prf_C_Operator1				= &quot;operator color&quot;;
+ const char* const prf_C_Operator2				= &quot;alt operator color&quot;;
+-const char* const prf_C_Separator1				= &quot;separator color&quot;;
+-const char* const prf_C_Separator2				= &quot;alt separator color&quot;;
+ const char* const prf_C_Preprocessor1			= &quot;preprocessor color&quot;;
+ const char* const prf_C_Preprocessor2			= &quot;altprocessor color&quot;;
+-const char* const prf_C_CharConst				= &quot;char constant color&quot;;
+-const char* const prf_C_Invisibles				= &quot;invisibles color&quot;;
+-const char* const prf_C_Keyword1				= &quot;keyword color&quot;;
+-const char* const prf_C_Mark					= &quot;mark color&quot;;
+ const char* const prf_C_Selection				= &quot;selection color&quot;;
++const char* const prf_C_Separator1				= &quot;separator color&quot;;
++const char* const prf_C_Separator2				= &quot;alt separator color&quot;;
+ const char* const prf_C_String1					= &quot;string color&quot;;
+ const char* const prf_C_String2					= &quot;tagstring color&quot;;
+-const char* const prf_C_IdentifierSystem		= &quot;system identifier color&quot;;
+ const char* const prf_C_Tag						= &quot;tag color&quot;;
+-const char* const prf_C_Attribute				= &quot;attribute color&quot;;
+-const char* const prf_C_IdentifierUser			= &quot;user identifier color&quot;;
++const char* const prf_C_Text					= &quot;text color&quot;;
+ const char* const prf_C_UserSet1				= &quot;user1&quot;;
+ const char* const prf_C_UserSet2				= &quot;user2&quot;;
+ const char* const prf_C_UserSet3				= &quot;user3&quot;;
+@@ -54,40 +54,26 @@
+ const char* const prf_D_AltFontSize				= &quot;alt font size&quot;;
+ const char* const prf_D_FontSize				= &quot;font size&quot;;
+ 
+-const char* const prf_I_SearchBackwards			= &quot;Search Backwards&quot;;
+-const char* const prf_I_SearchBatch				= &quot;Search Batch&quot;;
+-const char* const prf_I_SearchEntireWord		= &quot;Search Entire Word&quot;;
+-const char* const prf_I_SearchIgnoreCase		= &quot;Search Ignore Case&quot;;
+-const char* const prf_I_SearchMultikind			= &quot;Search Multikind&quot;;
+-const char* const prf_I_SearchRecursive			= &quot;Search Recursive&quot;;
+-const char* const prf_I_SearchTextFilesOnly		= &quot;Search Text Files Only&quot;;
+-const char* const prf_I_SearchWhichDir			= &quot;Search Whichdir&quot;;
+-const char* const prf_I_SearchWrap				= &quot;Search Wrap&quot;;
+-const char* const prf_I_SearchWithGrep			= &quot;Search with Grep&quot;;
+ const char* const prf_I_AltFontSize				= &quot;alt font size&quot;;
+ const char* const prf_I_AltHome					= &quot;althome&quot;;
+ const char* const prf_I_AutoIndent				= &quot;auto indent&quot;;
+ const char* const prf_I_AutodetectProjects		= &quot;autodetect projects&quot;;
+-const char* const prf_I_MakeBackup				= &quot;backup&quot;;
+ const char* const prf_I_BalanceWhileTyping		= &quot;balance&quot;;
+ const char* const prf_I_BeIncludes				= &quot;beincludes&quot;;
+ const char* const prf_I_BlockCursor				= &quot;block cursor&quot;;
+ const char* const prf_I_CenterFoundString		= &quot;centerfound&quot;;
++const char* const prf_I_ContextChars			= &quot;contextchars&quot;;
+ const char* const prf_I_ContextLines			= &quot;contextlines&quot;;
+-const char* const prf_I_ContextChars			= &quot;contextchars&quot;;
+ const char* const prf_I_DiffCaseInsensitive		= &quot;diffcase&quot;;
+ const char* const prf_I_DiffIgnoreWhiteSpace	= &quot;diffwhite&quot;;
++const char* const prf_I_EndWithNewline			= &quot;nl at eof&quot;;
+ const char* const prf_I_FlashCursor				= &quot;flash cursor&quot;;
+ const char* const prf_I_FontSize				= &quot;font size&quot;;
+ const char* const prf_I_FullPathInTitle			= &quot;fullpath&quot;;
+-const char* const prf_I_ShowBeIdeMenu			= &quot;ide menu&quot;;
+-const char* const prf_I_ShowIncludes			= &quot;includes&quot;;
+ const char* const prf_I_InclSearchIgnoreCase	= &quot;isearch_igncase&quot;;
+ const char* const prf_I_LoadBeIdeExt			= &quot;mw plugins&quot;;
+-const char* const prf_I_EndWithNewline			= &quot;nl at eof&quot;;
+-const char* const prf_I_SearchParent			= &quot;parent&quot;;
++const char* const prf_I_MakeBackup				= &quot;backup&quot;;
+ const char* const prf_I_PassiveFtp				= &quot;passive ftp&quot;;
+-const char* const prf_I_ShowPrototypes			= &quot;protos&quot;;
+ const char* const prf_I_RecentSize				= &quot;recent size&quot;;
+ const char* const prf_I_RedirectStdErr			= &quot;redirect stderr&quot;;
+ const char* const prf_I_RelativeGroupPaths		= &quot;relative group paths&quot;;
+@@ -99,15 +85,30 @@
+ const char* const prf_I_SavedState				= &quot;saved state&quot;;
+ const char* const prf_I_ScrollwheelLines		= &quot;scrollwheel lines&quot;;
+ 						// Currently not in GUI
+-const char* const prf_I_ShowPaletteForHtml		= &quot;show htmlpalette for html&quot;;
++const char* const prf_I_SearchBackwards			= &quot;Search Backwards&quot;;
++const char* const prf_I_SearchBatch				= &quot;Search Batch&quot;;
++const char* const prf_I_SearchEntireWord		= &quot;Search Entire Word&quot;;
++const char* const prf_I_SearchIgnoreCase		= &quot;Search Ignore Case&quot;;
++const char* const prf_I_SearchMultikind			= &quot;Search Multikind&quot;;
++const char* const prf_I_SearchParent			= &quot;parent&quot;;
++const char* const prf_I_SearchRecursive			= &quot;Search Recursive&quot;;
++const char* const prf_I_SearchTextFilesOnly		= &quot;Search Text Files Only&quot;;
++const char* const prf_I_SearchWhichDir			= &quot;Search Whichdir&quot;;
++const char* const prf_I_SearchWithGrep			= &quot;Search with Grep&quot;;
++const char* const prf_I_SearchWrap				= &quot;Search Wrap&quot;;
++const char* const prf_I_ShowBeIdeMenu			= &quot;ide menu&quot;;
++const char* const prf_I_ShowGlossary			= &quot;showglossary&quot;;
+ const char* const prf_I_ShowHtmlPalette			= &quot;show htmlpalette&quot;;
++const char* const prf_I_ShowIncludes			= &quot;includes&quot;;
+ const char* const prf_I_ShowInvisibles			= &quot;show invisibles&quot;;
++const char* const prf_I_ShowPaletteForHtml		= &quot;show htmlpalette for html&quot;;
++const char* const prf_I_ShowPrototypes			= &quot;protos&quot;;
+ const char* const prf_I_ShowTabs				= &quot;show tabs&quot;;
+-const char* const prf_I_ShowGlossary			= &quot;showglossary&quot;;
+ const char* const prf_I_SingleClickGlossary		= &quot;singleclickglossary&quot;;
+ const char* const prf_I_SkipHtmlExt				= &quot;skiphtmlext&quot;;
+ const char* const prf_I_SkipTmpFiles			= &quot;skiptmp&quot;;
+ const char* const prf_I_SmartBraces				= &quot;smart braces&quot;;
++const char* const prf_I_SmartWorkspaces			= &quot;window to workspace&quot;;
+ const char* const prf_I_SoftWrap				= &quot;softwrap&quot;;
+ const char* const prf_I_SortGroup				= &quot;sortgroup&quot;;
+ const char* const prf_I_SortPopup				= &quot;sortpopup&quot;;
+@@ -118,15 +119,14 @@
+ const char* const prf_I_SyntaxColoring			= &quot;syntax coloring&quot;;
+ const char* const prf_I_ShowTypes				= &quot;types&quot;;
+ const char* const prf_I_VerifyOpenFiles			= &quot;verify&quot;;
+-const char* const prf_I_SmartWorkspaces			= &quot;window to workspace&quot;;
+ const char* const prf_I_Worksheet				= &quot;worksheet&quot;;
+ const char* const prf_I_WrapCol					= &quot;wrapcol&quot;;
+ const char* const prf_I_WrapType				= &quot;wraptype&quot;;
+ const char* const prf_I_ZoomOpenPanel			= &quot;zoomopen&quot;;
+ 
++const char* const prf_R_DefaultDocumentRect		= &quot;default document rect&quot;;
+ const char* const prf_R_GlossaryPosition		= &quot;GlossaryPosition&quot;;
+ const char* const prf_R_HtmlPalettePos			= &quot;HTMLPalettePos&quot;;
+-const char* const prf_R_DefaultDocumentRect		= &quot;default document rect&quot;;
+ 
+ const char* const prf_S_AltFontFamily			= &quot;alt font family&quot;;
+ const char* const prf_S_AltFontStyle			= &quot;alt font style&quot;;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#126">[ date ]</a>
+              <a href="thread.html#126">[ thread ]</a>
+              <a href="subject.html#126">[ subject ]</a>
+              <a href="author.html#126">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

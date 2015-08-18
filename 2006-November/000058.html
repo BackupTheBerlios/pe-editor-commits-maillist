@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r465 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r465%20-%20trunk/Sources&In-Reply-To=%3C200611222029.kAMKTwUW023183%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000057.html">
+   <LINK REL="Next"  HREF="000059.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r465 - trunk/Sources</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r465%20-%20trunk/Sources&In-Reply-To=%3C200611222029.kAMKTwUW023183%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r465 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 22 21:29:58 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000057.html">[pe-commits] r464 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000059.html">[pe-commits] r466 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#58">[ date ]</a>
+              <a href="thread.html#58">[ thread ]</a>
+              <a href="subject.html#58">[ subject ]</a>
+              <a href="author.html#58">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2006-11-22 21:29:57 +0100 (Wed, 22 Nov 2006)
+New Revision: 465
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=465&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=465&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PApp.cpp
+Log:
+* completely overlocked that BAutolock, or did it just appear?!?
+  (in any case, the bug hunting has shown that it can be beneficial
+  to check the success of the lock)
+
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-11-22 20:10:15 UTC (rev 464)
++++ trunk/Sources/PApp.cpp	2006-11-22 20:29:57 UTC (rev 465)
+@@ -934,24 +934,21 @@
+ 				fPrefOpener = (thread_id)NULL;
+ 				if (fPrefsDialog) {
+ 					BAutolock lock(fPrefsDialog);
++					if (!lock.IsLocked()) {
++						THROW((&quot;Preferences panel failed to lock&quot;));
++						break;
++					}
+ 
+ 					int c = 1 &lt;&lt; current_workspace();
+ 
+ 					if (gPrefs-&gt;GetPrefInt(prf_I_WindowToWorkspace, 1))
+ 						fPrefsDialog-&gt;SetWorkspaces(c);
+ 
+-					if (fPrefsDialog-&gt;Lock()) {
+-	
+-						if (fPrefsDialog-&gt;IsHidden()) {
+-							fPrefsDialog-&gt;Show();
+-						}
+-	
+-						fPrefsDialog-&gt;Activate(true);
+-	
+-						fPrefsDialog-&gt;Unlock();
+-					} else {
+-						THROW((&quot;Preferences panel failed to lock&quot;));
++					if (fPrefsDialog-&gt;IsHidden()) {
++						fPrefsDialog-&gt;Show();
+ 					}
++
++					fPrefsDialog-&gt;Activate(true);
+ 				}
+ 				else
+ 					THROW((&quot;Preferences panel failed to open&quot;));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000057.html">[pe-commits] r464 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000059.html">[pe-commits] r466 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#58">[ date ]</a>
+              <a href="thread.html#58">[ thread ]</a>
+              <a href="subject.html#58">[ subject ]</a>
+              <a href="author.html#58">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r513 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r513%20-%20trunk/Sources&In-Reply-To=%3C200804121143.m3CBhaFH009491%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000106.html">
+   <LINK REL="Next"  HREF="000108.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r513 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r513%20-%20trunk/Sources&In-Reply-To=%3C200804121143.m3CBhaFH009491%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r513 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 13:43:36 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000106.html">[pe-commits] r512 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000108.html">[pe-commits] r514 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#107">[ date ]</a>
+              <a href="thread.html#107">[ thread ]</a>
+              <a href="subject.html#107">[ subject ]</a>
+              <a href="author.html#107">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-04-12 13:43:36 +0200 (Sat, 12 Apr 2008)
+New Revision: 513
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=513&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=513&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/Prefs.h
+Log:
+* sorted prefs entries in order to make scanning for an item easier
+
+
+Modified: trunk/Sources/Prefs.h
+===================================================================
+--- trunk/Sources/Prefs.h	2008-04-12 09:57:33 UTC (rev 512)
++++ trunk/Sources/Prefs.h	2008-04-12 11:43:36 UTC (rev 513)
+@@ -19,32 +19,32 @@
+ const char* const prf_X_SearchPath				= &quot;searchpath&quot;;
+ const char* const prf_X_StdErrPattern			= &quot;stderrpattern&quot;;
+ 
+-const char* const prf_C_Low						= &quot;low color&quot;;
+-const char* const prf_C_Text					= &quot;text color&quot;;
++const char* const prf_C_Attribute				= &quot;attribute color&quot;;
++const char* const prf_C_CharConst				= &quot;char constant color&quot;;
+ const char* const prf_C_Comment1				= &quot;comment color&quot;;
+ const char* const prf_C_Comment2				= &quot;alt comment color&quot;;
+ const char* const prf_C_Error1					= &quot;error color&quot;;
+ const char* const prf_C_Error2					= &quot;alt error color&quot;;
++const char* const prf_C_IdentifierSystem		= &quot;system identifier color&quot;;
++const char* const prf_C_IdentifierUser			= &quot;user identifier color&quot;;
++const char* const prf_C_Invisibles				= &quot;invisibles color&quot;;
++const char* const prf_C_Keyword1				= &quot;keyword color&quot;;
+ const char* const prf_C_Keyword2				= &quot;alt keyword color&quot;;
++const char* const prf_C_Low						= &quot;low color&quot;;
++const char* const prf_C_Mark					= &quot;mark color&quot;;
+ const char* const prf_C_Number1					= &quot;number color&quot;;
+ const char* const prf_C_Number2					= &quot;alt number color&quot;;
+ const char* const prf_C_Operator1				= &quot;operator color&quot;;
+ const char* const prf_C_Operator2				= &quot;alt operator color&quot;;
+-const char* const prf_C_Separator1				= &quot;separator color&quot;;
+-const char* const prf_C_Separator2				= &quot;alt separator color&quot;;
+ const char* const prf_C_Preprocessor1			= &quot;preprocessor color&quot;;
+ const char* const prf_C_Preprocessor2			= &quot;altprocessor color&quot;;
+-const char* const prf_C_CharConst				= &quot;char constant color&quot;;
+-const char* const prf_C_Invisibles				= &quot;invisibles color&quot;;
+-const char* const prf_C_Keyword1				= &quot;keyword color&quot;;
+-const char* const prf_C_Mark					= &quot;mark color&quot;;
+ const char* const prf_C_Selection				= &quot;selection color&quot;;
++const char* const prf_C_Separator1				= &quot;separator color&quot;;
++const char* const prf_C_Separator2				= &quot;alt separator color&quot;;
+ const char* const prf_C_String1					= &quot;string color&quot;;
+ const char* const prf_C_String2					= &quot;tagstring color&quot;;
+-const char* const prf_C_IdentifierSystem		= &quot;system identifier color&quot;;
+ const char* const prf_C_Tag						= &quot;tag color&quot;;
+-const char* const prf_C_Attribute				= &quot;attribute color&quot;;
+-const char* const prf_C_IdentifierUser			= &quot;user identifier color&quot;;
++const char* const prf_C_Text					= &quot;text color&quot;;
+ const char* const prf_C_UserSet1				= &quot;user1&quot;;
+ const char* const prf_C_UserSet2				= &quot;user2&quot;;
+ const char* const prf_C_UserSet3				= &quot;user3&quot;;
+@@ -54,40 +54,26 @@
+ const char* const prf_D_AltFontSize				= &quot;alt font size&quot;;
+ const char* const prf_D_FontSize				= &quot;font size&quot;;
+ 
+-const char* const prf_I_SearchBackwards			= &quot;Search Backwards&quot;;
+-const char* const prf_I_SearchBatch				= &quot;Search Batch&quot;;
+-const char* const prf_I_SearchEntireWord		= &quot;Search Entire Word&quot;;
+-const char* const prf_I_SearchIgnoreCase		= &quot;Search Ignore Case&quot;;
+-const char* const prf_I_SearchMultikind			= &quot;Search Multikind&quot;;
+-const char* const prf_I_SearchRecursive			= &quot;Search Recursive&quot;;
+-const char* const prf_I_SearchTextFilesOnly		= &quot;Search Text Files Only&quot;;
+-const char* const prf_I_SearchWhichDir			= &quot;Search Whichdir&quot;;
+-const char* const prf_I_SearchWrap				= &quot;Search Wrap&quot;;
+-const char* const prf_I_SearchWithGrep			= &quot;Search with Grep&quot;;
+ const char* const prf_I_AltFontSize				= &quot;alt font size&quot;;
+ const char* const prf_I_AltHome					= &quot;althome&quot;;
+ const char* const prf_I_AutoIndent				= &quot;auto indent&quot;;
+ const char* const prf_I_AutodetectProjects		= &quot;autodetect projects&quot;;
+-const char* const prf_I_MakeBackup				= &quot;backup&quot;;
+ const char* const prf_I_BalanceWhileTyping		= &quot;balance&quot;;
+ const char* const prf_I_BeIncludes				= &quot;beincludes&quot;;
+ const char* const prf_I_BlockCursor				= &quot;block cursor&quot;;
+ const char* const prf_I_CenterFoundString		= &quot;centerfound&quot;;
++const char* const prf_I_ContextChars			= &quot;contextchars&quot;;
+ const char* const prf_I_ContextLines			= &quot;contextlines&quot;;
+-const char* const prf_I_ContextChars			= &quot;contextchars&quot;;
+ const char* const prf_I_DiffCaseInsensitive		= &quot;diffcase&quot;;
+ const char* const prf_I_DiffIgnoreWhiteSpace	= &quot;diffwhite&quot;;
++const char* const prf_I_EndWithNewline			= &quot;nl at eof&quot;;
+ const char* const prf_I_FlashCursor				= &quot;flash cursor&quot;;
+ const char* const prf_I_FontSize				= &quot;font size&quot;;
+ const char* const prf_I_FullPathInTitle			= &quot;fullpath&quot;;
+-const char* const prf_I_ShowBeIdeMenu			= &quot;ide menu&quot;;
+-const char* const prf_I_ShowIncludes			= &quot;includes&quot;;
+ const char* const prf_I_InclSearchIgnoreCase	= &quot;isearch_igncase&quot;;
+ const char* const prf_I_LoadBeIdeExt			= &quot;mw plugins&quot;;
+-const char* const prf_I_EndWithNewline			= &quot;nl at eof&quot;;
+-const char* const prf_I_SearchParent			= &quot;parent&quot;;
++const char* const prf_I_MakeBackup				= &quot;backup&quot;;
+ const char* const prf_I_PassiveFtp				= &quot;passive ftp&quot;;
+-const char* const prf_I_ShowPrototypes			= &quot;protos&quot;;
+ const char* const prf_I_RecentSize				= &quot;recent size&quot;;
+ const char* const prf_I_RedirectStdErr			= &quot;redirect stderr&quot;;
+ const char* const prf_I_RelativeGroupPaths		= &quot;relative group paths&quot;;
+@@ -99,15 +85,30 @@
+ const char* const prf_I_SavedState				= &quot;saved state&quot;;
+ const char* const prf_I_ScrollwheelLines		= &quot;scrollwheel lines&quot;;
+ 						// Currently not in GUI
+-const char* const prf_I_ShowPaletteForHtml		= &quot;show htmlpalette for html&quot;;
++const char* const prf_I_SearchBackwards			= &quot;Search Backwards&quot;;
++const char* const prf_I_SearchBatch				= &quot;Search Batch&quot;;
++const char* const prf_I_SearchEntireWord		= &quot;Search Entire Word&quot;;
++const char* const prf_I_SearchIgnoreCase		= &quot;Search Ignore Case&quot;;
++const char* const prf_I_SearchMultikind			= &quot;Search Multikind&quot;;
++const char* const prf_I_SearchParent			= &quot;parent&quot;;
++const char* const prf_I_SearchRecursive			= &quot;Search Recursive&quot;;
++const char* const prf_I_SearchTextFilesOnly		= &quot;Search Text Files Only&quot;;
++const char* const prf_I_SearchWhichDir			= &quot;Search Whichdir&quot;;
++const char* const prf_I_SearchWithGrep			= &quot;Search with Grep&quot;;
++const char* const prf_I_SearchWrap				= &quot;Search Wrap&quot;;
++const char* const prf_I_ShowBeIdeMenu			= &quot;ide menu&quot;;
++const char* const prf_I_ShowGlossary			= &quot;showglossary&quot;;
+ const char* const prf_I_ShowHtmlPalette			= &quot;show htmlpalette&quot;;
++const char* const prf_I_ShowIncludes			= &quot;includes&quot;;
+ const char* const prf_I_ShowInvisibles			= &quot;show invisibles&quot;;
++const char* const prf_I_ShowPaletteForHtml		= &quot;show htmlpalette for html&quot;;
++const char* const prf_I_ShowPrototypes			= &quot;protos&quot;;
+ const char* const prf_I_ShowTabs				= &quot;show tabs&quot;;
+-const char* const prf_I_ShowGlossary			= &quot;showglossary&quot;;
+ const char* const prf_I_SingleClickGlossary		= &quot;singleclickglossary&quot;;
+ const char* const prf_I_SkipHtmlExt				= &quot;skiphtmlext&quot;;
+ const char* const prf_I_SkipTmpFiles			= &quot;skiptmp&quot;;
+ const char* const prf_I_SmartBraces				= &quot;smart braces&quot;;
++const char* const prf_I_SmartWorkspaces			= &quot;window to workspace&quot;;
+ const char* const prf_I_SoftWrap				= &quot;softwrap&quot;;
+ const char* const prf_I_SortGroup				= &quot;sortgroup&quot;;
+ const char* const prf_I_SortPopup				= &quot;sortpopup&quot;;
+@@ -118,15 +119,14 @@
+ const char* const prf_I_SyntaxColoring			= &quot;syntax coloring&quot;;
+ const char* const prf_I_ShowTypes				= &quot;types&quot;;
+ const char* const prf_I_VerifyOpenFiles			= &quot;verify&quot;;
+-const char* const prf_I_SmartWorkspaces			= &quot;window to workspace&quot;;
+ const char* const prf_I_Worksheet				= &quot;worksheet&quot;;
+ const char* const prf_I_WrapCol					= &quot;wrapcol&quot;;
+ const char* const prf_I_WrapType				= &quot;wraptype&quot;;
+ const char* const prf_I_ZoomOpenPanel			= &quot;zoomopen&quot;;
+ 
++const char* const prf_R_DefaultDocumentRect		= &quot;default document rect&quot;;
+ const char* const prf_R_GlossaryPosition		= &quot;GlossaryPosition&quot;;
+ const char* const prf_R_HtmlPalettePos			= &quot;HTMLPalettePos&quot;;
+-const char* const prf_R_DefaultDocumentRect		= &quot;default document rect&quot;;
+ 
+ const char* const prf_S_AltFontFamily			= &quot;alt font family&quot;;
+ const char* const prf_S_AltFontStyle			= &quot;alt font style&quot;;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000106.html">[pe-commits] r512 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000108.html">[pe-commits] r514 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#107">[ date ]</a>
+              <a href="thread.html#107">[ thread ]</a>
+              <a href="subject.html#107">[ subject ]</a>
+              <a href="author.html#107">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

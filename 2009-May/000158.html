@@ -1,0 +1,1117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r562 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r562%20-%20trunk/Sources&In-Reply-To=%3C200905012250.n41MoGxe010051%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000157.html">
+   <LINK REL="Next"  HREF="000159.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r562 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r562%20-%20trunk/Sources&In-Reply-To=%3C200905012250.n41MoGxe010051%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r562 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sat May  2 00:50:16 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000157.html">[pe-commits] r561 - trunk/rez/Sources
+</A></li>
+        <LI>Next message: <A HREF="000159.html">[pe-commits] r563 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#158">[ date ]</a>
+              <a href="thread.html#158">[ thread ]</a>
+              <a href="subject.html#158">[ subject ]</a>
+              <a href="author.html#158">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-02 00:50:05 +0200 (Sat, 02 May 2009)
+New Revision: 562
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=562&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=562&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CCharObject.cpp
+   trunk/Sources/CDiff.h
+   trunk/Sources/CDiffWindow.cpp
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+   trunk/Sources/CFilterChoiceDialog.cpp
+   trunk/Sources/CFindDialog.cpp
+   trunk/Sources/CFindDialog.h
+   trunk/Sources/CFontStyle.cpp
+   trunk/Sources/CFontStyle.h
+   trunk/Sources/CFtpDialog.cpp
+   trunk/Sources/CFtpDialog.h
+   trunk/Sources/CFtpListItem.cpp
+   trunk/Sources/CGlossary.h
+   trunk/Sources/CHtmlBar.h
+   trunk/Sources/CKeyMapper.h
+   trunk/Sources/CLanguageInterface.cpp
+   trunk/Sources/CLanguageInterface.h
+   trunk/Sources/CLineObject.cpp
+   trunk/Sources/CPrefsDialog.h
+   trunk/Sources/CProjectFile.h
+   trunk/Sources/CRegex.h
+   trunk/Sources/CStdErrParser.cpp
+   trunk/Sources/CStdErrParser.h
+   trunk/Sources/HButtonBar.h
+   trunk/Sources/HColorPicker2.cpp
+   trunk/Sources/HColorUtils.cpp
+   trunk/Sources/HDialog.cpp
+   trunk/Sources/HDialogViews.h
+   trunk/Sources/HLazyObject.cpp
+   trunk/Sources/HPreferences.h
+   trunk/Sources/MTextAddOnImpl.cpp
+   trunk/Sources/PAddOn.cpp
+   trunk/Sources/PCmd.cpp
+   trunk/Sources/PCmd.h
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PDoc.h
+   trunk/Sources/PFindFunctionDialog.cpp
+   trunk/Sources/PMessageWindow.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+   trunk/Sources/PTextBuffer.cpp
+   trunk/Sources/utf-support.cpp
+Log:
+gcc 4 fixes.
+
+
+Modified: trunk/Sources/CCharObject.cpp
+===================================================================
+--- trunk/Sources/CCharObject.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CCharObject.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -56,7 +56,7 @@
+ 
+ void CCharObject::MessageReceived(BMessage *msg)
+ {
+-	auto_ptr&lt;CCharObject&gt; destroy(this);
++	std::auto_ptr&lt;CCharObject&gt; destroy(this);
+ 
+ 	switch (msg-&gt;what)
+ 	{
+
+Modified: trunk/Sources/CDiff.h
+===================================================================
+--- trunk/Sources/CDiff.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CDiff.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -36,6 +36,12 @@
+ #ifndef CDIFF_H
+ #define CDIFF_H
+ 
++#include &lt;vector&gt;
++
++
++using std::vector;
++
++
+ class CDiff
+ {
+ public:
+
+Modified: trunk/Sources/CDiffWindow.cpp
+===================================================================
+--- trunk/Sources/CDiffWindow.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CDiffWindow.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -123,7 +123,8 @@
+ 	be_plain_font-&gt;GetHeight(&amp;fh);
+ 	
+ 	r = b;
+-	r.bottom = r.top + max(kToolBarHeight, (fh.ascent + fh.descent - 1) * 2 + 1);
++	r.bottom = r.top + std::max(kToolBarHeight,
++		(fh.ascent + fh.descent - 1) * 2 + 1);
+ 
+ 	fToolBar = new CDiffToolBar(r, &quot;DiffToolBar&quot;);
+ 	AddChild(fToolBar);
+@@ -740,7 +741,7 @@
+ 		GetDocs(docA, docB, false);
+ 
+ 		if (toFile == 2)
+-			swap(docA, docB);
++			std::swap(docA, docB);
+ 		
+ 		char *s;
+ 		{
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CDoc.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -45,8 +45,11 @@
+ class CDoc;
+ class URLData;
+ 
+-typedef list&lt;CDoc*&gt; doclist;
++using std::string;
++using std::vector;
+ 
++typedef std::list&lt;CDoc*&gt; doclist;
++
+ // types of linebreaks
+ enum {
+ 	kle_UNKNOWN = -1,
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CDocIO.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -676,7 +676,7 @@
+ 				}
+ 			}
+ 
+-			fLastSaved = max(fLastSaved, time(NULL));
++			fLastSaved = std::max(fLastSaved, time(NULL));
+ 				// if more than one update request was issued
+ 				// in the mean time, only the first one is
+ 				// considered
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CDocIO.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -87,7 +87,7 @@
+ 			node_ref fNodeRef;
+ 			BLooper* fTarget;
+ 
+-	typedef map&lt;node_ref, int32&gt; WatchedFolderMap;
++	typedef std::map&lt;node_ref, int32&gt; WatchedFolderMap;
+ 	WatchedFolderMap sfWatchedFolderMap;
+ 	static	BLocker sfDocListLock;
+ };
+
+Modified: trunk/Sources/CFilterChoiceDialog.cpp
+===================================================================
+--- trunk/Sources/CFilterChoiceDialog.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFilterChoiceDialog.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -403,7 +403,7 @@
+ 	BMessage *message = new BMessage(MSG_COMMIT_REQUEST);
+ 	FailNil(message);
+ 	BRect rect(bounds);
+-	fFilterStringControl = new(nothrow) BTextControl(rect, &quot;filter text&quot;,
++	fFilterStringControl = new(std::nothrow) BTextControl(rect, &quot;filter text&quot;,
+ 		&quot;Filter&quot;, &quot;&quot;, message,
+ 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
+ 	FailNil(fFilterStringControl);
+@@ -420,14 +420,14 @@
+ 	rect.top = fFilterStringControl-&gt;Frame().bottom + 1 + 5;
+ 	rect.right -= B_V_SCROLL_BAR_WIDTH;
+ 	rect.bottom -= B_H_SCROLL_BAR_HEIGHT;
+-	fChoicesList = new(nothrow) BListView(rect, &quot;choices list&quot;,
++	fChoicesList = new(std::nothrow) BListView(rect, &quot;choices list&quot;,
+ 		B_SINGLE_SELECTION_LIST, B_FOLLOW_ALL, B_WILL_DRAW | B_FRAME_EVENTS);
+ 	FailNil(fChoicesList);
+ 	message = new BMessage(MSG_COMMIT_REQUEST);
+ 	fChoicesList-&gt;SetInvocationMessage(message);
+ 	fChoicesList-&gt;SetTarget(this);
+ 	// scroll view
+-	BScrollView *scrollView = new(nothrow) BScrollView(&quot;scroll view&quot;,
++	BScrollView *scrollView = new(std::nothrow) BScrollView(&quot;scroll view&quot;,
+ 		fChoicesList, B_FOLLOW_ALL, 0, true, true, B_FANCY_BORDER); 
+ 	fMainView-&gt;AddChild(scrollView);
+ 	scrollView-&gt;SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+@@ -438,7 +438,7 @@
+ 	// get the choice groups
+ 	fItemCount = 0;
+ 	fGroupCount = fModel-&gt;CountChoiceGroups();
+-	fGroupInfos = new(nothrow) ChoiceGroupInfo[fGroupCount];
++	fGroupInfos = new(std::nothrow) ChoiceGroupInfo[fGroupCount];
+ 	FailNil(fGroupInfos);
+ 	for (int i = 0; i &lt; fGroupCount; i++) 
+ 	{
+@@ -450,7 +450,7 @@
+ 			// + 1 for group separator item
+ 	}
+ 	// get the item infos
+-	fItemInfos = new(nothrow) ChoiceItemInfo[fItemCount];
++	fItemInfos = new(std::nothrow) ChoiceItemInfo[fItemCount];
+ 	FailNil(fItemInfos);
+ 	for (int groupIndex = 0; groupIndex &lt; fGroupCount; groupIndex++) 
+ 	{
+@@ -458,7 +458,7 @@
+ 		// add a group separator item
+ 		ChoiceItemInfo&amp; separatorItemInfo = fItemInfos[groupInfo.index - 1];
+ 		separatorItemInfo.choiceItem = NULL;
+-		separatorItemInfo.listItem = new(nothrow) SeparatorListItem(
++		separatorItemInfo.listItem = new(std::nothrow) SeparatorListItem(
+ 			groupIndex, -1, &amp;separatorItemInfo);
+ 		separatorItemInfo.isSeparator = true;
+ 		// add the group's real items
+@@ -469,7 +469,7 @@
+ 			itemInfo.choiceItem = choiceItem;
+ 			if (choiceItem-&gt;IsSeparator()) 
+ 			{
+-				itemInfo.listItem = new(nothrow) SeparatorListItem(
++				itemInfo.listItem = new(std::nothrow) SeparatorListItem(
+ 					groupIndex, i, &amp;itemInfo);
+ 				itemInfo.isSeparator = true;
+ 			} 
+@@ -477,7 +477,7 @@
+ 			{
+ 				bool italic = choiceItem-&gt;IsItalic();
+ 				BFont *font = (italic ? &amp;fItalicFont : &amp;fPlainFont);
+-				itemInfo.listItem = new(nothrow) ChoiceListItem(
++				itemInfo.listItem = new(std::nothrow) ChoiceListItem(
+ 					groupIndex, i, &amp;itemInfo, font);
+ 				itemInfo.isSeparator = false;
+ 			}
+@@ -543,12 +543,12 @@
+ 				if (y &lt; 0) 
+ 				{
+ 					value -= delta;
+-					value = max(minVal, value);
++					value = std::max(minVal, value);
+ 				}
+ 				else 
+ 				{
+ 					value += delta;
+-					value = min(maxVal, value);
++					value = std::min(maxVal, value);
+ 				}
+ 				vScroller-&gt;SetValue(value);
+ 			}
+@@ -671,7 +671,7 @@
+ 			= (fh.ascent + fh.descent + fh.leading) * kMaximalVisibleListItems;
+ 		// we can get the height from the frame of the last item
+ 		BRect itemFrame(fChoicesList-&gt;ItemFrame(count -1));
+-		float desiredListHeight = min(itemFrame.bottom, maxListHeight);
++		float desiredListHeight = std::min(itemFrame.bottom, maxListHeight);
+ 		if (listBounds.Height() &gt; maxListHeight)
+ 			frame.bottom += maxListHeight - listBounds.Height();
+ 		else if (listBounds.Height() &lt; desiredListHeight)
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFindDialog.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -405,9 +405,9 @@
+ 	BRect r = fMainView-&gt;Bounds();
+ 
+ 	// Position Buttons
+-	w = max(fButFind-&gt;Width(), fButRepl-&gt;Width());
+-	w = max(w, fButRepF-&gt;Width());
+-	w = max(w, fButRepA-&gt;Width());
++	w = std::max(fButFind-&gt;Width(), fButRepl-&gt;Width());
++	w = std::max(w, fButRepF-&gt;Width());
++	w = std::max(w, fButRepA-&gt;Width());
+ 
+ 	fButFind-&gt;MoveTo(fMainView-&gt;Right()-w-dx, dy);
+ 	fButFind-&gt;SetWidth(w);
+@@ -434,17 +434,17 @@
+ 	fScrRepl-&gt;ResizeTo(w, lineHeight*2+6);
+ 
+ 	// Multi File Search
+-	w = max(fChkText-&gt;Width(), fChkRecu-&gt;Width());
+-	wd = max(fMfdNamp-&gt;Divider(), fMfdSdir-&gt;Divider());
++	w = std::max(fChkText-&gt;Width(), fChkRecu-&gt;Width());
++	wd = std::max(fMfdNamp-&gt;Divider(), fMfdSdir-&gt;Divider());
+ 	fMfdSdir-&gt;SetDivider(wd);
+ 	fMfdNamp-&gt;SetDivider(wd);
+ 
+ 	fChkText-&gt;MoveTo(dx, r.bottom-fChkText-&gt;Height()-dy);
+ 	fChkRecu-&gt;MoveAbove(fChkText, 2);
+ 
+-	wm = max(fMfdNamp-&gt;StringWidth(fMitNampAny-&gt;Label()), fMfdNamp-&gt;StringWidth(fMitNampEnd-&gt;Label()));
+-	wm = max(wm, fMfdNamp-&gt;StringWidth(fMitNampBeg-&gt;Label()));
+-	wm = max(wm, fMfdNamp-&gt;StringWidth(fMitNampCon-&gt;Label()));
++	wm = std::max(fMfdNamp-&gt;StringWidth(fMitNampAny-&gt;Label()), fMfdNamp-&gt;StringWidth(fMitNampEnd-&gt;Label()));
++	wm = std::max(wm, fMfdNamp-&gt;StringWidth(fMitNampBeg-&gt;Label()));
++	wm = std::max(wm, fMfdNamp-&gt;StringWidth(fMitNampCon-&gt;Label()));
+ 	wm += fMfdNamp-&gt;StringWidth(&quot;WW&quot;);
+ 
+ 	fMfdNamp-&gt;MoveTo(2*dx+w, fChkText-&gt;Top()-2);
+@@ -453,8 +453,8 @@
+ 	fMfdSdir-&gt;MoveTo(2*dx+w, fChkRecu-&gt;Top()-2);
+ 	fMfdSdir-&gt;MenuBar()-&gt;SetMaxContentWidth(r.right-fMfdSdir-&gt;Left()-fMfdSdir-&gt;Divider()-2*dx-30);
+ 
+-	wm = max(fMfdMeth-&gt;StringWidth(fMitMethDir-&gt;Label()), fMfdMeth-&gt;StringWidth(fMitMethWin-&gt;Label()));
+-	wm = max(wm, fMfdMeth-&gt;StringWidth(fMitMethInc-&gt;Label()));
++	wm = std::max(fMfdMeth-&gt;StringWidth(fMitMethDir-&gt;Label()), fMfdMeth-&gt;StringWidth(fMitMethWin-&gt;Label()));
++	wm = std::max(wm, fMfdMeth-&gt;StringWidth(fMitMethInc-&gt;Label()));
+ 	wm += fMfdMeth-&gt;StringWidth(&quot;WW&quot;);
+ 
+ 	fChkMult-&gt;MoveAbove(fChkRecu, dy);
+@@ -466,15 +466,15 @@
+ 	fChkWrap-&gt;MoveAbove(fChkMult, dy);
+ 	fChkCase-&gt;MoveAbove(fChkWrap);
+ 
+-	fChkWord-&gt;MoveTo(max(fChkCase-&gt;Right(), fChkWrap-&gt;Right())+dx, fChkWrap-&gt;Top());
++	fChkWord-&gt;MoveTo(std::max(fChkCase-&gt;Right(), fChkWrap-&gt;Right())+dx, fChkWrap-&gt;Top());
+ 	fChkBack-&gt;MoveAbove(fChkWord);
+ 
+-	fChkBtch-&gt;MoveTo(max(fChkBack-&gt;Right(), fChkWord-&gt;Right())+dx, fChkWrap-&gt;Top());
++	fChkBtch-&gt;MoveTo(std::max(fChkBack-&gt;Right(), fChkWord-&gt;Right())+dx, fChkWrap-&gt;Top());
+ 	fChkGrep-&gt;MoveAbove(fChkBtch);
+ 
+ 	// set minimum height to fit one line in textviews...
+ 	h = fScrRepl-&gt;Bottom()+r.bottom-fChkCase-&gt;Top()+2;
+-	w = 2*dx+max(fChkGrep-&gt;Right(), fChkBtch-&gt;Right())+fButRepA-&gt;Width();
++	w = 2*dx+std::max(fChkGrep-&gt;Right(), fChkBtch-&gt;Right())+fButRepA-&gt;Width();
+ 	ResizeToLimits(w, 99999, h-2*lineHeight, 99999);
+ 	// ...but default to two lines in textviews:
+ 	ResizeTo(w, h);
+@@ -1647,7 +1647,7 @@
+ 				
+ 			free(l);
+ 			
+-			offset = max(e, offset+1);
++			offset = std::max(e, offset+1);
+ 			r = regex-&gt;Match(buf, size, offset);
+ 			offset = regex-&gt;MatchStart();
+ 			e = offset + regex-&gt;MatchLen();
+
+Modified: trunk/Sources/CFindDialog.h
+===================================================================
+--- trunk/Sources/CFindDialog.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFindDialog.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -46,6 +46,8 @@
+ class PMessageItem;
+ class PDoc;
+ 
++using std::stack;
++
+ const unsigned long
+ 	msg_QueryCanReplace = 'CRpl',
+ 	msg_ReplyCanReplace = 'RpRp';
+
+Modified: trunk/Sources/CFontStyle.cpp
+===================================================================
+--- trunk/Sources/CFontStyle.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFontStyle.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -175,7 +175,7 @@
+ 
+ void CFontStyle::ReHash()
+ {
+-	int nc = max(1, fEscapementsCount * 2);
++	int nc = std::max(1, fEscapementsCount * 2);
+ 	EscapementEntry *n = (EscapementEntry *)calloc(nc, sizeof(EscapementEntry));
+ 	FailNil(n);
+ 	
+
+Modified: trunk/Sources/CFontStyle.h
+===================================================================
+--- trunk/Sources/CFontStyle.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFontStyle.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -43,7 +43,7 @@
+ #include &quot;Benaphore.h&quot;
+ typedef float f_unit_t;
+ 
+-//using namespace std;
++using std::vector;
+ 
+ struct EscapementEntry {
+ 	int unicode;
+
+Modified: trunk/Sources/CFtpDialog.cpp
+===================================================================
+--- trunk/Sources/CFtpDialog.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFtpDialog.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -225,12 +225,12 @@
+ 	fUsePassive-&gt;MoveTo(dx, fPassword-&gt;Bottom()+dy);
+ 	fConnectButton-&gt;MoveTo(2*dx, fUsePassive-&gt;Bottom()+dy);
+ 	//
+-	float bw = max(max(dx*10, fCancelButton-&gt;Width()), fOkButton-&gt;Width());
+-	bw = max(bw, fServerName-&gt;Right());
+-	bw = max(bw, fUserName-&gt;Right());
+-	bw = max(bw, fPassword-&gt;Right());
+-	bw = max(bw, fUsePassive-&gt;Right());
+-	bw = max(bw, fConnectButton-&gt;Right()+2*dx);
++	float bw = std::max(std::max(dx*10, fCancelButton-&gt;Width()), fOkButton-&gt;Width());
++	bw = std::max(bw, fServerName-&gt;Right());
++	bw = std::max(bw, fUserName-&gt;Right());
++	bw = std::max(bw, fPassword-&gt;Right());
++	bw = std::max(bw, fUsePassive-&gt;Right());
++	bw = std::max(bw, fConnectButton-&gt;Right()+2*dx);
+ 	//
+ 	fServerName-&gt;SetWidth(bw);
+ 	fUserName-&gt;SetWidth(bw);
+@@ -263,9 +263,9 @@
+ 	//
+ 	float minW = 200;
+ 	float minH = 100;
+-	minW = max(minW, 
++	minW = std::max(minW, 
+ 		       bw + 3*dx + fShowDotted-&gt;Width() + fDirectoryField-&gt;Width());
+-	minH = max(minH, fLoginBox-&gt;Bottom()+2*fOkButton-&gt;Height()+3*dy);
++	minH = std::max(minH, fLoginBox-&gt;Bottom()+2*fOkButton-&gt;Height()+3*dy);
+ 	ResizeToLimits(minW, 99999, minH, 99999);
+ } // CFtpDialog::Layout
+ 
+
+Modified: trunk/Sources/CFtpDialog.h
+===================================================================
+--- trunk/Sources/CFtpDialog.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFtpDialog.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -40,6 +40,10 @@
+ #include &quot;HDialog.h&quot;
+ #include &quot;HDialogViews.h&quot;
+ 
++
++using std::map;
++
++
+ class CFtpDialog : public HDialog
+ {
+   public:
+
+Modified: trunk/Sources/CFtpListItem.cpp
+===================================================================
+--- trunk/Sources/CFtpListItem.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CFtpListItem.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -147,5 +147,5 @@
+ {
+ 	font_height fh;
+ 	be_plain_font-&gt;GetHeight(&amp;fh);
+-	SetHeight(max((float)18.0, 4 + fh.descent + fh.ascent));
++	SetHeight(std::max((float)18.0, 4 + fh.descent + fh.ascent));
+ } // CFtpListItem::Update
+
+Modified: trunk/Sources/CGlossary.h
+===================================================================
+--- trunk/Sources/CGlossary.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CGlossary.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -36,13 +36,15 @@
+ #ifndef CGLOSSARY_H
+ #define CGLOSSARY_H
+ 
++#include &lt;string&gt;
+ 
+-//using namespace std;
+ 
++using std::string;
++
+ const unsigned long
+ 	kModifierMask = B_SHIFT_KEY | B_COMMAND_KEY | B_CONTROL_KEY | B_OPTION_KEY | B_MENU_KEY;
+ 
+-typedef map&lt;int, string&gt; glossymap;
++typedef std::map&lt;int, string&gt; glossymap;
+ 
+ class CGlossary {
+ public:
+
+Modified: trunk/Sources/CHtmlBar.h
+===================================================================
+--- trunk/Sources/CHtmlBar.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CHtmlBar.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -41,6 +41,8 @@
+ class CHtmlButtonPane;
+ class CHtmlButton;
+ 
++using std::vector;
++
+ class CHtmlBar : public BWindow {
+ public:
+ 
+
+Modified: trunk/Sources/CKeyMapper.h
+===================================================================
+--- trunk/Sources/CKeyMapper.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CKeyMapper.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -37,7 +37,7 @@
+ #define CKEYMAPPER_H
+ 
+ 
+-//using namespace std;
++using std::set;
+ 
+ class PText;
+ 
+@@ -52,7 +52,7 @@
+ 	inline bool operator==(const KeyShortcut&amp; ks) const;
+ };
+ 
+-typedef map&lt;KeyShortcut,int&gt; keymap;
++typedef std::map&lt;KeyShortcut,int&gt; keymap;
+ 
+ class CKeyMapper
+ {
+
+Modified: trunk/Sources/CLanguageInterface.cpp
+===================================================================
+--- trunk/Sources/CLanguageInterface.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CLanguageInterface.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -48,6 +48,10 @@
+ #include &quot;Prefs.h&quot;
+ #include &lt;algorithm&gt;
+ 
++
++using std::map;
++
++
+ unsigned char *CLanguageInterface::sfWordBreakTable = NULL;
+ 
+ class ext {
+@@ -400,14 +404,14 @@
+ {
+ 	try
+ 	{
+-		int start = min(text.Anchor(), text.Caret());
+-		int end = max(text.Anchor(), text.Caret());
++		int start = std::min(text.Anchor(), text.Caret());
++		int end = std::max(text.Anchor(), text.Caret());
+ 
+ 		if (! Balance(text, start, end))
+ 			THROW((0));
+ 
+-		if (start == min(text.Anchor(), text.Caret()) &amp;&amp;
+-			end == max(text.Anchor(), text.Caret()))
++		if (start == std::min(text.Anchor(), text.Caret()) &amp;&amp;
++			end == std::max(text.Anchor(), text.Caret()))
+ 		{
+ 			start--; end++;
+ 			if (! Balance(text, start, end))
+@@ -469,9 +473,9 @@
+ 			int size;
+ 
+ 			if (line &gt;= text.LineCount() - 1)
+-				size = min(text.Size() - offset, 1024);
++				size = std::min(text.Size() - offset, 1024);
+ 			else
+-				size = min(text.LineStart(line + 1) - offset, 1024);
++				size = std::min(text.LineStart(line + 1) - offset, 1024);
+ 
+ 			CAlloca txt(size + 1);
+ 			text.TextBuffer().Copy(txt, offset, size);
+@@ -780,7 +784,7 @@
+ 						end = start + strcspn(start, &quot;\n&quot;);
+ 					}
+ 				} else {
+-					fKeywordMap.insert(pair&lt;BString, int&gt;(word, currType));
++					fKeywordMap.insert(std::pair&lt;BString, int&gt;(word, currType));
+ 				}
+ 				start = end + strspn(end, white);
+ 				end = start + strcspn(start, white);
+
+Modified: trunk/Sources/CLanguageInterface.h
+===================================================================
+--- trunk/Sources/CLanguageInterface.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CLanguageInterface.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -106,7 +106,7 @@
+ protected:
+ 		static const int kKeywordBufSize = 128;
+ 		char fKeywordBuf[kKeywordBufSize+1];
+-		typedef multimap&lt;BString, int&gt; KeywordMap;
++		typedef std::multimap&lt;BString, int&gt; KeywordMap;
+ 		mutable bool fHaveParsedKeywords;
+ 		mutable KeywordMap fKeywordMap;
+ //		void GenerateKeywordMap(const char *ext);
+
+Modified: trunk/Sources/CLineObject.cpp
+===================================================================
+--- trunk/Sources/CLineObject.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CLineObject.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -83,7 +83,7 @@
+ 
+ void CLineObject::MessageReceived(BMessage *msg)
+ {
+-	auto_ptr&lt;CLineObject&gt; destroy(this);
++	std::auto_ptr&lt;CLineObject&gt; destroy(this);
+ 
+ 	switch (msg-&gt;what)
+ 	{
+
+Modified: trunk/Sources/CPrefsDialog.h
+===================================================================
+--- trunk/Sources/CPrefsDialog.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CPrefsDialog.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -45,6 +45,8 @@
+ class CGrepBox;
+ class COutlineListView;
+ 
++using std::vector;
++
+ class CPrefsDialog : public HDialog
+ {
+ public:
+
+Modified: trunk/Sources/CProjectFile.h
+===================================================================
+--- trunk/Sources/CProjectFile.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CProjectFile.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -19,6 +19,8 @@
+ class BPositionIO;
+ class CProjectSerializer;
+ 
++using std::list;
++
+ /*
+  * CProjectItem
+  *		represents a source-file in a project (displayed in a PProjectWindow).
+
+Modified: trunk/Sources/CRegex.h
+===================================================================
+--- trunk/Sources/CRegex.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CRegex.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -10,6 +10,8 @@
+ 
+ #include &lt;pcre.h&gt;
+ 
++using std::vector;
++
+ extern const status_t krx_NoMatch;
+ extern const status_t krx_NotBOL;
+ extern const status_t krx_NotEOL;
+
+Modified: trunk/Sources/CStdErrParser.cpp
+===================================================================
+--- trunk/Sources/CStdErrParser.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CStdErrParser.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -166,11 +166,12 @@
+ 			{
+ 				int l = (int)fErrBuffer.find('\n');
+ 				
+-				CMessageItem *i = new CMessageItem(fErrBuffer.c_str(), min(m, l), CMessageItem::msgInfo);
++				CMessageItem *i = new CMessageItem(fErrBuffer.c_str(),
++					std::min(m, l), CMessageItem::msgInfo);
+ 				fErrList-&gt;AddItem(i);
+ 				i-&gt;SetHeight(h);
+ 				
+-				fErrBuffer.erase(0, min(l + 1, m));
++				fErrBuffer.erase(0, std::min(l + 1, m));
+ 				m -= l + 1;
+ 				
+ 				found = true;
+
+Modified: trunk/Sources/CStdErrParser.h
+===================================================================
+--- trunk/Sources/CStdErrParser.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/CStdErrParser.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -41,6 +41,9 @@
+ 
+ #include &quot;CRegex.h&quot;
+ 
++using std::string;
++using std::vector;
++
+ class CStdErrParser
+ {
+   public:
+
+Modified: trunk/Sources/HButtonBar.h
+===================================================================
+--- trunk/Sources/HButtonBar.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HButtonBar.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -41,6 +41,8 @@
+ class HHelpWindow;
+ class HButtonBar;
+ 
++using std::vector;
++
+ struct IMPEXP_LIBHEKKEL BtnTemplate {
+ 	long resID;
+ 	long cmd;
+
+Modified: trunk/Sources/HColorPicker2.cpp
+===================================================================
+--- trunk/Sources/HColorPicker2.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HColorPicker2.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -178,7 +178,7 @@
+ 	r.InsetBy(1, 1);
+ 
+ 	BRect knob;
+-	float m = min(r.Width(), r.Height());
++	float m = std::min(r.Width(), r.Height());
+ 	knob.Set(r.left, r.top, m + r.left, m + r.top);
+ 
+ 	if (fHorizontal)
+@@ -279,9 +279,15 @@
+ 			if (oldPt != where)
+ 			{
+ 				if (fHorizontal)
+-					fValue = min(1.0, max(0.0, (where.x - s) / (double)a));
++				{
++					fValue = std::min(1.0,
++						std::max(0.0, (where.x - s) / (double)a));
++				}
+ 				else
+-					fValue = 1 - min(1.0, max(0.0, (where.y - s) / (double)a));
++				{
++					fValue = 1 - std::min(1.0,
++						std::max(0.0, (where.y - s) / (double)a));
++				}
+ 
+ 				msg.ReplaceFloat(&quot;value&quot;, fValue);
+ 
+@@ -332,22 +338,22 @@
+ 	{
+ 		case B_UP_ARROW:
+ 			if (!fHorizontal)
+-				nv = min(1.0, (fValue * a + 1) / (double)a);
++				nv = std::min(1.0, (fValue * a + 1) / (double)a);
+ 			break;
+ 
+ 		case B_LEFT_ARROW:
+ 			if (fHorizontal)
+-				nv = max(0.0, (fValue * a - 1) / (double)a);
++				nv = std::max(0.0, (fValue * a - 1) / (double)a);
+ 			break;
+ 
+ 		case B_DOWN_ARROW:
+ 			if (!fHorizontal)
+-				nv = max(0.0, (fValue * a - 1) / (double)a);
++				nv = std::max(0.0, (fValue * a - 1) / (double)a);
+ 			break;
+ 
+ 		case B_RIGHT_ARROW:
+ 			if (fHorizontal)
+-				nv = min(1.0, (fValue * a + 1) / (double)a);
++				nv = std::min(1.0, (fValue * a + 1) / (double)a);
+ 			break;
+ 
+ 		default:
+@@ -449,8 +455,8 @@
+ 
+ 	do
+ 	{
+-		int nx = max(2, min((int)where.x, mx));
+-		int ny = max(2, min((int)where.y, my));
++		int nx = std::max(2, std::min((int)where.x, mx));
++		int ny = std::max(2, std::min((int)where.y, my));
+ 
+ 		if (nx != fX || ny != fY)
+ 		{
+
+Modified: trunk/Sources/HColorUtils.cpp
+===================================================================
+--- trunk/Sources/HColorUtils.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HColorUtils.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -134,10 +134,10 @@
+ {
+ 	rgb_color rgb;
+ 
+-	rgb.red = (int)(max(0.0, min(255.0, r * 255.0)));
+-	rgb.green = (int)(max(0.0, min(255.0, g * 255.0)));
+-	rgb.blue = (int)(max(0.0, min(255.0, b * 255.0)));
+-	rgb.alpha = (int)(max(0.0, min(255.0, a * 255.0)));
++	rgb.red = (int)(std::max(0.0, std::min(255.0, r * 255.0)));
++	rgb.green = (int)(std::max(0.0, std::min(255.0, g * 255.0)));
++	rgb.blue = (int)(std::max(0.0, std::min(255.0, b * 255.0)));
++	rgb.alpha = (int)(std::max(0.0, std::min(255.0, a * 255.0)));
+ 
+ 	return rgb;
+ } /* f2rgb */
+@@ -146,8 +146,8 @@
+ {
+ 	float cmin, cmax, delta;
+ 	
+-	cmax = max(r, max(g, b));
+-	cmin = min(r, min(g, b));
++	cmax = std::max(r, std::max(g, b));
++	cmin = std::min(r, std::min(g, b));
+ 	delta = cmax - cmin;
+ 	
+ 	v = cmax;
+
+Modified: trunk/Sources/HDialog.cpp
+===================================================================
+--- trunk/Sources/HDialog.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HDialog.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -50,7 +50,7 @@
+ 	msg_AddDialog		= 'ADlg',
+ 	msg_RemoveDialog	= 'RDlg';
+ 
+-typedef map&lt;int, FieldCreator&gt; field_map;
++typedef std::map&lt;int, FieldCreator&gt; field_map;
+ 
+ static field_map *sFieldMap = NULL;
+ 
+@@ -114,8 +114,8 @@
+ {
+ 	SetSizeLimits(minW, maxW, minH, maxH);
+ 	BRect frame = Frame();
+-	float w = min(maxW, max(minW, frame.Width()));
+-	float h = min(maxH, max(minH, frame.Height()));
++	float w = std::min(maxW, std::max(minW, frame.Width()));
++	float h = std::min(maxH, std::max(minH, frame.Height()));
+ 	ResizeTo(w, h);
+ }
+ 
+@@ -551,7 +551,7 @@
+ 	if (typeid(*v) == typeid(BMenuField))
+ 	{
+ 		BMenu *menu = static_cast&lt;BMenuField*&gt;(v)-&gt;Menu();
+-		return max(menu-&gt;IndexOf(menu-&gt;FindMarked()) + 1, 1L);
++		return std::max(menu-&gt;IndexOf(menu-&gt;FindMarked()) + 1, 1L);
+ 	}
+ 	else if (typeid(*v) == typeid(BTextControl))
+ 		return atoi(GetText(id));
+
+Modified: trunk/Sources/HDialogViews.h
+===================================================================
+--- trunk/Sources/HDialogViews.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HDialogViews.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -45,7 +45,9 @@
+ #define H_FOLLOW_LEFT_RIGHT_TOP		(B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP)
+ #define H_FOLLOW_LEFT_RIGHT_BOTTOM	(B_FOLLOW_LEFT_RIGHT|B_FOLLOW_BOTTOM)
+ 
++using std::vector;
+ 
++
+ class IMPEXP_LIBHEKKEL HDlogView : public BView {
+ public:
+ 		HDlogView(BRect frame, const char *name);
+
+Modified: trunk/Sources/HLazyObject.cpp
+===================================================================
+--- trunk/Sources/HLazyObject.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HLazyObject.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -49,7 +49,7 @@
+ BHandler *HLazyObject::ResolveSpecifier(BMessage *msg, int32 index,
+ 						BMessage *specifier, int32 form, const char *property)
+ {
+-	auto_ptr&lt;HLazyObject&gt; lets_commit_suicide(this);
++	std::auto_ptr&lt;HLazyObject&gt; lets_commit_suicide(this);
+ 	BHandler *result = NULL;
+ 
+ //	if (index &gt; 0)
+
+Modified: trunk/Sources/HPreferences.h
+===================================================================
+--- trunk/Sources/HPreferences.h	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/HPreferences.h	2009-05-01 22:50:05 UTC (rev 562)
+@@ -43,8 +43,10 @@
+ 
+ #include &lt;string&gt;
+ 
+-typedef map&lt;string, char*&gt; PrefMap;
++using std::string;
+ 
++typedef std::map&lt;string, char*&gt; PrefMap;
++
+ class IMPEXP_LIBHEKKEL HPreferences {
+ public:
+ 	HPreferences(const char *preffilename);
+
+Modified: trunk/Sources/MTextAddOnImpl.cpp
+===================================================================
+--- trunk/Sources/MTextAddOnImpl.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/MTextAddOnImpl.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -87,8 +87,8 @@
+ {
+ 	if (fText.LockLooper()) {
+ 		int32 a = fText.Anchor(), c = fText.Caret();
+-		*start = min(a, c);
+-		*end = max(a, c);
++		*start = std::min(a, c);
++		*end = std::max(a, c);
+ 		fText.UnlockLooper();
+ 	}
+ } /* MTextAddOnImpl::GetSelection */
+
+Modified: trunk/Sources/PAddOn.cpp
+===================================================================
+--- trunk/Sources/PAddOn.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/PAddOn.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -186,8 +186,8 @@
+ void PEditText::GetSelection(int32* _start, int32* _end) const
+ {
+ 	int32 start = fText.Anchor(), end = fText.Caret();
+-	*_start = min(start, end);
+-	*_end = max(start, end);
++	*_start = std::min(start, end);
++	*_end = std::max(start, end);
+ }
+ 
+ 
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2009-05-01 22:11:51 UTC (rev 561)
++++ trunk/Sources/PCmd.cpp	2009-05-01 22:50:05 UTC (rev 562)
+@@ -88,7 +88,7 @@
+ void PCutCmd::Do()
+ {
+ 	fText-&gt;Select(fAnchor, fCaret, true, false);
+-	fWhere = min(fAnchor, fCaret);
++	fWhere = std::min(fAnchor, fCaret);
+ 	fText-&gt;GetSelectedText(fSavedTxt);
+ 	fText-&gt;Cut(fAppend);
+ 	Update();
+@@ -127,7 +127,7 @@
+ void PClearCmd::Do()
+ {
+ 	fText-&gt;Select(fAnchor, fCaret, true, false);
+-	fWhere = min(fAnchor, fCaret);
++	fWhere = std::min(fAnchor, fCaret);
+ 	fText-&gt;GetSelectedText(fSavedTxt);
+ 	fText-&gt;Clear();
+ 	Update();
+@@ -165,7 +165,7 @@
+ void PPasteCmd::Do()
+ {
+ 	fText-&gt;SetBlockSelect(false);
+-	fWhere = min(fText-&gt;Anchor(), fText-&gt;Caret());
++	fWhere = std::min(fText-&gt;Anchor(), fText-&gt;Caret());
+ 	fText-&gt;GetSelectedText(fSavedTxt);
+ 
+ 	fText-&gt;Paste();
+@@ -225,11 +225,11 @@
+ 
+ void PTypingCmd::Do()
+ {
+-	fDeletedIndx = min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fDeletedIndx = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	fDeletedLen = abs(fText-&gt;Caret() - fText-&gt;Anchor());
+ 		
+ 	if (fDeletedIndx + fDeletedLen &gt;= fText-&gt;TextBuffer().Size())
+-		fDeletedLen = max(fText-&gt;TextBuffer().Size() - fDeletedIndx, 0);
++		fDeletedLen = std::max(fText-&gt;TextBuffer().Size() - fDeletedIndx, 0);
+ 		
+ 	fDeleted = (char *)malloc(fDeletedLen);
+ 		
+@@ -247,8 +247,8 @@
+ 	{
+ 		int lf, lt;
+ 		
+-		lf = fText-&gt;Offset2Line(min(fText-&gt;Anchor(), fText-&gt;Caret()));
+-		lt = fText-&gt;Offset2Line(max(fText-&gt;Anchor(), fText-&gt;Caret()));
++		lf = fText-&gt;Offset2Line(std::min(fText-&gt;Anchor(), fText-&gt;Caret()));
++		lt = fText-&gt;Offset2Line(std::max(fText-&gt;Anchor(), fText-&gt;Caret()));
+ 		fText-&gt;TouchLines(lf, lt);
+ 	}
+ 
+@@ -482,8 +482,8 @@
+ 	}
+ 
+ 	fText-&gt;Select(fAnchor, fCaret, true, false);
+-	swap(anchor, fAnchor);
+-	swap(caret, fCaret);
++	std::swap(anchor, fAnchor);
++	std::swap(caret, fCaret);
+ 	
+ 	Update();
+ } /* PExtCmd::Undo */
+@@ -508,8 +508,8 @@
+ 	}
+ 	
+ 	fText-&gt;Select(fAnchor, fCaret, true, false);
+-	swap(anchor, fAnchor);
+-	swap(caret, fCaret);
++	std::swap(anchor, fAnchor);
++	std::swap(caret, fCaret);
+ 	
+ 	Update();
+ } /* PExtCmd::Redo */
+@@ -734,7 +734,7 @@
+ 	fOldTextSize = abs(fText-&gt;Anchor() - fText-&gt;Caret());
+ 	if (fOldTextSize)
+ 	{
+-		fAnchor = fCaret = min(fText-&gt;Anchor(), fText-&gt;Caret());
++		fAnchor = fCaret = std::min(fText-&gt;Anchor(), fText-&gt;Caret());
+ 		fOldText = (char *)malloc(fOldTextSize);
+ 		FailNil(fOldText);
+ 		fText-&gt;TextBuffer().Copy(fOldText, fAnchor, fOldTextSize);
+@@ -920,8 +920,8 @@
+ PShiftCmd::PShiftCmd(const char *name, PText *txt)
+ 	: PCmd(name, txt)
+ {
+-	fFrom = min(fText-&gt;Caret(), fText-&gt;Anchor());
+-	fTo = max(fText-&gt;Caret(), fText-&gt;Anchor());
++	fFrom = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fTo = std::max(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	int fromLine = fText-&gt;Offset2Line(fFrom);
+ 	int toLine = fText-&gt;Offset2Line(fTo);
+ 	// our first line may be a soft wrapped one: find the preceding hard wrap
+@@ -971,7 +971,7 @@
+ 	}
+ 	// Get the first character of each hard line. If it's not a tab or a space,
+ 	// we mark it 0.
+-	fFirstChars = new(nothrow) char[fLineCount];
++	fFirstChars = new(std::nothrow) char[fLineCount];
+ 	FailNil(fFirstChars);
+ 	fNoOp = true;
+ 	int hardIndex = 0;
+@@ -1114,8 +1114,8 @@
+ PTwiddleCmd::PTwiddleCmd(PText *txt)
+ 	: PCmd(&quot;Twiddle&quot;, txt)
+ {
+-	fFrom = min(fText-&gt;Caret(), fText-&gt;Anchor());
+-	fTo = max(fText-&gt;Caret(), fText-&gt;Anchor());
++	fFrom = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fTo = std::max(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	
+ 	if (fFrom == fTo)
+ 	{
+@@ -1187,8 +1187,8 @@
+ {
+ 	fComment = comment;
+ 	
+-	fFrom = min(fText-&gt;Caret(), fText-&gt;Anchor());
+-	fTo = max(fText-&gt;Caret(), fText-&gt;Anchor());
++	fFrom = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fTo = std::max(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	
+ 	if (strlen(before) &gt; 7 || strlen(after) &gt; 7) THROW((&quot;comment strings too long&quot;));
+ 	
+@@ -1224,8 +1224,8 @@
+ 	}
+ 	
+ 	fText-&gt;Select(fText-&gt;LineStart(lf), fText-&gt;LineStart(fText-&gt;Offset2Line(fTo)), true, false);
+-	fFrom = min(fText-&gt;Caret(), fText-&gt;Anchor());
+-	fTo = max(fText-&gt;Caret(), fText-&gt;Anchor());
++	fFrom = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fTo = std::max(fText-&gt;Caret(), fText-&gt;Anchor());
+ 
+ 	if (fText-&gt;LineCount() != c)	
+ 		Redraw();
+@@ -1257,8 +1257,8 @@
+ 	}
+ 	
+ 	fText-&gt;Select(fText-&gt;LineStart(lf), fText-&gt;LineStart(fText-&gt;Offset2Line(fTo)), true, false);
+-	fFrom = min(fText-&gt;Caret(), fText-&gt;Anchor());
+-	fTo = max(fText-&gt;Caret(), fText-&gt;Anchor());
++	fFrom = std::min(fText-&gt;Caret(), fText-&gt;Anchor());
++	fTo = std::max(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	
+ 	if (fText-&gt;LineCount() != c)	
+ 		Redraw();
+@@ -1341,7 +1341,7 @@
+ 
+ void PWrapCmd::Undo()
+ {
+-	int a = min(fAnchor, fCaret);
++	int a = std::min(fAnchor, fCaret);
+ 	fText-&gt;Delete(a, a + fNewLen);
+ 	if (fSavedText)
+ 	{
+@@ -1388,7 +1388,7 @@
+ 
+ void PUnwrapCmd::Undo()
+ {
+
+[... truncated: 368 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000157.html">[pe-commits] r561 - trunk/rez/Sources
+</A></li>
+	<LI>Next message: <A HREF="000159.html">[pe-commits] r563 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#158">[ date ]</a>
+              <a href="thread.html#158">[ thread ]</a>
+              <a href="subject.html#158">[ subject ]</a>
+              <a href="author.html#158">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

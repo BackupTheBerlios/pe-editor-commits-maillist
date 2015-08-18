@@ -1,0 +1,49 @@
+From zooey at mail.berlios.de  Sun Mar 11 11:08:39 2007
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 11 Mar 2007 11:08:39 +0100
+Subject: [pe-commits] r477 - in trunk: Extensions Sources
+Message-ID: <200703111008.l2BA8d6I015323@sheep.berlios.de>
+
+Author: zooey
+Date: 2007-03-11 11:08:38 +0100 (Sun, 11 Mar 2007)
+New Revision: 477
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=477&view=rev
+
+Modified:
+   trunk/Extensions/BeBookFetch.cpp
+   trunk/Sources/CDoc.h
+Log:
+* applied patch provided by Ithamar, which allows for compiling with older
+  compilers (gnupro-000224).
+
+
+Modified: trunk/Extensions/BeBookFetch.cpp
+===================================================================
+--- trunk/Extensions/BeBookFetch.cpp	2006-12-17 16:38:15 UTC (rev 476)
++++ trunk/Extensions/BeBookFetch.cpp	2007-03-11 10:08:38 UTC (rev 477)
+@@ -80,7 +80,7 @@
+ 	if (messenger.IsValid())
+ 		messenger.SendMessage(&msg);
+ 	else
+-		be_roster->Launch(kTrackerSig, 1, &const_cast<char*>(fileName));
++		be_roster->Launch(kTrackerSig, 1, const_cast<char**>(&fileName));
+ }
+ 
+ 
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-12-17 16:38:15 UTC (rev 476)
++++ trunk/Sources/CDoc.h	2007-03-11 10:08:38 UTC (rev 477)
+@@ -196,7 +196,7 @@
+ 
+ inline void CDoc::ClearErrorMsg()
+ {
+-	fErrorMsg.clear();
++	fErrorMsg.erase();
+ }
+ 
+ inline const char *CDoc::MimeType() const
+
+
+

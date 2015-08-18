@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r430 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r430%20-%20trunk/Sources&In-Reply-To=%3C200608070858.k778w8iw024840%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000020.html">
+   <LINK REL="Next"  HREF="000022.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r430 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r430%20-%20trunk/Sources&In-Reply-To=%3C200608070858.k778w8iw024840%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r430 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 10:58:08 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000020.html">[pe-commits] r429 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000022.html">[pe-commits] r431 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 10:58:08 +0200 (Mon, 07 Aug 2006)
+New Revision: 430
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=430&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=430&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed potential call to debugger in SetDirty()
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-08-07 08:52:23 UTC (rev 429)
++++ trunk/Sources/PDoc.cpp	2006-08-07 08:58:08 UTC (rev 430)
+@@ -822,13 +822,15 @@
+ 
+ void PDoc::SetDirty(bool dirty)
+ {
+-	inherited::SetDirty(dirty);
+-	if (!dirty)
+-		// if the new state is non-dirty, we propagate this info to the 
+-		// undo-stack, such that the non-dirty state is updated accordingly:
+-		fText-&gt;ResetUndo();
+-	fButtonBar-&gt;SetEnabled(msg_Save, dirty);
+-	BString title = Title();
++	if (LockLooper()) {
++		inherited::SetDirty(dirty);
++		if (!dirty)
++			// if the new state is non-dirty, we propagate this info to the 
++			// undo-stack, such that the non-dirty state is updated accordingly:
++			fText-&gt;ResetUndo();
++		fButtonBar-&gt;SetEnabled(msg_Save, dirty);
++		UnlockLooper();
++	}
+ } /* PDoc::SetDirty */
+ 
+ void PDoc::CreateFilePanel()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000020.html">[pe-commits] r429 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000022.html">[pe-commits] r431 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

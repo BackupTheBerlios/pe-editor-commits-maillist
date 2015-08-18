@@ -1,0 +1,29 @@
+From axeld at mail.berlios.de  Wed Jun 20 15:15:50 2007
+From: axeld at mail.berlios.de (axeld at BerliOS)
+Date: Wed, 20 Jun 2007 15:15:50 +0200
+Subject: [pe-commits] r478 - trunk/artwork
+Message-ID: <200706201315.l5KDFoXS020018@sheep.berlios.de>
+
+Author: axeld
+Date: 2007-06-20 15:15:49 +0200 (Wed, 20 Jun 2007)
+New Revision: 478
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=478&view=rev
+
+Added:
+   trunk/artwork/pe_icon.hvif
+Log:
+Added Haiku vector icon format version of the Pe icon as well.
+
+
+Added: trunk/artwork/pe_icon.hvif
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/artwork/pe_icon.hvif
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+
+

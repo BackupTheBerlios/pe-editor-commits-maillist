@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r483 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r483%20-%20trunk/Sources&In-Reply-To=%3C200712091154.lB9BsCsb000771%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000078.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r483 - trunk/Sources</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r483%20-%20trunk/Sources&In-Reply-To=%3C200712091154.lB9BsCsb000771%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r483 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec  9 12:54:12 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000078.html">[pe-commits] r484 - trunk/Resources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2007-12-09 12:54:11 +0100 (Sun, 09 Dec 2007)
+New Revision: 483
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=483&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=483&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/Utils.cpp
+Log:
+* use a more robust method to send messages to Tracker (I have a really weird
+  setup where the old method fails (using OpenTracker on ZETA, but without
+  replacing the original ZETA libtracker.so...)) -&gt; this fixes the &quot;deadlock&quot;
+  (more likely an uncaught exception) when I use the PStatus view to open the
+  parent folder of a source file
+
+
+Modified: trunk/Sources/Utils.cpp
+===================================================================
+--- trunk/Sources/Utils.cpp	2007-11-12 00:06:07 UTC (rev 482)
++++ trunk/Sources/Utils.cpp	2007-12-09 11:54:11 UTC (rev 483)
+@@ -140,17 +140,19 @@
+ 	BMessage msg(B_REFS_RECEIVED);
+ 	msg.AddRef(&quot;refs&quot;, &amp;ref);
+ 
+-	entry_ref app;
+-	if (be_roster-&gt;FindApp(&quot;application/x-vnd.Be-TRAK&quot;, &amp;app))
+-		THROW((0));
+-
+-	if (be_roster-&gt;IsRunning(&amp;app))
++	const char* trackerSignature = &quot;application/x-vnd.Be-TRAK&quot;;
++	team_id trackerTeam = be_roster-&gt;TeamFor(trackerSignature);
++	if (trackerTeam &lt; 0)
+ 	{
+-		BMessenger msr(NULL, be_roster-&gt;TeamFor(&amp;app));
+-		msr.SendMessage(&amp;msg);
++		// tracker is not running and we pass the message trough launching it
++		if (be_roster-&gt;Launch(trackerSignature, &amp;msg) &lt; B_OK)
++			THROW((&quot;Tracker not running???&quot;));
+ 	}
+-	else if (be_roster-&gt;Launch(&amp;app, &amp;msg))
+-		THROW((&quot;Tracker not running???&quot;));
++	else
++	{
++		BMessenger messenger(NULL, trackerTeam);
++		messenger.SendMessage(&amp;msg);
++	}
+ } /* OpenInTracker */
+ 
+ void SendToIDE(const BMessage&amp; msg, BMessage *reply)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000078.html">[pe-commits] r484 - trunk/Resources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

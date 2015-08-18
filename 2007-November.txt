@@ -1,0 +1,391 @@
+From zooey at mail.berlios.de  Wed Nov  7 17:50:47 2007
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 7 Nov 2007 17:50:47 +0100
+Subject: [pe-commits] r479 - in trunk: Resources Sources
+Message-ID: <200711071650.lA7GolD9006290@sheep.berlios.de>
+
+Author: zooey
+Date: 2007-11-07 17:50:46 +0100 (Wed, 07 Nov 2007)
+New Revision: 479
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=479&view=rev
+
+Modified:
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/PAbout.cpp
+Log:
+* preparations for a bugfix release - 2.4.1
+
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2007-06-20 13:15:49 UTC (rev 478)
++++ trunk/Sources/PAbout.cpp	2007-11-07 16:50:46 UTC (rev 479)
+@@ -46,9 +46,9 @@
+ const char
+ 	kAboutText[] =
+ #if __INTEL__
+-		"Pe 2.4 (x86) Open Source Version\n\n"
++		"Pe 2.4.1 (x86) Open Source Version\n\n"
+ #else
+-		"Pe 2.4 (PPC) Open Source Version\n\n"
++		"Pe 2.4.1 (PPC) Open Source Version\n\n"
+ #endif
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+@@ -74,6 +74,7 @@
+ 		"Christian Packmann\n"
+ 		"Guy Haviv\n"
+ 		"Ingo Weinhold\n"
++		"Ithamar R. Adema\n"
+ 		"Keith McAfee\n"
+ 		"Oliver Tappe\n"
+ 		"Oscar Lesta\n"
+
+
+
+From zooey at mail.berlios.de  Sun Nov 11 19:37:25 2007
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 11 Nov 2007 19:37:25 +0100
+Subject: [pe-commits] r480 - trunk/Sources
+Message-ID: <200711111837.lABIbPNa028287@sheep.berlios.de>
+
+Author: zooey
+Date: 2007-11-11 19:37:25 +0100 (Sun, 11 Nov 2007)
+New Revision: 480
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=480&view=rev
+
+Modified:
+   trunk/Sources/CFindDialog.cpp
+   trunk/Sources/CRegex.cpp
+   trunk/Sources/PCmd.cpp
+Log:
+* fixed broken handling of \<num> references to regex submatches
+  during replace operations
+* added support for $<num> submatch references (so you can use $1, $2, ...
+  instead of \1, \2, ...)
+* as regex matching does not behave very well in combination with backwards
+  searching (unexpected non-greediness of .+ constructs), only one of these two 
+  can be active now
+
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/CFindDialog.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -58,7 +58,9 @@
+ 	msg_YASD			= 'SYAD',
+ 	msg_ChangedMFKind	= 'MFKn',
+ 	msg_FindPopup		= 'FnPp',
+-	msg_Collapse		= 'clps';
++	msg_Collapse		= 'clps',
++	msg_FlagBackward	= 'FnBk',
++	msg_FlagRegex		= 'FnRx';
+ 
+ enum {
+ 	METHOD_IDX_DIR	= 0,
+@@ -316,9 +318,11 @@
+ 	// Add Settings
+ 	fChkCase = new HCheckBox(fMainView, "case", NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWrap = new HCheckBox(fMainView, "wrap", NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkBack = new HCheckBox(fMainView, "back", NULL, H_FOLLOW_LEFT_BOTTOM);
++	fChkBack = new HCheckBox(fMainView, "back", new BMessage(msg_FlagBackward), 
++		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWord = new HCheckBox(fMainView, "word", NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkGrep = new HCheckBox(fMainView, "regx", NULL, H_FOLLOW_LEFT_BOTTOM);
++	fChkGrep = new HCheckBox(fMainView, "regx", new BMessage(msg_FlagRegex), 
++		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkBtch = new HCheckBox(fMainView, "btch", NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkCase->SetOn(gPrefs->GetPrefInt(prf_I_SearchIgnoreCase, 1));
+ 	fChkWrap->SetOn(gPrefs->GetPrefInt(prf_I_SearchWrap, 1));
+@@ -789,6 +793,20 @@
+ 				UpdateSearchDirMenu();
+ 				break;
+ 
++			case msg_FlagBackward:
++			{
++				fChkGrep->SetOn(false);
++				UpdateFields();
++				break;
++			}
++
++			case msg_FlagRegex:
++			{
++				fChkBack->SetOn(false);
++				UpdateFields();
++				break;
++			}
++
+ 			default:
+ 				HDialog::MessageReceived(msg);
+ 				break;
+
+Modified: trunk/Sources/CRegex.cpp
+===================================================================
+--- trunk/Sources/CRegex.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/CRegex.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -118,19 +118,22 @@
+ 	for(int i=0; i<rl; ++i)
+ 	{
+ 		c = repl[i];
+-		if (c == '\\')
++		if (c == '\\' || c == '$')
+ 		{
+ 			c = repl[++i];
+ 			if (c >= '1' && c <= '9')
+ 				replStr << MatchStr(subject, c-'0');
+-			else if (c == 'n')
+-				replStr << '\n';
+-			else if (c == 'r')
+-				replStr << '\r';
+-			else if (c == 't')
+-				replStr << '\t';
+-			else if (c == '\\')
+-				replStr << '\\';
++			else if (c == '\\') 
++			{	// de-escape newline, carriage-return, tab and backslash:
++				if (c == 'n')
++					replStr << '\n';
++				else if (c == 'r')
++					replStr << '\r';
++				else if (c == 't')
++					replStr << '\t';
++				else if (c == '\\')
++					replStr << '\\';
++			}
+ 		}
+ 		else
+ 			replStr << c;
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/PCmd.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -537,7 +537,7 @@
+ 	
+ 	if (fGrep)
+ 	{
+-		fWith = gFindDialog->RxReplaceString(fWhat, size);
++		fWith = gFindDialog->RxReplaceString(txt->Text(), txt->Size());
+ 		fExpr = strdup(gFindDialog->FindString());
+ 	}
+ 	else
+@@ -636,12 +636,14 @@
+ 	while (fText->FindNext(fFind, offset, fIgnoreCase,	false, false, 
+ 		fEntireWord, fGrep, false, &matchLen))
+ 	{
++		BString originalText(fText->Text(), fText->Size());
++
+ 		what.SetTo(fText->Text() + offset, matchLen);
+ 		fText->Delete(offset, offset + matchLen);
+ 		if (fGrep)
+ 		{
+ 			char* repStr 
+-				= gFindDialog->RxReplaceString(what.String(), what.Length());
++				= gFindDialog->RxReplaceString(originalText.String(), originalText.Length());
+ 			if (repStr)
+ 			{
+ 				rl = strlen(repStr);
+
+
+
+From zooey at mail.berlios.de  Sun Nov 11 20:17:57 2007
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 11 Nov 2007 20:17:57 +0100
+Subject: [pe-commits] r481 - trunk/Sources
+Message-ID: <200711111917.lABJHvop004107@sheep.berlios.de>
+
+Author: zooey
+Date: 2007-11-11 20:17:57 +0100 (Sun, 11 Nov 2007)
+New Revision: 481
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=481&view=rev
+
+Modified:
+   trunk/Sources/CDocWindow.cpp
+Log:
+* When asked to quit, Pe will now try hard to show any dirty windows asking the
+  user whether they should be saved. I am not so sure if unlocking the looper
+  of those windows in order to allow redraws is safe ...
+
+
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2007-11-11 18:37:25 UTC (rev 480)
++++ trunk/Sources/CDocWindow.cpp	2007-11-11 19:17:57 UTC (rev 481)
+@@ -148,9 +148,19 @@
+ 		char title[256];
+ 		sprintf(title, "Save changes to '%s' before closing?", inheritedDoc::Name());
+ 
++		if (IsMinimized())
++			Minimize(false);
++		Activate();
++
++		UnlockLooper();
++
+ 		MInfoAlert alert(title, "Save", "Cancel", "Don't save");
+ 
+-		switch (alert.Go())
++		int32 alertResult = alert.Go();
++
++		LockLooper();
++
++		switch (alertResult)
+ 		{
+ 			case 3:
+ 				break;
+
+
+
+From superstippi at gmx.de  Sun Nov 11 23:32:00 2007
+From: superstippi at gmx.de (Stephan Assmus)
+Date: Sun, 11 Nov 2007 23:32:00 +0100
+Subject: [pe-commits] r481 - trunk/Sources
+In-Reply-To: <200711111917.lABJHvop004107@sheep.berlios.de>
+References: <200711111917.lABJHvop004107@sheep.berlios.de>
+Message-ID: <20071111233200.477.1@stippis.WG>
+
+
+zooey at BerliOS wrote (2007-11-11, 20:17:57 [+0100]):
+> Author: zooey
+> Date: 2007-11-11 20:17:57 +0100 (Sun, 11 Nov 2007) New Revision: 481
+> ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=481&view=rev
+> 
+> Modified:
+>    trunk/Sources/CDocWindow.cpp
+> Log:
+> * When asked to quit, Pe will now try hard to show any dirty windows 
+> asking the
+>   user whether they should be saved. I am not so sure if unlocking the 
+>   looper of those windows in order to allow redraws is safe ...
+> 
+> 
+> 
+> Modified: trunk/Sources/CDocWindow.cpp
+> ===================================================================
+> --- trunk/Sources/CDocWindow.cpp    2007-11-11 18:37:25 UTC (rev 480)
+> +++ trunk/Sources/CDocWindow.cpp    2007-11-11 19:17:57 UTC (rev 481)
+> @@ -148,9 +148,19 @@
+>          char title[256];
+>          sprintf(title, "Save changes to '%s' before closing?", 
+>          inheritedDoc::Name());
+>  
+> +        if (IsMinimized())
+> +            Minimize(false);
+> +        Activate();
+> +
+> +        UnlockLooper();
+> +
+>          MInfoAlert alert(title, "Save", "Cancel", "Don't save");
+>  
+> -        switch (alert.Go())
+> +        int32 alertResult = alert.Go();
+> +
+> +        LockLooper();
+
+Have you tried UpdateIfNeeded()?
+
+Best regards,
+-Stephan
+
+
+
+From zooey at mail.berlios.de  Mon Nov 12 01:06:09 2007
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 12 Nov 2007 01:06:09 +0100
+Subject: [pe-commits] r482 - trunk/Sources
+Message-ID: <200711120006.lAC0698n010763@sheep.berlios.de>
+
+Author: zooey
+Date: 2007-11-12 01:06:07 +0100 (Mon, 12 Nov 2007)
+New Revision: 482
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=482&view=rev
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed problem with node monitor that caused pe to lose track of files 
+  changed by svn
+
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2007-11-11 19:17:57 UTC (rev 481)
++++ trunk/Sources/CDocIO.cpp	2007-11-12 00:06:07 UTC (rev 482)
+@@ -552,8 +552,6 @@
+ 	if (fEntryRef == NULL || fTarget == NULL)
+ 		return;
+ 
+-
+-
+ 	watch_node(&fNodeRef, B_STOP_WATCHING, fTarget);
+ 
+ 	// if we get late messages, we don't want to deal with them
+@@ -618,13 +616,35 @@
+ 
+ bool CLocalDocIO::MatchesNodeMonitorMsg(BMessage* msg)
+ {
+-	node_ref nref;
+-	if (fEntryRef == NULL
+-	|| msg->FindInt64("node", &nref.node) != B_OK
+-	|| msg->FindInt32("device", &nref.device) != B_OK)
+-		return false;
++	int32 opcode = msg->FindInt32("opcode");
+ 
+-	return nref == fNodeRef;
++	if (opcode == B_ENTRY_REMOVED)
++	{
++		// the message is for us if it refers to our node-ref:
++		node_ref nref;
++		if (msg->FindInt64("node", &nref.node) == B_OK
++			&& msg->FindInt32("device", &nref.device) == B_OK
++			&& nref == fNodeRef)
++			return true;
++	}
++	else if (opcode == B_ENTRY_CREATED || opcode == B_ENTRY_MOVED)
++	{
++		// the message is for us if it refers to our parent folder and carries
++		// our name:
++		node_ref pref;
++		BString name;
++		if (fEntryRef != NULL
++			&& (msg->FindInt64("directory", &pref.node) == B_OK
++				|| msg->FindInt64("to directory", &pref.node) == B_OK)
++			&& msg->FindInt32("device", &pref.device) == B_OK
++			&& msg->FindString("name", &name) == B_OK
++			&& pref.device == fEntryRef->device
++			&& pref.node == fEntryRef->directory
++			&& name == fEntryRef->name)
++			return true;
++	}
++		
++	return false;
+ }
+ 
+ bool CLocalDocIO::VerifyFile()
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2007-11-11 19:17:57 UTC (rev 481)
++++ trunk/Sources/PDoc.cpp	2007-11-12 00:06:07 UTC (rev 482)
+@@ -329,7 +329,11 @@
+ 
+ void PDoc::SetText(const BString& docText)
+ {
+-	fText->SetText(docText.String(), docText.Length());
++	if (LockLooper())
++	{
++		fText->SetText(docText.String(), docText.Length());
++		UnlockLooper();
++	}
+ }
+ 
+ void PDoc::ChangeSourceEncoding(int encoding)
+
+
+

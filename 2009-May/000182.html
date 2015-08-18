@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r581 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r581%20-%20trunk/Sources&In-Reply-To=%3C20090506004212.2649.1%40knochen-vm.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000181.html">
+   <LINK REL="Next"  HREF="000183.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r581 - trunk/Sources</H1>
+    <B>Ingo Weinhold</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r581%20-%20trunk/Sources&In-Reply-To=%3C20090506004212.2649.1%40knochen-vm.localdomain%3E"
+       TITLE="[pe-commits] r581 - trunk/Sources">ingo_weinhold at gmx.de
+       </A><BR>
+    <I>Wed May  6 00:42:12 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000181.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000183.html">[pe-commits] r582 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+On 2009-05-05 at 23:10:49 [+0200], bonefish at BerliOS 
+&lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">bonefish at mail.berlios.de</A>&gt; wrote:
+&gt;<i> Author: bonefish
+</I>&gt;<i> Date: 2009-05-05 23:10:46 +0200 (Tue, 05 May 2009)
+</I>&gt;<i> New Revision: 581
+</I>&gt;<i> ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=581&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=581&amp;view=rev</A>
+</I>&gt;<i> 
+</I>&gt;<i> Modified:
+</I>&gt;<i>    trunk/Sources/PText.cpp
+</I>&gt;<i>    trunk/Sources/PText.h
+</I>&gt;<i> Log:
+</I>&gt;<i> * Introduced InvalidateLines() methods.
+</I>&gt;<i> * Introduced LinesShifted() and PrepareForRedrawDirtyLines() hooks.
+</I>&gt;<i> * Also store the line of a brace highlight. When the text changes the offset
+</I>&gt;<i>   might no longer translate to the line where the highlight was drawn 
+</I>&gt;<i>   earlier.
+</I>&gt;<i>   In LinesShifted() we adjust the line, since ShiftLines() uses CopyBits() 
+</I>&gt;<i>   to
+</I>&gt;<i>   move lines graphically.
+</I>&gt;<i> * Since RedrawDirtyLines() draws synchronously we need to update the brace
+</I>&gt;<i>   highlights in PrepareForRedrawDirtyLines() if necessary.
+</I>&gt;<i> 
+</I>&gt;<i> This should (hopefully) solve all highlight related drawing artifacts.
+</I>
+Under Haiku (not under BeOS, though) I can reproduce problems when scrolling 
+is involved. E.g. in the following situation:
+
+8&lt; 8&lt; 8&lt; 8&lt; 8&lt;   view top    8&lt; 8&lt; 8&lt; 8&lt; 8&lt; 8&lt; 8&lt;
+
+[...]
+
+{
+}
+
+
+8&lt; 8&lt; 8&lt; 8&lt; 8&lt;  view bottom  8&lt; 8&lt; 8&lt; 8&lt; 8&lt; 8&lt; 8&lt;
+
+When the cursor is positioned after the &quot;{&quot; and Return is pressed, so that 
+(a) the highlights should disappear and (b) the text is scrolled one line to 
+keep the three lines context (the last two blank lines need to exists), the 
+two lines with the braces disappear.
+
+Since it works OK under BeOS I assume that's just a Haiku bug. Maybe even the 
+same one that causes artifacts e.g. when scrolling column list views. Maybe 
+someone is motivated to look into it. :-)
+
+CU, Ingo
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000181.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000183.html">[pe-commits] r582 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

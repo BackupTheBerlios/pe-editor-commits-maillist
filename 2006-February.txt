@@ -1,0 +1,101 @@
+From zooey at berlios.de  Wed Feb 22 20:42:57 2006
+From: zooey at berlios.de (zooey at BerliOS)
+Date: Wed, 22 Feb 2006 20:42:57 +0100
+Subject: [pe-commits]r428 - trunk/Sources
+Message-ID: <200602221942.k1MJgvj9020760@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-02-22 20:42:48 +0100 (Wed, 22 Feb 2006)
+New Revision: 428
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=428&view=rev
+
+Modified:
+   trunk/Sources/PCmd.cpp
+Log:
+- fixed bug that  caused data loss when invoking extensions that are shell scripts.
+  The piping code didn't pay attention to the fact that the pipe might get full,
+  such that several write attempts may be needed to pass the complete buffer to 
+  the consuming process.
+
+
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2006-01-15 12:35:44 UTC (rev 427)
++++ trunk/Sources/PCmd.cpp	2006-02-22 19:42:48 UTC (rev 428)
+@@ -422,6 +422,8 @@
+ 	}
+ } /* PDropCmd::Undo */
+ 
++#pragma mark --- ExtAction
++
+ ExtAction::ExtAction()
+ {
+ 	aText = NULL;
+@@ -438,6 +440,8 @@
+ {
+ } /* ExtAction::~ExtAction */
+ 
++#pragma mark --- PExtCmd
++
+ PExtCmd::PExtCmd(PText *txt, const char *ext)
+ 	: PCmd(ext, txt)
+ {
+@@ -511,6 +515,8 @@
+ } /* PExtCmd::Redo */
+ 
+ 
++#pragma mark --- PReplaceCmd
++
+ PReplaceCmd::PReplaceCmd(PText *txt, int offset, int size, bool findNext, bool backward)
+ 	: PCmd("Replace", txt)
+ {
+@@ -584,6 +590,8 @@
+ 	fText->Select(fOffset, fOffset + strlen(fWhat), true, false);
+ } /* PReplaceCmd::Undo */
+ 
++#pragma mark --- PReplaceAllCmd
++
+ PReplaceAllCmd::PReplaceAllCmd(PText *txt)
+ 	: PCmd("Replace All", txt)
+ {
+@@ -690,6 +698,8 @@
+ 	Undo();
+ } /* PReplaceAllCmd::Redo */
+ 
++#pragma mark --- PScriptCmd
++
+ const int
+ 	kBufferSize = 1024;
+ 
+@@ -886,15 +896,23 @@
+ long PScriptCmd::Piper(void *data)
+ {
+ 	PScriptCmd *cmd = static_cast<PScriptCmd*>(data);
++	long status = 0;
+ 	
+-	write(cmd->fFD, cmd->fOldText, cmd->fOldTextSize);
++	long written = 0;
++	do {
++		long ww = write(cmd->fFD, cmd->fOldText+written, cmd->fOldTextSize-written);
++		if (ww < 0) {
++			status = ww;
++			break;
++		}
++		written += ww;
++	} while(written < cmd->fOldTextSize);
+ 	close(cmd->fFD);
+ 
+-	return 0;
++	return status;
+ } /* PScriptCmd::Piper */
+ 
+-#pragma mark -
+-#pragma mark --- Shift Command ---
++#pragma mark --- Shift Command
+ 
+ PShiftCmd::PShiftCmd(const char *name, PText *txt)
+ 	: PCmd(name, txt)
+
+
+

@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r454 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r454%20-%20trunk/Sources&In-Reply-To=%3C200611191856.kAJIuZit023138%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000046.html">
+   <LINK REL="Next"  HREF="000048.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r454 - trunk/Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r454%20-%20trunk/Sources&In-Reply-To=%3C200611191856.kAJIuZit023138%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r454 - trunk/Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 19 19:56:35 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000046.html">[pe-commits] r453 - trunk/Languages/Sources
+</A></li>
+        <LI>Next message: <A HREF="000048.html">[pe-commits] r455 - in trunk: Languages/Resources Languages/Sources	Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-19 19:56:35 +0100 (Sun, 19 Nov 2006)
+New Revision: 454
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=454&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=454&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CKeywords.cpp
+Log:
+* Fixed a bug where the first keyword after an '-...'-line was skipped
+
+
+Modified: trunk/Sources/CKeywords.cpp
+===================================================================
+--- trunk/Sources/CKeywords.cpp	2006-11-19 02:22:01 UTC (rev 453)
++++ trunk/Sources/CKeywords.cpp	2006-11-19 18:56:35 UTC (rev 454)
+@@ -48,7 +48,7 @@
+  *     the amount of words contained in the map beforehand, the memory footprint
+  *     of the hashmap would be (much) worse than that of a map.
+  *     Benchmarks have indicated that lookup speed is good enough with maps
+- *		 anyway (it performs at least s well as the older DFA-approach), 
++ *		 anyway (it performs at least as well as the older DFA-approach), 
+  *		 so I have decided to use a map for now.
+  */
+ void GenerateKWMap(const char *file, const char *ext, map&lt;BString,int&gt;&amp; kwMap)
+@@ -106,7 +106,7 @@
+ 		BString word;
+ 		char* buf;
+ 		int currType = kKeywordLanguage;
+-		while(start &lt; end) {
++		while (start &lt; end) {
+ 			// ideally, we'd like to use this:
+ 			//			word.SetTo(start, end-start);
+ 			// but the implementation of SetTo() seems to do a strlen() without
+@@ -123,7 +123,7 @@
+ 				start += strspn(start, white);
+ 				end = start + strcspn(start, white);
+ 			} else {
+-				if(word[0] == '-') {
++				if (word[0] == '-') {
+ 					// it's a keyword-class specifier, we check which one:
+ 					if (!word.ICompare(&quot;-Pe-Keywords-Language-&quot;))
+ 						currType = kKeywordLanguage;
+@@ -140,9 +140,7 @@
+ 						// '-' entry bumps the type...
+ 						currType++;
+ 						// ...and skips to end of line:
+-						start += strcspn(start, &quot;\n&quot;);
+-						start += strspn(start, white);
+-						end = start + strcspn(start, white);
++						end = start + strcspn(start, &quot;\n&quot;);
+ 					}
+ 				} else {
+ 					kwMap[word] = currType;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000046.html">[pe-commits] r453 - trunk/Languages/Sources
+</A></li>
+	<LI>Next message: <A HREF="000048.html">[pe-commits] r455 - in trunk: Languages/Resources Languages/Sources	Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#47">[ date ]</a>
+              <a href="thread.html#47">[ thread ]</a>
+              <a href="subject.html#47">[ subject ]</a>
+              <a href="author.html#47">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1059 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r575 - in trunk: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r575%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200905050134.n451YPX5032504%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000171.html">
+   <LINK REL="Next"  HREF="000173.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r575 - in trunk: Resources Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r575%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200905050134.n451YPX5032504%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r575 - in trunk: Resources Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Tue May  5 03:34:25 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000171.html">[pe-commits] r574 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000173.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-05 03:34:24 +0200 (Tue, 05 May 2009)
+New Revision: 575
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=575&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=575&amp;view=rev</A>
+
+Modified:
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/HColorUtils.h
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PDoc.h
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+   trunk/Sources/PrefControls.h
+   trunk/Sources/Prefs.h
+Log:
+* Added PDoc::DispatchMessage(). It checks whether the anchor, caret, or the
+  text buffer change and call respective PText hooks. Not particularly
+  beautiful, but avoids touching all the spaghetti code in PText meddling with
+  them.
+* PText: Implemented highlighting of matching parentheses/brackets/braces near
+  the cursor.
+* Added a &quot;Highlight&quot; color setting to the Preferences dialog.
+* Automatic white space cleanup.
+
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Resources/Dialog-Preferences.r	2009-05-05 01:34:24 UTC (rev 575)
+@@ -65,9 +65,9 @@
+ 
+ 
+ resource 'DLOG' (132, &quot;Preferences&quot;) {
+-	{0, 0, 415, 266}, &quot;Preferences&quot;, B_TITLED_WINDOW, NORMAL,
++	{0, 0, 415, 276}, &quot;Preferences&quot;, B_TITLED_WINDOW, NORMAL,
+ 	{
+-		TabbedBook				{{   0,   0, 415, 266 }, &quot;tabB&quot; 															},
++		TabbedBook				{{   0,   0, 415, 276 }, &quot;tabB&quot; 															},
+ 			TabSheet			{ &quot;Colours&quot;, &quot;The colours used for syntax colouring and window layout&quot;						},
+ 				ColorControl	{{   0,   0, 145,  16 }, pnm_Col_C_Low,					&quot;Background&quot;						},
+ 				ColorControl	{{ 155,   0, 290,  16 }, pnm_Col_C_Text,				&quot;Normal Text&quot;						},
+@@ -75,43 +75,45 @@
+ 				ColorControl	{{   0,  16, 145,  32 }, pnm_Col_C_Selection,			&quot;Selection&quot;							},
+ 				ColorControl	{{ 155,  16, 290,  32 }, pnm_Col_C_Mark,				&quot;Mark&quot;								},
+ 
+-				Line			{{   0,  36, 290,  37 }																		},
++				ColorControl	{{   0,  32, 145,  48 }, pnm_Col_C_Highlight,			&quot;Highlight&quot;							},
+ 
+-				ColorControl	{{   0,  40, 110,  56 }, pnm_Col_C_Keyword1,			&quot;Keywords&quot;							},
+-				ColorControl	{{ 110,  40, 145,  56 }, pnm_Col_C_Keyword2,			&quot;&quot;									},
+-				ColorControl	{{ 155,  40, 255,  56 }, pnm_Col_C_Comment1,			&quot;Comments&quot;							},
+-				ColorControl	{{ 255,  40, 290,  56 }, pnm_Col_C_Comment2,			&quot;&quot;									},
++				Line			{{   0,  52, 290,  53 }																		},
+ 
+-				ColorControl	{{   0,  56, 110,  72 }, pnm_Col_C_String1,				&quot;Strings&quot;							},
+-				ColorControl	{{ 110,  56, 145,  72 }, pnm_Col_C_String2,				&quot;&quot;									},
+-				ColorControl	{{ 155,  56, 255,  72 }, pnm_Col_C_Number1,				&quot;Numbers&quot;							},
+-				ColorControl	{{ 255,  56, 290,  72 }, pnm_Col_C_Number2,				&quot;&quot;									},
++				ColorControl	{{   0,  56, 110,  72 }, pnm_Col_C_Keyword1,			&quot;Keywords&quot;							},
++				ColorControl	{{ 110,  56, 145,  72 }, pnm_Col_C_Keyword2,			&quot;&quot;									},
++				ColorControl	{{ 155,  56, 255,  72 }, pnm_Col_C_Comment1,			&quot;Comments&quot;							},
++				ColorControl	{{ 255,  56, 290,  72 }, pnm_Col_C_Comment2,			&quot;&quot;									},
+ 
+-				ColorControl	{{   0,  72, 110,  88 }, pnm_Col_C_Operator1,			&quot;Operators&quot;							},
+-				ColorControl	{{ 110,  72, 145,  88 }, pnm_Col_C_Operator2,			&quot;&quot;									},
+-				ColorControl	{{ 155,  72, 255,  88 }, pnm_Col_C_Separator1,			&quot;Separators&quot;						},
+-				ColorControl	{{ 255,  72, 290,  88 }, pnm_Col_C_Separator2,			&quot;&quot;									},
++				ColorControl	{{   0,  72, 110,  88 }, pnm_Col_C_String1,				&quot;Strings&quot;							},
++				ColorControl	{{ 110,  72, 145,  88 }, pnm_Col_C_String2,				&quot;&quot;									},
++				ColorControl	{{ 155,  72, 255,  88 }, pnm_Col_C_Number1,				&quot;Numbers&quot;							},
++				ColorControl	{{ 255,  72, 290,  88 }, pnm_Col_C_Number2,				&quot;&quot;									},
+ 
+-				ColorControl	{{   0,  88, 110, 104 }, pnm_Col_C_Preprocessor1,		&quot;PreProcessor&quot;						},
+-				ColorControl	{{ 110,  88, 145, 104 }, pnm_Col_C_Preprocessor2,		&quot;&quot;									},
+-				ColorControl	{{ 155,  88, 255, 104 }, pnm_Col_C_Error1,				&quot;Errors&quot;							},
+-				ColorControl	{{ 255,  88, 290, 104 }, pnm_Col_C_Error2,				&quot;&quot;									},
++				ColorControl	{{   0,  88, 110, 104 }, pnm_Col_C_Operator1,			&quot;Operators&quot;							},
++				ColorControl	{{ 110,  88, 145, 104 }, pnm_Col_C_Operator2,			&quot;&quot;									},
++				ColorControl	{{ 155,  88, 255, 104 }, pnm_Col_C_Separator1,			&quot;Separators&quot;						},
++				ColorControl	{{ 255,  88, 290, 104 }, pnm_Col_C_Separator2,			&quot;&quot;									},
+ 
+-				Line			{{   0, 108, 290, 109 }},
++				ColorControl	{{   0, 104, 110, 120 }, pnm_Col_C_Preprocessor1,		&quot;PreProcessor&quot;						},
++				ColorControl	{{ 110, 104, 145, 120 }, pnm_Col_C_Preprocessor2,		&quot;&quot;									},
++				ColorControl	{{ 155, 104, 255, 120 }, pnm_Col_C_Error1,				&quot;Errors&quot;							},
++				ColorControl	{{ 255, 104, 290, 120 }, pnm_Col_C_Error2,				&quot;&quot;									},
+ 
+-				ColorControl	{{   0, 112, 145, 128 }, pnm_Col_C_IdentifierSystem,	&quot;System Identifiers&quot;				},
+-				ColorControl	{{ 155, 112, 290, 128 }, pnm_Col_C_CharConst,			&quot;Char Constants&quot;					},
+-				ColorControl	{{   0, 128, 145, 144 }, pnm_Col_C_IdentifierUser,		&quot;User Identifiers&quot;					},
+-				ColorControl	{{ 155, 128, 255, 144 }, pnm_Col_C_Tag,					&quot;Tags/Attribut.&quot;					},
+-				ColorControl	{{ 255, 128, 290, 144 }, pnm_Col_C_Attribute,			&quot;&quot;									},
++				Line			{{   0, 124, 290, 115 }},
+ 
+-				Line			{{   0, 148, 290, 149 }																		},
++				ColorControl	{{   0, 128, 145, 144 }, pnm_Col_C_IdentifierSystem,	&quot;System Identifiers&quot;				},
++				ColorControl	{{ 155, 128, 290, 144 }, pnm_Col_C_CharConst,			&quot;Char Constants&quot;					},
++				ColorControl	{{   0, 144, 145, 160 }, pnm_Col_C_IdentifierUser,		&quot;User Identifiers&quot;					},
++				ColorControl	{{ 155, 144, 255, 160 }, pnm_Col_C_Tag,					&quot;Tags/Attribut.&quot;					},
++				ColorControl	{{ 255, 144, 290, 160 }, pnm_Col_C_Attribute,			&quot;&quot;									},
+ 
+-				ColorControl	{{   0, 152, 145, 168 }, pnm_Col_C_UserSet1,			&quot;User defined 1&quot;					},
+-				ColorControl	{{ 155, 152, 290, 168 }, pnm_Col_C_UserSet2,			&quot;User defined 2&quot;					},
+-				ColorControl	{{   0, 168, 145, 184 }, pnm_Col_C_UserSet3,			&quot;User defined 3&quot;					},
+-				ColorControl	{{ 155, 168, 290, 184 }, pnm_Col_C_UserSet4,			&quot;User defined 4&quot;					},
++				Line			{{   0, 164, 290, 165 }																		},
+ 
++				ColorControl	{{   0, 168, 145, 184 }, pnm_Col_C_UserSet1,			&quot;User defined 1&quot;					},
++				ColorControl	{{ 155, 168, 290, 184 }, pnm_Col_C_UserSet2,			&quot;User defined 2&quot;					},
++				ColorControl	{{   0, 184, 145, 200 }, pnm_Col_C_UserSet3,			&quot;User defined 3&quot;					},
++				ColorControl	{{ 155, 184, 290, 200 }, pnm_Col_C_UserSet4,			&quot;User defined 4&quot;					},
++
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Connections&quot;, &quot;Options that control the connections to other programs&quot;					},
+@@ -141,7 +143,7 @@
+ 				CheckBox		{{   0,  80, 140,  96 }, pnm_Edi_X_SmartWorkspaces,		&quot;Smart Workspaces&quot;					},
+ 				CheckBox		{{ 150,  80, 290,  96 }, pnm_Edi_X_AlternateHome,		&quot;Alternate Home&quot;					},
+ 
+-				Edit			{{   0, 100, 290, 117 }, pnm_Edi_T_ContextLines,		
++				Edit			{{   0, 100, 290, 117 }, pnm_Edi_T_ContextLines,
+ 									&quot;Context Lines at Top/Bottom Edge:&quot;,	&quot;&quot;, &quot;0123456789&quot;, 2, 240
+ 								},
+ 
+@@ -309,8 +311,8 @@
+ 
+ 			TabSheetEnd			{																							},
+ 
+-			Button				{{ 335, 235, 390, 255 }, &quot;ok  &quot;,		&quot;Apply&quot;,			'ok  '							},
+-			Button				{{ 265, 235, 320, 255 }, &quot;cncl&quot;,		&quot;Revert&quot;,			'cncl'							},
++			Button				{{ 335, 245, 390, 265 }, &quot;ok  &quot;,		&quot;Apply&quot;,			'ok  '							},
++			Button				{{ 265, 245, 320, 265 }, &quot;cncl&quot;,		&quot;Revert&quot;,			'cncl'							},
+ 		TabbedBookEnd			{}
+ 	}
+ };
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/CPrefsDialog.cpp	2009-05-05 01:34:24 UTC (rev 575)
+@@ -272,6 +272,7 @@
+ 	CntrlGetColor(pnm_Col_C_Text,				kColorText,				prf_C_Text);
+ 	CntrlGetColor(pnm_Col_C_Selection,			kColorSelection,		prf_C_Selection);
+ 	CntrlGetColor(pnm_Col_C_Mark,				kColorMark,				prf_C_Mark);
++	CntrlGetColor(pnm_Col_C_Highlight,			kColorHighlight,		prf_C_Highlight);
+ 	CntrlGetColor(pnm_Col_C_Keyword1,			kColorKeyword1,			prf_C_Keyword1);
+ 	CntrlGetColor(pnm_Col_C_Keyword2,			kColorKeyword2,			prf_C_Keyword2);
+ 	CntrlGetColor(pnm_Col_C_Comment1,			kColorComment1,			prf_C_Comment1);
+@@ -492,6 +493,7 @@
+ 	CntrlSetColor(pnm_Col_C_Text,				kColorText);
+ 	CntrlSetColor(pnm_Col_C_Selection,			kColorSelection);
+ 	CntrlSetColor(pnm_Col_C_Mark,				kColorMark);
++	CntrlSetColor(pnm_Col_C_Highlight,			kColorHighlight);
+ 	CntrlSetColor(pnm_Col_C_Keyword1,			kColorKeyword1);
+ 	CntrlSetColor(pnm_Col_C_Keyword2,			kColorKeyword2);
+ 	CntrlSetColor(pnm_Col_C_Comment1,			kColorComment1);
+
+Modified: trunk/Sources/HColorUtils.h
+===================================================================
+--- trunk/Sources/HColorUtils.h	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/HColorUtils.h	2009-05-05 01:34:24 UTC (rev 575)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 10/10/97 15:00:41
+ */
+@@ -39,7 +39,7 @@
+ #include &quot;HLibHekkel.h&quot;
+ 
+ struct IMPEXP_LIBHEKKEL roSColor
+-{ 
++{
+     float  m_Red;
+     float  m_Green;
+     float  m_Blue;
+@@ -52,6 +52,7 @@
+ 	kColorSelection,
+ 	kColorInvisibles,
+ 	kColorMark,
++	kColorHighlight,
+ 	// Constants below are used for syntax coloring
+ 	kColorText,				// simple Text
+ 	kColorKeyword1,			// like c's    : if
+@@ -91,15 +92,15 @@
+ 
+ IMPEXP_LIBHEKKEL void rgb2ro(rgb_color rgb, roSColor&amp; ro);
+ IMPEXP_LIBHEKKEL rgb_color ro2rgb(roSColor&amp; ro);
+-IMPEXP_LIBHEKKEL 
++IMPEXP_LIBHEKKEL
+ void rgb2hsv(float r, float g, float b, float&amp; h, float&amp; s, float&amp; v);
+-IMPEXP_LIBHEKKEL 
++IMPEXP_LIBHEKKEL
+ void hsv2rgb(float h, float s, float v, float&amp; r, float&amp; g, float&amp; b);
+-IMPEXP_LIBHEKKEL 
++IMPEXP_LIBHEKKEL
+ void rgb2f(rgb_color rgb, float&amp; r, float&amp; g, float&amp; b, float&amp; a);
+ IMPEXP_LIBHEKKEL rgb_color f2rgb(float r, float g, float b, float a = 0.0);
+ 
+-IMPEXP_LIBHEKKEL 
++IMPEXP_LIBHEKKEL
+ rgb_color DistinctColor(rgb_color highColor, rgb_color lowColor);
+ IMPEXP_LIBHEKKEL void DefineInvColors(rgb_color selectionColor);
+ IMPEXP_LIBHEKKEL rgb_color LookupDistinctColor(rgb_color highColor);
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PApp.cpp	2009-05-05 01:34:24 UTC (rev 575)
+@@ -196,6 +196,7 @@
+ 		SetColor(kColorText,			prf_C_Text,				0x00, 0x00, 0x00);
+ 		SetColor(kColorSelection,		prf_C_Selection,		0xff, 0xec, 0x7c);
+ 		SetColor(kColorMark,			prf_C_Mark,				0x00, 0x00, 0xFF);
++		SetColor(kColorHighlight,		prf_C_Highlight,		0xe0, 0xe0, 0xff);
+ 		SetColor(kColorKeyword1,		prf_C_Keyword1,			0x39, 0x74, 0x79);
+ 		SetColor(kColorKeyword2,		prf_C_Keyword2,			0x39, 0x74, 0x79);
+ 		SetColor(kColorComment1,		prf_C_Comment1,			0xA1, 0x64, 0x0E);
+@@ -644,7 +645,7 @@
+ 			FailOSErr (inMessage-&gt;FindRef(&quot;refs&quot;, i, &amp;doc));
+ 			PDoc *d = dynamic_cast&lt;PDoc*&gt;(OpenWindow(doc));
+ 			if (!d) continue;
+-			
++
+ 			if (inMessage-&gt;HasData(kTokenIdentifier, kTokenIDType))
+ 			{
+ 				TokenIdentifier *ident;
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PDoc.cpp	2009-05-05 01:34:24 UTC (rev 575)
+@@ -873,10 +873,10 @@
+ 	{
+ 		BView *background = savePanel-&gt;ChildAt(0);
+ 		FailNilMsg(background, &quot;Error building FilePanel&quot;);
+-		
++
+ 		BButton *cancel = dynamic_cast&lt;BButton*&gt;(background-&gt;FindView(&quot;cancel button&quot;));
+ 		FailNilMsg(cancel, &quot;Error building FilePanel&quot;);
+-		
++
+ 		BView *textview = background-&gt;FindView(&quot;text view&quot;);
+ 		FailNilMsg(textview, &quot;Error building FilePanel&quot;);
+ 
+@@ -1227,6 +1227,26 @@
+ 
+ #pragma mark - Commands
+ 
++void PDoc::DispatchMessage(BMessage* message, BHandler* handler)
++{
++	// This is a work-around for the problem that anchor, caret, and the text
++	// itself are modified all over the place. Since all actions manipulating
++	// either of them should be caused by an incoming message, we check here
++	// whether they changed while the message was processed and call respective
++	// hooks on the PText.
++	int anchor = fText-&gt;Anchor();
++	int caret = fText-&gt;Caret();
++	int changeCounter = fText-&gt;TextBuffer().ChangeCounter();
++
++	inherited::DispatchMessage(message, handler);
++
++	if (fText-&gt;Anchor() != anchor || fText-&gt;Caret() != caret)
++		fText-&gt;SelectionChanged(anchor, caret);
++
++	if (fText-&gt;TextBuffer().ChangeCounter() != changeCounter)
++		fText-&gt;TextBufferChanged();
++}
++
+ void PDoc::MessageReceived(BMessage *msg)
+ {
+ 	PApp *pa = (PApp *)be_app;
+
+Modified: trunk/Sources/PDoc.h
+===================================================================
+--- trunk/Sources/PDoc.h	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PDoc.h	2009-05-05 01:34:24 UTC (rev 575)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 10/25/97 08:57:11 by Maarten Hekkelman
+ */
+@@ -56,7 +56,7 @@
+ using std::vector;
+ 
+ template &lt;class T&gt;
+-class PDialog 
++class PDialog
+ {
+   public:
+   	bool operator() (HDialog*&amp; d)
+@@ -70,9 +70,10 @@
+ 			PDoc(const entry_ref *ref = NULL, bool show = true);
+ 			PDoc(URLData&amp; url);
+ virtual		~PDoc();
+-		
++
+ virtual		const char* DocWindowType();
+ 
++virtual		void DispatchMessage(BMessage* message, BHandler* handler);
+ virtual		void MessageReceived(BMessage *msg);
+ virtual		bool QuitRequested();
+ 
+@@ -84,11 +85,11 @@
+ 			PStatus* Status() const;
+ 			HButtonBar* ButtonBar() const;
+ 			PToolBar* ToolBar() const;
+-	
++
+ 			void MakeWorksheet();
+ 			bool IsWorksheet();
+ static		PDoc* GetWorksheet();
+-			
++
+ 			bool IsSourceFile();
+ 			bool IsHeaderFile();
+ 			void OpenPartner();
+@@ -112,7 +113,7 @@
+ 			template &lt;class T&gt;
+ 			void GetDialog(T*&amp; dlog)
+ 			{
+-				vector&lt;HDialog*&gt;::iterator i = 
++				vector&lt;HDialog*&gt;::iterator i =
+ 					find_if(fDialogs.begin(), fDialogs.end(), PDialog&lt;T&gt;());
+ 				if (i != fDialogs.end())
+ 				{
+@@ -148,7 +149,7 @@
+ 			void InitWindow(const char *name);
+ 
+ virtual		void MenusBeginning();
+-			
++
+ 			void OpenSelection();
+ public:
+ 			void OpenInclude(const char *incl);
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PText.cpp	2009-05-05 01:34:24 UTC (rev 575)
+@@ -240,6 +240,10 @@
+ 	fMainPopUp-&gt;SetFont(be_plain_font);
+ 	fMainPopUp-&gt;SetRadioMode(false);
+ 
++	fHighlightCursor = -1;
++	fHighlightChangeCounter = -1;
++	fHighlightPart = -1;
++
+ 	ReInit();
+ } /* PText::PText */
+ 
+@@ -1510,6 +1514,7 @@
+ 	if (kSplitMinimum &gt; fSplitAt ||
+ 		b.Height() - kSplitMinimum &lt; fSplitAt + kSplitterHeight)
+ 	{
++		int previousActivePart = fActivePart;
+ 		fActivePart = 2;
+ 		fVScrollBar2-&gt;SetValue(v);
+ 
+@@ -1527,15 +1532,22 @@
+ 
+ 		TouchLines(floor(v / fLineHeight));
+ 		RedrawDirtyLines();
++
++		if (fActivePart != previousActivePart)
++			ActivePartChanged(previousActivePart);
+ 	}
+ } /* PText::DoneMovingSplitter */
+ 
+ void PText::SwitchPart(int newPart)
+ {
++	int previousActivePart = fActivePart;
+ 	HideCaret();
+ 
+ 	fActivePart = newPart;
+ 	HiliteSelection();
++
++	if (fActivePart != previousActivePart)
++		ActivePartChanged(previousActivePart);
+ } /* PText::SwitchPart */
+ 
+ void PText::SplitWindow()
+@@ -4845,6 +4857,37 @@
+ 		}
+ 	}
+ 
++	// draw the background for highlighted text
++	bool highlightsDrawn = false;
++	for (HighlightList::iterator it = fHighlights.begin();
++			it != fHighlights.end(); ++it)
++	{
++		HighlightInfo* highlight = *it;
++		if (highlight-&gt;fromOffset &lt; e &amp;&amp; highlight-&gt;toOffset &gt;= s)
++		{
++			BRect r(E);
++
++			if (highlight-&gt;fromOffset &gt; s)
++				r.left = Offset2Position(highlight-&gt;fromOffset).x - hv;
++			else
++				r.left = hv ? 0 : 3;
++
++			if (highlight-&gt;toOffset &lt; e
++				|| (lineNr == LineCount() - 1
++					&amp;&amp; highlight-&gt;toOffset == fText.Size()))
++			{
++				r.right = Offset2Position(highlight-&gt;toOffset).x - hv;
++			}
++
++			vw-&gt;SetLowColor(gColor[kColorHighlight]);
++			vw-&gt;FillRect(r, B_SOLID_LOW);
++			highlightsDrawn = true;
++		}
++	}
++
++	if (highlightsDrawn)
++		vw-&gt;SetLowColor(gColor[kColorLow]);
++
+ 	int a, c;
+ 	a = min(fAnchor, fCaret);
+ 	c = max(fAnchor, fCaret);
+@@ -5426,6 +5469,50 @@
+ 		Draw(b);
+ } /* PText::ShiftLinesPart2 */
+ 
++void PText::InvalidateRange(int fromOffset, int toOffset, int part)
++{
++	if (fromOffset &gt;= toOffset)
++		return;
++
++	// get bounds and vertical scroll offset of the part in question
++	float vScrollOffset = 0;
++	BRect bounds;
++
++	if (part == 1)
++	{
++		if (fSplitAt &lt;= 0)
++			return;
++
++		bounds = fBounds;
++		bounds.bottom = fSplitAt - kSplitterHeight;
++		vScrollOffset = fVScrollBar1-&gt;Value();
++	}
++	else if (part == 2)
++	{
++		bounds = fBounds;
++		bounds.top = fSplitAt;
++		vScrollOffset = fVScrollBar2-&gt;Value();
++	}
++	else
++		return;
++
++	if (!bounds.IsValid())
++		return;
++
++	// We only invalidate complete lines.
++	int fromLine = Offset2Line(fromOffset);
++	int toLine = Offset2Line(toOffset - 1);
++
++	// compute the invalidation rect and invalidate it
++	float fromY = ceil(fLineHeight * fromLine - vScrollOffset);
++	float toY = fromY + ceil((toLine + 1 - fromLine) * fLineHeight);
++	float hScrollOffset = fHScrollBar-&gt;Value();
++	BRect rect(hScrollOffset, fromY + 1, hScrollOffset + fBounds.Width(),
++		toY);
++	Invalidate(rect &amp; bounds.OffsetByCopy(hScrollOffset, 0));
++}
++
++
+ // #pragma mark - Printing
+ 
+ struct PrintFunctionRef {
+@@ -6052,6 +6139,7 @@
+ 				if (fSplitAt &gt; 0)
+ 				{
+ 					HideCaret();
++					int previousActivePart = fActivePart;
+ 					fActivePart = (fActivePart == 1) ? 2 : 1;
+ 
+ 					int a, c;
+@@ -6062,6 +6150,9 @@
+ 					fOPCaret = c;
+ 					fOPAnchor = a;
+ 					std::swap(fMark, fOPMark);
++
++					if (fActivePart != previousActivePart)
++						ActivePartChanged(previousActivePart);
+ 				}
+ 				else
+ 					beep();
+@@ -6485,3 +6576,112 @@
+ 	ReInit();
+ 	Invalidate();
+ } /* PText::ChangedInfo */
++
++
++// #pragma mark - Highlighting
++
++void PText::SelectionChanged(int oldAnchor, int oldCaret)
++{
++	int newCursor = fAnchor == fCaret ? fAnchor : -1;
++	if (newCursor != fHighlightCursor)
++		UpdateBraceHighlights();
++}
++
++void PText::TextBufferChanged()
++{
++	if (fText.ChangeCounter() != fHighlightChangeCounter)
++		UpdateBraceHighlights();
++}
++
++void PText::ActivePartChanged(int oldActivePart)
++{
++	if (fActivePart != fHighlightPart)
++		UpdateBraceHighlights();
++}
++
++void PText::UpdateBraceHighlights()
++{
++	// invalidate the old highlights
++	if (fBraceHighlight1.fromOffset &gt;= 0) {
++		InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset,
++			fHighlightPart);
++		fBraceHighlight1.fromOffset = -1;
++		fHighlights.remove(&amp;fBraceHighlight1);
++	}
++
++	if (fBraceHighlight2.fromOffset &gt;= 0) {
++		InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset,
++			fHighlightPart);
++		fBraceHighlight2.fromOffset = -1;
++		fHighlights.remove(&amp;fBraceHighlight2);
++	}
++
++	fHighlightCursor = fAnchor == fCaret ? fAnchor : -1;
++	fHighlightChangeCounter = fText.ChangeCounter();
++	fHighlightPart = fActivePart;
++
++	if (!gBalance)
++		return;
++
++	// If we have a selection, there's nothing to highlight
++	if (fHighlightCursor &lt; 0)
++		return;
++
++	// Check whether the cursor touches a parenthesis/bracket/brace
++	char charBefore = fHighlightCursor &gt; 0
++		? fText[fHighlightCursor - 1] : 0;
++	char charAfter = fHighlightCursor &lt; fText.Size()
++		? fText[fHighlightCursor] : 0;
++	int offset = -1;
++	int direction = 1;
++	if (charBefore == ')' || charBefore == ']' || charBefore == '}'
++		|| charBefore == '&gt;')
++	{
++		// match opening counterpart
++		offset = fHighlightCursor - 1;
++		direction = -1;
++	}
++	else if (charAfter == '(' || charAfter == '[' || charAfter == '{'
++		|| charAfter == '&lt;')
++	{
++		// match closing counterpart
++		offset = fHighlightCursor;
++	}
++	else if (charBefore == '(' || charBefore == '[' || charBefore == '{'
++		|| charBefore == '&lt;')
++	{
++		// match closing counterpart
++		offset = fHighlightCursor - 1;
++	}
++	else if (charAfter == ')' || charAfter == ']' || charAfter == '}'
++		|| charAfter == '&gt;')
++	{
++		// match opening counterpart
++		offset = fHighlightCursor;
++		direction = -1;
++	}
++	else
++		return;
++
++	// find the other
++	int otherOffset = FindTheOther(offset + (direction &gt; 0 ? 1 : 0),
++		fText[offset]);
++	if (otherOffset &lt; 0)
++		return;
++
++	if (direction &lt; 0)
++		otherOffset--;
++
++	// update the highlights
++	fBraceHighlight1.fromOffset = offset;
++	fBraceHighlight1.toOffset = fBraceHighlight1.fromOffset + 1;
++	fHighlights.push_back(&amp;fBraceHighlight1);
++	InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset,
++		fHighlightPart);
++
++	fBraceHighlight2.fromOffset = otherOffset;
++	fBraceHighlight2.toOffset = fBraceHighlight2.fromOffset + 1;
++	fHighlights.push_back(&amp;fBraceHighlight2);
++	InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset,
++		fHighlightPart);
++}
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PText.h	2009-05-05 01:34:24 UTC (rev 575)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #ifndef PTEXT_H
+@@ -36,6 +36,8 @@
+ 
+ typedef float g_unit_t;
+ 
++#include &lt;list&gt;
++
+ #include &lt;Messenger.h&gt;
+ #include &lt;View.h&gt;
+ 
+@@ -62,7 +64,7 @@
+ 	unsigned char state		: 8;
+ 	unsigned char dirty		: 1;
+ 	unsigned char nl		: 1;
+-	
++
+ 	LineInfo() { start = state = dirty = nl = 0; };
+ 	LineInfo(int nStart, int nState, bool nNl = true)
+ 		: start(nStart), state(nState), dirty(1), nl(nNl) {};
+@@ -73,7 +75,7 @@
+ 	short classCnt;
+ 	unsigned char classMap[256];
+ 	short forwardCnt;
+-	unsigned char forwardTable[1]; 
++	unsigned char forwardTable[1];
+ };
+ 
+ typedef vector&lt;LineInfo&gt; VLineInfo;
+@@ -91,14 +93,14 @@
+ };
+ 
+ public:
+-			PText(BRect frame, PTextBuffer&amp; txt, BScrollBar *bars[], 
++			PText(BRect frame, PTextBuffer&amp; txt, BScrollBar *bars[],
+ 				  const char *ext);
+ 			~PText();
+ 
+ 			void ReInit();
+ 
+ 			void SetStatus(PStatus *status);
+-		
++
+ virtual		void AttachedToWindow();
+ 
+ virtual		void Draw(BRect updateRect);
+@@ -117,7 +119,7 @@
+ 			void Pulse();
+ 
+ 			void HandleDrop(BMessage *msg);
+-			
++
+ 			void ProcessCommand(unsigned long what, void *param);
+ 
+ 			void SetText(const char *utf8Text, size_t size);
+@@ -137,17 +139,17 @@
+ 			void FontChanged(bool reInit = true);
+ 
+ 			void ChangedInfo(BMessage *msg);
+-			
++
+ 			void GetSelectedText(char*&amp; s, bool extend = false);
+ 			void CopyBlock(char*&amp; s, int from, int to);
+ 
+ 			bool WaitMouseMoved(BPoint where);
+ 			void ShowContextualMenu(BPoint where);
+ 			void ShowFunctionMenu(BPoint where, int which);
+-			
++
+ 			void SetDirty(bool dirty);
+ 			bool IsDirty();
+-		
++
+ 			void AdjustScrollBars();
+ 			void ScrollBarChanged(BScrollBar *bar, g_unit_t newValue);
+ 			void ScrollToCaret(bool keepContext);
+@@ -156,7 +158,7 @@
+ 	virtual	void ScrollTo(BPoint p);
+ 
+ 			void ShowTabStops(bool show);
+-	
++
+ 			void DrawLine(int lineNr, g_unit_t y, bool buffer);
+ //			void DrawString(BView *v, const char *buf, int size, float hv, float&amp; x, float y);
+ 			void RedrawDirtyLines();
+@@ -166,7 +168,8 @@
+ 			void DrawCaret();
+ 			void HideCaret();
+ 			void ShowCaret();
+-			
++			void InvalidateRange(int fromOffset, int toOffset, int part);
++
+ 			status_t PageSetup();
+ 			status_t Print();
+ 
+@@ -184,7 +187,7 @@
+ 			void SmartBrace();
+ 			void ScanForFunctions(CFunctionScanHandler&amp; handler);
+ 			void HashLines(vector&lt;int&gt;&amp; hv, bool ignoreCase, bool ignoreWhite);
+-			
++
+ 			int Offset2Line(int offset);
+ 			BPoint Offset2Position(int offset, int part = -1);
+ 			int LinePosition2Offset(int line, g_unit_t position);
+@@ -198,55 +201,55 @@
+ 			int Offset2Column(int offset);
+ 			int Column2Offset(int lineNr, int column);
+ 			int RealLine2Line(int lineNr);
+-			
++
+ 			// block select mode:
+ 			bool IsFixedFont() const;
+ 			bool IsBlockSelect() const				{ return fBlockSelect; }
+ 			void SetBlockSelect(bool block)			{ fBlockSelect = block; }
+ 			void BlockOffsetsForLine(int lineNr, int&amp; startOffset, int&amp; endOffset);
+-			
++
+ 			void Selection2Region(BRegion&amp; rgn, int part = -1);
+ 			void ChangeSelection(int newAnchor, int newCaret, bool block = false);
+ 			void SelectLine(int lineNr);
+ 			void SelectParagraph();
+ 			void InvertRegion(BRegion&amp; rgn);
+-	
++
+ 			void CharKeyDown(const char *bytes, int numBytes);
+ 			void BackspaceKeyDown();
+ 			void DeleteKeyDown();
+ 			void GlossaryKey(int ch, int modifiers);
+ 			void GlossaryButton(const char *glossy);
+-			
++
+ 			g_unit_t TextWidth(int offset, int len) const;
+ 			g_unit_t StringWidth(const char *buf, int len) const;
+-			
++
+ 			void Insert(const char *text, int textLen, int offset);
+ 			void Delete(int from, int to);
+ 			void RestyleDirtyLines(int from);
+ 			void TextChanged(int from, int to);
+ 			void TypeString(const char *string);
+-			
++
+ 			void Cut(int append = 0);
+ 			void Copy(int append = 0);
+ 			void Paste();
+ 			void Clear();
+-			
++
+ 			void TouchLine(int lineNr);
+ 			void TouchLines(int from, int to = -1);
+-		
++
+ 			int Anchor();
+ 			int Caret();
+ 			void SetCaret(int newCaret);
+ 			void SetMark(int offset);
+ 			void Select(int anchor, int caret, bool update, bool block);
+ 			void CenterSelection();
+-			
++
+ 			void RegisterCommand(PCmd *cmd);
+ 			void Undo();
+ 			void Redo();
+ 			void ResetUndo();
+ 			void FlushUndo();
+-			
++
+ 			void Find(unsigned long msg, void *args);
+ 			bool CanReplace(const char *s, bool ignoreCase, bool regx);
+ 			bool FindNext(const char *what, int&amp; offset, bool ignoreCase,
+@@ -255,10 +258,10 @@
+ 			bool IsIncSearching() const;
+ 			void DoIncSearch(bool forward);
+ 			void IncSearchKey(const char *bytes, int numBytes);
+-			
++
+ 			void JumpToFunction(const char *func, int offset);
+ 			void FindNextError(bool backward);
+-			
++
+ 			void ExecuteSelection();
+ 			void KillCurrentJob();
+ 			void PrepareForOutput();
+@@ -266,7 +269,7 @@
+ 			const char *GetCWD() const;
+ 			void SendTextToJob(const char *txt);
+ 			void SetErrorWindow(PErrorWindow *window);
+-			
++
+ 			void SetSplitter(PSplitter *splitter);
+ 			void TrackSplitter(BPoint where);
+ 			void SplitterMoved(g_unit_t dy);
+@@ -274,7 +277,7 @@
+ 			void SplitWindow();
+ 			void UnsplitWindow();
+ 			void SwitchPart(int toPart);
+-		
++
+ 			const PTextBuffer&amp; TextBuffer() const;
+ 			const char* FindString() const;
+ 			const char* ReplaceString() const;
+@@ -288,6 +291,11 @@
+ 			int WrapWidth() const;
+ 			PDoc* Doc() const;
+ 
++			void SelectionChanged(int oldAnchor, int oldCaret);
++			void TextBufferChanged();
++			void ActivePartChanged(int oldActivePart);
++			void UpdateBraceHighlights();
++
+ private:
+ 			void VerticallyScrollToSelection(int startOffset,
+ 											 int endOffset,
+@@ -302,7 +310,7 @@
+ 			BRect PartBounds(int part);
+ 			bool OffsetIsOutsideOfContextArea(int32 offset);
+ 			void NavigateOverFunctions(char direction);
+-			
++
+ 			BBitmap *fLineMap;
+ 			BView	*fLineView;
+ 			BFont fFont;
+@@ -355,12 +363,30 @@
+ 			float fDefaultCharWidth;
+ 			BMessage *fPrintSettings;
+ 			BMessenger fErrorWindowMessenger;
+-		
++
+ static		PText *sfDragSource;
+ 
+ 			rgb_color fLowColor, fTextColor;
+ 			rgb_color fKeywordColor, fStringColor, fCommentColor;
+ 
++			struct HighlightInfo {
++				HighlightInfo()
++					: fromOffset(-1)
++				{
++				}
++
++				int	fromOffset;
++				int toOffset;
++			};
++			typedef std::list&lt;HighlightInfo*&gt; HighlightList;
++
++			int fHighlightCursor;
++			int fHighlightChangeCounter;
++			int fHighlightPart;
++			HighlightInfo fBraceHighlight1;
++			HighlightInfo fBraceHighlight2;
++			HighlightList fHighlights;
++
+ // saveable settings
+ 			int fTabStops;
+ 			char *fCWD;
+@@ -483,8 +509,8 @@
+ 
+ inline void PText::ProcessCommand(unsigned long what, void *param)
+ {
+-	BMessage msg(what); 
+-	msg.AddPointer(&quot;param&quot;, param); 
++	BMessage msg(what);
++	msg.AddPointer(&quot;param&quot;, param);
+ 	BMessenger(this).SendMessage(&amp;msg);
+ }
+ 
+
+Modified: trunk/Sources/PrefControls.h
+===================================================================
+--- trunk/Sources/PrefControls.h	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/PrefControls.h	2009-05-05 01:34:24 UTC (rev 575)
+@@ -16,6 +16,7 @@
+ #define pnm_Col_C_Text					&quot;txtc&quot;
+ #define pnm_Col_C_Selection				&quot;selc&quot;
+ #define pnm_Col_C_Mark					&quot;mrkc&quot;
++#define pnm_Col_C_Highlight				&quot;hilc&quot;
+ #define pnm_Col_C_Keyword1				&quot;keyc&quot;
+ #define pnm_Col_C_Keyword2				&quot;ke2c&quot;
+ #define pnm_Col_C_Comment1				&quot;cmtc&quot;
+
+Modified: trunk/Sources/Prefs.h
+===================================================================
+--- trunk/Sources/Prefs.h	2009-05-05 01:26:08 UTC (rev 574)
++++ trunk/Sources/Prefs.h	2009-05-05 01:34:24 UTC (rev 575)
+@@ -25,6 +25,7 @@
+ const char* const prf_C_Comment2				= &quot;alt comment color&quot;;
+ const char* const prf_C_Error1					= &quot;error color&quot;;
+ const char* const prf_C_Error2					= &quot;alt error color&quot;;
++const char* const prf_C_Highlight				= &quot;highlight color&quot;;
+ const char* const prf_C_IdentifierSystem		= &quot;system identifier color&quot;;
+ const char* const prf_C_IdentifierUser			= &quot;user identifier color&quot;;
+ const char* const prf_C_Invisibles				= &quot;invisibles color&quot;;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000171.html">[pe-commits] r574 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000173.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

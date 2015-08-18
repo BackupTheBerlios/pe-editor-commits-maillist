@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r549 - in trunk: Extensions Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r549%20-%20in%20trunk%3A%20Extensions%20Resources%20Sources&In-Reply-To=%3C200811081054.mA8AsFsq023114%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000138.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r549 - in trunk: Extensions Resources Sources</H1>
+    <B>stippi at mail.berlios.de</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r549%20-%20in%20trunk%3A%20Extensions%20Resources%20Sources&In-Reply-To=%3C200811081054.mA8AsFsq023114%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r549 - in trunk: Extensions Resources Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov  8 11:54:15 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000138.html">[pe-commits] r548 - trunk/build
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2008-11-08 11:54:11 +0100 (Sat, 08 Nov 2008)
+New Revision: 549
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=549&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=549&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/Jamfile
+   trunk/Resources/pe.types.rdef
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/Jamfile
+Log:
+* Bumped version number (RC1 -&gt; RC3)
+* Rebuild pe.types.rsrc from rdef
+* Changed name of executable from pe to Pe
+* Fixed the three extensions that link against it. Note, I had no clue how
+  to make use of this &quot;_APP_&quot; thing.
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Extensions/Jamfile	2008-11-08 10:54:11 UTC (rev 549)
+@@ -67,14 +67,14 @@
+ # &lt;pe-src&gt;
+ PeExtension HeaderHeader
+ 	: HeaderHeader.cpp 
+-	: libhekkel.so &lt;nogrist&gt;pe be tracker $(STDC++LIB)
++	: libhekkel.so &lt;nogrist&gt;Pe be tracker $(STDC++LIB)
+ 	;
+ # &lt;/pe-src&gt;
+ 
+ # &lt;pe-src&gt;
+ PeExtension ImageToC
+ 	: ImageToC.cpp 
+-	: libhekkel.so &lt;nogrist&gt;pe be translation
++	: libhekkel.so &lt;nogrist&gt;Pe be translation
+ 	;
+ # &lt;/pe-src&gt;
+ 
+@@ -130,6 +130,6 @@
+ # &lt;pe-src&gt;
+ PeExtension WebPaste 
+ 	: WebPaste.cpp 
+-	: libhekkel.so &lt;nogrist&gt;pe be $(STDC++LIB)
++	: libhekkel.so &lt;nogrist&gt;Pe be $(STDC++LIB)
+ 	;
+ # &lt;/pe-src&gt;
+
+Modified: trunk/Resources/pe.types.rdef
+===================================================================
+--- trunk/Resources/pe.types.rdef	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Resources/pe.types.rdef	2008-11-08 10:54:11 UTC (rev 549)
+@@ -9,8 +9,8 @@
+ 	variety = B_APPV_BETA,
+ 	internal = 0,
+ 
+-	short_info = &quot;Pe 2.4.1-rc1&quot;,
+-	long_info = &quot;Pe 2.4.1 Release Candidate 1&quot;
++	short_info = &quot;Pe 2.4.1-rc3&quot;,
++	long_info = &quot;Pe 2.4.1 Release Candidate 3&quot;
+ };
+ 
+ resource app_signature &quot;application/x-vnd.beunited.pe&quot;;
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/Jamfile
+===================================================================
+--- trunk/Sources/Jamfile	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Sources/Jamfile	2008-11-08 10:54:11 UTC (rev 549)
+@@ -45,7 +45,7 @@
+ LINKFLAGS += -L/boot/home/config/lib -L/boot/common/lib ;
+ 
+ #&lt;pe-src&gt;
+-Application pe : 
++Application Pe : 
+ 	Benaphore.cpp
+ 	CCharObject.cpp
+ 	CDiff.cpp
+@@ -118,7 +118,7 @@
+ 	ObjectC++Flags CGlossary.cpp : -Wno-format ;
+ }
+ 
+-XRes pe : 
++XRes Pe : 
+ 	Bindings.rsrc
+ 	Cursor.rsrc
+ 	Dialog-Colorpicker.rsrc
+@@ -140,6 +140,6 @@
+ 	WordBreakTable.rsrc
+ 	;
+ 
+-Rez pe : [ FDirName $(TOP) Resources Now.r ] ;
++Rez Pe : [ FDirName $(TOP) Resources Now.r ] ;
+ 
+-MimeSet pe ;
++MimeSet Pe ;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000138.html">[pe-commits] r548 - trunk/build
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

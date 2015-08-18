@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r445 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r445%20-%20trunk/Sources&In-Reply-To=%3C200609031314.k83DEOmJ031961%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r445 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r445%20-%20trunk/Sources&In-Reply-To=%3C200609031314.k83DEOmJ031961%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r445 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep  3 15:14:24 CEST 2006</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-09-03 15:14:17 +0200 (Sun, 03 Sep 2006)
+New Revision: 445
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=445&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=445&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CKeyCapturer.cpp
+Log:
+* fixed (size-related) layout problem of key-capture element in prefs dialog
+
+
+Modified: trunk/Sources/CKeyCapturer.cpp
+===================================================================
+--- trunk/Sources/CKeyCapturer.cpp	2006-08-08 13:56:42 UTC (rev 444)
++++ trunk/Sources/CKeyCapturer.cpp	2006-09-03 13:14:17 UTC (rev 445)
+@@ -66,7 +66,7 @@
+ } /* CKeyCapturer::Filter */
+ 
+ CKeyCapturer::CKeyCapturer(BRect frame, const char *name)
+-	: BView(frame, name, B_FOLLOW_ALL_SIDES, B_WILL_DRAW | B_NAVIGABLE)
++	: BView(frame, name, B_FOLLOW_LEFT|B_FOLLOW_TOP, B_WILL_DRAW | B_NAVIGABLE)
+ {
+ 	fFilter = new CCaptureFilter;
+ } /* CKeyCapturer::CKeyCapturer */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,147 @@
+From mmu_man at mail.berlios.de  Thu Nov  6 23:46:17 2008
+From: mmu_man at mail.berlios.de (mmu_man at BerliOS)
+Date: Thu, 6 Nov 2008 23:46:17 +0100
+Subject: [pe-commits] r548 - trunk/build
+Message-ID: <200811062246.mA6MkHK8006082@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2008-11-06 23:46:16 +0100 (Thu, 06 Nov 2008)
+New Revision: 548
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=548&view=rev
+
+Modified:
+   trunk/build/MainBuildRules
+Log:
+Make sure Pe has _APP_ as SONAME so extensions don't break when renaming the binary.
+At least on x86. Shouldn't we check on gcc vs mwcc anyway ??
+
+
+Modified: trunk/build/MainBuildRules
+===================================================================
+--- trunk/build/MainBuildRules	2008-10-16 23:11:45 UTC (rev 547)
++++ trunk/build/MainBuildRules	2008-11-06 22:46:16 UTC (rev 548)
+@@ -18,6 +18,13 @@
+ 
+ 	Main $(app) : $(sources) ;
+ 	MakeLocate $(app) : $(LOCATE_MAIN_TARGET) ;
++	local linkFlags ;
++	if $(OSPLAT) = X86 {
++		linkFlags = -Xlinker -soname=\"_APP_\" ;
++	} else {
++		linkFlags = ;
++	}
++	LINKFLAGS on $(app) = [ on $(app) return $(LINKFLAGS) ] $(linkFlags) ;
+ 	LinkAgainst $(app) : $(libs) ;
+ }
+ 
+
+
+
+From stippi at mail.berlios.de  Sat Nov  8 11:54:15 2008
+From: stippi at mail.berlios.de (stippi at mail.berlios.de)
+Date: Sat, 8 Nov 2008 11:54:15 +0100
+Subject: [pe-commits] r549 - in trunk: Extensions Resources Sources
+Message-ID: <200811081054.mA8AsFsq023114@sheep.berlios.de>
+
+Author: stippi
+Date: 2008-11-08 11:54:11 +0100 (Sat, 08 Nov 2008)
+New Revision: 549
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=549&view=rev
+
+Modified:
+   trunk/Extensions/Jamfile
+   trunk/Resources/pe.types.rdef
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/Jamfile
+Log:
+* Bumped version number (RC1 -> RC3)
+* Rebuild pe.types.rsrc from rdef
+* Changed name of executable from pe to Pe
+* Fixed the three extensions that link against it. Note, I had no clue how
+  to make use of this "_APP_" thing.
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Extensions/Jamfile	2008-11-08 10:54:11 UTC (rev 549)
+@@ -67,14 +67,14 @@
+ # <pe-src>
+ PeExtension HeaderHeader
+ 	: HeaderHeader.cpp 
+-	: libhekkel.so <nogrist>pe be tracker $(STDC++LIB)
++	: libhekkel.so <nogrist>Pe be tracker $(STDC++LIB)
+ 	;
+ # </pe-src>
+ 
+ # <pe-src>
+ PeExtension ImageToC
+ 	: ImageToC.cpp 
+-	: libhekkel.so <nogrist>pe be translation
++	: libhekkel.so <nogrist>Pe be translation
+ 	;
+ # </pe-src>
+ 
+@@ -130,6 +130,6 @@
+ # <pe-src>
+ PeExtension WebPaste 
+ 	: WebPaste.cpp 
+-	: libhekkel.so <nogrist>pe be $(STDC++LIB)
++	: libhekkel.so <nogrist>Pe be $(STDC++LIB)
+ 	;
+ # </pe-src>
+
+Modified: trunk/Resources/pe.types.rdef
+===================================================================
+--- trunk/Resources/pe.types.rdef	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Resources/pe.types.rdef	2008-11-08 10:54:11 UTC (rev 549)
+@@ -9,8 +9,8 @@
+ 	variety = B_APPV_BETA,
+ 	internal = 0,
+ 
+-	short_info = "Pe 2.4.1-rc1",
+-	long_info = "Pe 2.4.1 Release Candidate 1"
++	short_info = "Pe 2.4.1-rc3",
++	long_info = "Pe 2.4.1 Release Candidate 3"
+ };
+ 
+ resource app_signature "application/x-vnd.beunited.pe";
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/Jamfile
+===================================================================
+--- trunk/Sources/Jamfile	2008-11-06 22:46:16 UTC (rev 548)
++++ trunk/Sources/Jamfile	2008-11-08 10:54:11 UTC (rev 549)
+@@ -45,7 +45,7 @@
+ LINKFLAGS += -L/boot/home/config/lib -L/boot/common/lib ;
+ 
+ #<pe-src>
+-Application pe : 
++Application Pe : 
+ 	Benaphore.cpp
+ 	CCharObject.cpp
+ 	CDiff.cpp
+@@ -118,7 +118,7 @@
+ 	ObjectC++Flags CGlossary.cpp : -Wno-format ;
+ }
+ 
+-XRes pe : 
++XRes Pe : 
+ 	Bindings.rsrc
+ 	Cursor.rsrc
+ 	Dialog-Colorpicker.rsrc
+@@ -140,6 +140,6 @@
+ 	WordBreakTable.rsrc
+ 	;
+ 
+-Rez pe : [ FDirName $(TOP) Resources Now.r ] ;
++Rez Pe : [ FDirName $(TOP) Resources Now.r ] ;
+ 
+-MimeSet pe ;
++MimeSet Pe ;
+
+
+

@@ -1,0 +1,416 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r492 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r492%20-%20trunk/Extensions&In-Reply-To=%3C200802272145.m1RLjBUL018796%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000085.html">
+   <LINK REL="Next"  HREF="000087.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r492 - trunk/Extensions</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r492%20-%20trunk/Extensions&In-Reply-To=%3C200802272145.m1RLjBUL018796%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r492 - trunk/Extensions">zooey at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 27 22:45:11 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000085.html">[pe-commits] r491 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000087.html">[pe-commits] r493 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#86">[ date ]</a>
+              <a href="thread.html#86">[ thread ]</a>
+              <a href="subject.html#86">[ subject ]</a>
+              <a href="author.html#86">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-02-27 22:45:11 +0100 (Wed, 27 Feb 2008)
+New Revision: 492
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=492&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=492&amp;view=rev</A>
+
+Added:
+   trunk/Extensions/BeHappy.cpp
+   trunk/Extensions/ConvertTabs.cpp
+Log:
+* added BeHappy and ConvertTabs extensions from Francois Revol - thanks\!
+
+Added: trunk/Extensions/BeHappy.cpp
+===================================================================
+--- trunk/Extensions/BeHappy.cpp	2008-02-27 21:43:25 UTC (rev 491)
++++ trunk/Extensions/BeHappy.cpp	2008-02-27 21:45:11 UTC (rev 492)
+@@ -0,0 +1,152 @@
++//
++// BeHappy: looks up the selected text against BeBook inside BeHappy.
++//
++// Based from BeBookFetch by Oscar Lesta.
++//
++// new bugs by Fran&#231;ois Revol.
++//
++
++#include &quot;PeAddOn.h&quot;
++
++#define kBeHappySig		&quot;application/x-vnd.STertois.BeHappy&quot;
++
++static team_id gBeHappyTeam = -1;
++
++//------------------------------------------------------------------------------
++
++status_t
++TellBeHappy(const char *topic)
++{
++	status_t err;
++	int32 lastWindow = 0;
++	
++	BMessenger msgr(kBeHappySig, gBeHappyTeam);
++	// if we didn't start it yet or it's gone...
++	if (gBeHappyTeam &lt; 0 || !msgr.IsValid()) {
++		// start it
++		err = be_roster-&gt;Launch(kBeHappySig, (BMessage *)NULL, &amp;gBeHappyTeam);
++		if (err &lt; B_OK) {
++			MStopAlert(&quot;Can't launch BeHappy!&quot;).Go();
++			return err;
++		}
++		// leave it some time to start
++		snooze(100000);
++		msgr = BMessenger(kBeHappySig, gBeHappyTeam);
++	}
++	
++	// XXX: lastWindow = (hey count Window) -1
++	
++	// set which book to use
++	BMessage m1(B_SET_PROPERTY);
++	m1.AddSpecifier(&quot;Book&quot;);
++	m1.AddString(&quot;data&quot;, &quot;Be Book&quot;);
++	m1.AddSpecifier(&quot;Window&quot;, lastWindow);
++	err = msgr.SendMessage(&amp;m1);
++	if (err &lt; B_OK)
++		return err;
++
++	// some more time to load the book...
++	snooze(500000);
++
++	// send the search string
++	BMessage m2(B_SET_PROPERTY);
++	m2.AddSpecifier(&quot;Topic&quot;);
++	m2.AddString(&quot;data&quot;, topic);
++	m2.AddSpecifier(&quot;Window&quot;, lastWindow);
++	BMessage reply;
++	err = msgr.SendMessage(&amp;m2, &amp;reply, 0);
++	if (err &lt; B_OK)
++		return err;
++
++	// see if the text was found
++	if (reply.FindInt32(&quot;error&quot;, &amp;err) &lt; B_OK)
++		return EINVAL;
++	if (err &lt; B_OK)
++		return err;
++	
++	return err;
++}
++
++
++//------------------------------------------------------------------------------
++//	#pragma mark - Addon Entry
++
++#if __INTEL__
++	extern &quot;C&quot; _EXPORT long perform_edit(MTextAddOn* addon);
++#else
++	#pragma export on
++	extern &quot;C&quot; {
++		long perform_edit(MTextAddOn* addon);
++	}
++	#pragma export reset
++#endif
++
++
++long
++perform_edit(MTextAddOn* addon)
++{
++	status_t err;
++	long selStart;
++	long selEnd;
++
++	addon-&gt;GetSelection(&amp;selStart, &amp;selEnd);
++
++	if (selEnd &lt;= selStart)
++		return B_ERROR;
++
++	int length = selEnd - selStart;
++
++	// Do NOT run the query if we have less than 3 chars. It works, but takes
++	// ages and produces an useless giant popup menu.
++	if (length &lt; 3) {
++		MIdeaAlert(&quot;The text selection is too short.\n&quot;
++					&quot;Please select at least three characters.&quot;).Go();
++		return B_ERROR;
++	}
++
++	BString selection;
++	selection.SetTo(addon-&gt;Text() + selStart, length);
++
++    // Limit the size of the search string to 30 chars, and make sure it is
++    // worth of searching for (name of: function/variable/error code, etc.).
++	int pos = 0;
++	while ((pos &lt; length) || pos &lt; 30) {
++		if (!isalnum(selection[pos]) &amp;&amp; (selection[pos] != '_')) break;
++		pos++;
++	}
++
++	if (!pos) return B_ERROR;
++
++	selection.Truncate(pos);
++
++	if (selection.CountChars() &lt; 3) {
++		MIdeaAlert(&quot;The text selection is too short.\n&quot;
++					&quot;Make sure that the selection doesn't contains punctuation &quot;
++					&quot;marks or other symbols.&quot;).Go();
++		return B_ERROR;
++	}
++
++	err = TellBeHappy(selection.String());
++	if (err &gt;= B_OK)
++		return B_OK;
++
++	// No results... Lets try the same selection as a function name...
++	BString funcname(selection.String());
++	funcname += &quot;()&quot;;
++	err = TellBeHappy(funcname.String());
++	if (err &gt;= B_OK)
++		return B_OK;
++
++	// Still nothing? Lets Slap a B on the front and check for Classes!
++	BString section(&quot;B&quot;);
++	section += selection.String();
++	err = TellBeHappy(section.String());
++	if (err &gt;= B_OK)
++		return B_OK;
++
++	BString message(&quot;Nothing was found by BeHappy for: &quot;);
++	message += selection.String();
++	MInfoAlert(message.String()).Go();
++
++	return B_OK;
++}
+
+Added: trunk/Extensions/ConvertTabs.cpp
+===================================================================
+--- trunk/Extensions/ConvertTabs.cpp	2008-02-27 21:43:25 UTC (rev 491)
++++ trunk/Extensions/ConvertTabs.cpp	2008-02-27 21:45:11 UTC (rev 492)
+@@ -0,0 +1,180 @@
++/*
++ * Convert Tabs Add-on for Pe editor
++ *
++ * Copyright (C) 2008 by Fran&#231;ois Revol, &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">revol at free.fr</A>&gt;
++ *
++ * Derived from:
++ * Convert Tabs Add-on for BeIDE's editor
++ *
++ * Copyright (C) 2008 by Anthony Lee &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">don.anthony.lee at gmail.com</A>&gt;
++ * Distributed under the terms of the MIT License.
++ */
++
++#include &lt;be/kernel/image.h&gt;
++#include &lt;be/support/String.h&gt;
++#include &lt;be/storage/Path.h&gt;
++#include &lt;be/storage/FindDirectory.h&gt;
++#include &lt;be/storage/File.h&gt;
++#include &lt;be/interface/Alert.h&gt;
++#include &lt;be/interface/Window.h&gt;
++
++#include &quot;PeAddOn.h&quot;
++
++static bool sIsReplaceAddon = false;
++
++
++// # this doesn't work in the Jamfile...
++// (both object names are the same)
++// ObjectC++Flags Replace\ As\ Tabs : -DEXPAND_TABS=1 ;
++// so we check at run time.
++static void DetermineAddon(void)
++{
++	int32 cookie = 0;
++	image_info info;
++
++	// determine which addon we are
++	while (get_next_image_info(0, &amp;cookie, &amp;info) == B_OK) {
++		if ((char *)&amp;DetermineAddon &gt;= (char *)info.text &amp;&amp; 
++			(char *)&amp;DetermineAddon &lt; ((char *)info.text + info.text_size)) {
++			if (strstr(info.name, &quot;Replace As Tabs&quot;))
++				sIsReplaceAddon = true;
++			break;
++		}
++	}
++}
++
++
++static int32 GetTabSize(MTextAddOn *addon)
++{
++	char *p = NULL;
++	int32 tabstop = 4;
++
++	// note it breaks if you changed the tabstop but didn't save the file again yet...
++	try {
++		attr_info ai;
++		entry_ref ref;
++		if (addon-&gt;GetRef(ref) &gt;= B_OK) {
++			BFile file(&amp;ref, B_READ_ONLY);
++			if (file.GetAttrInfo(&quot;pe-info&quot;, &amp;ai) == B_NO_ERROR)
++			{
++				p = (char *)malloc(ai.size);
++				FailNil(p);
++
++				FailIOErr(file.ReadAttr(&quot;pe-info&quot;, ai.type, 0, p, ai.size));
++
++				BMessage settings;
++				settings.Unflatten(p);
++				if (settings.FindInt32(&quot;tabstop&quot;, &amp;tabstop) &lt; B_OK)
++					tabstop = 4;
++			}
++		}
++	}
++	catch (HErr&amp; e) {}
++	free(p);
++	return tabstop;
++}
++
++
++static void ConvertTabs(MTextAddOn *addon, BString &amp;str)
++{
++	int32 tab_size = GetTabSize(addon);
++	int32 found;
++
++	for(int32 pos = 0; pos &lt; str.Length(); pos = found + 1)
++	{
++		found = str.FindFirst('\n', pos);
++		if(found &lt; 0) found = str.Length();
++
++		BString line;
++		line.SetTo(str.String() + pos, found - pos);
++
++//#ifdef EXPAND_TABS
++		if (!sIsReplaceAddon) {
++			int32 index;
++			while((index = line.FindFirst('\t')) &gt;= 0)
++			{
++				int32 width = 0;
++				for(int32 k = 0; k &lt; index; k++)
++				{
++					// FIXME: special multi-bytes character
++					uint8 c = *((uint8*)(line.String() + k));
++					if(c &lt; 0x80) width += 1;
++					else if(c &lt; 0xc0 || c &gt;= 0xfe) continue;
++					else if(c &lt; 0xe0) { width += 2; k += 1; }
++					else if(c &lt; 0xf0) { width += 2; k += 2; }
++					else if(c &lt; 0xf8) { width += 2; k += 3; }
++					else if(c &lt; 0xfc) { width += 2; k += 4; }
++					else if(c &lt; 0xfe) { width += 2; k += 5; }
++				}
++
++				line.Remove(index, 1);
++				line.Insert(' ', tab_size - width % tab_size, index);
++			}
++		} else {
++//#else // REPLACE_AS_TABS
++			int32 count = 0;
++			for(int32 k = 0; k &lt; line.Length(); k++)
++			{
++				if(line[k] == '\t') continue;
++				if(line[k] != ' ') break;
++				if(++count &lt; tab_size) continue;
++				count = 0;
++				line.Remove(k - tab_size + 1, tab_size);
++				k -= tab_size - 1;
++				line.Insert('\t', 1, k);
++			}
++		}
++//#endif
++
++		str.Remove(pos, found - pos);
++		str.Insert(line, pos);
++		found = pos + line.Length();
++	}
++}
++
++
++static void ShowErrors(const char *msg)
++{
++	BAlert *alert = new BAlert(&quot;Convert Tabs&quot;, msg, &quot;Quit&quot;, NULL, NULL,
++							   B_WIDTH_AS_USUAL, B_STOP_ALERT);
++	alert-&gt;Lock();
++	alert-&gt;SetLook(B_TITLED_WINDOW_LOOK);
++	alert-&gt;SetFeel(B_NORMAL_WINDOW_FEEL);
++	alert-&gt;Unlock();
++	alert-&gt;Go((BInvoker*)NULL);
++}
++
++
++extern &quot;C&quot; _EXPORT status_t perform_edit(MTextAddOn *addon)
++{
++	DetermineAddon();
++	
++	//if(addon-&gt;IsEditable() == false) return B_ERROR;
++
++	int32 startIDX = 0, endIDX = 0;
++	addon-&gt;GetSelection(&amp;startIDX, &amp;endIDX);
++	if(endIDX &lt;= startIDX)
++	{
++		ShowErrors(&quot;No selection!!!&quot;);
++		return B_ERROR;
++	}
++
++	BString str;
++	str.SetTo(addon-&gt;Text() + startIDX, endIDX - startIDX);
++	if(str.Length() != endIDX - startIDX)
++	{
++		ShowErrors(&quot;Unknown error!!!&quot;);
++		return B_ERROR;
++	}
++
++	ConvertTabs(addon, str);
++
++	if(str.Compare(addon-&gt;Text() + startIDX, endIDX - startIDX) != 0)
++	{
++		addon-&gt;Delete();
++		addon-&gt;Insert(str.String());
++		addon-&gt;Select(startIDX, startIDX + str.Length());
++	}
++
++	return B_NO_ERROR;
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000085.html">[pe-commits] r491 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000087.html">[pe-commits] r493 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#86">[ date ]</a>
+              <a href="thread.html#86">[ thread ]</a>
+              <a href="subject.html#86">[ subject ]</a>
+              <a href="author.html#86">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

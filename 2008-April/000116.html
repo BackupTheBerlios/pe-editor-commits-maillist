@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r521 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r521%20-%20trunk/Extensions&In-Reply-To=%3C200804220203.m3M23GIv009395%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000115.html">
+   <LINK REL="Next"  HREF="000117.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r521 - trunk/Extensions</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r521%20-%20trunk/Extensions&In-Reply-To=%3C200804220203.m3M23GIv009395%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r521 - trunk/Extensions">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 22 04:03:16 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000115.html">[pe-commits] r520 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000117.html">[pe-commits] r522 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-22 04:03:15 +0200 (Tue, 22 Apr 2008)
+New Revision: 521
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=521&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=521&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/HeaderHeader.cpp
+   trunk/Extensions/Jamfile
+Log:
+Use comment depending on language.
+
+
+Modified: trunk/Extensions/HeaderHeader.cpp
+===================================================================
+--- trunk/Extensions/HeaderHeader.cpp	2008-04-22 01:26:21 UTC (rev 520)
++++ trunk/Extensions/HeaderHeader.cpp	2008-04-22 02:03:15 UTC (rev 521)
+@@ -3,6 +3,9 @@
+  */
+ 
+ #include &quot;PeAddOn.h&quot;
++#include &quot;PDoc.h&quot;
++#include &quot;PText.h&quot;
++#include &quot;CLanguageInterface.h&quot;
+ #include &lt;ctype.h&gt;
+ #include &lt;time.h&gt;
+ #include &lt;FilePanel.h&gt;
+@@ -148,7 +151,10 @@
+ }
+ 
+ void
+-AddTemplateItem(BPopUpMenu *menu, const char *name, const char *tmpl, const char *match=NULL)
++AddTemplateItem(BPopUpMenu *menu, 
++	const char *name, 
++	const char *tmpl, 
++	const char *match=NULL)
+ {
+ 	BMessage *msg;
+ 	BMenuItem *item;
+@@ -195,7 +201,8 @@
+ 		return menu;
+ 
+ 	entry_ref ref;
+-	while (dir.GetNextRef(&amp;ref) == B_OK) {
++	while (dir.GetNextRef(&amp;ref) == B_OK)
++	{
+ 		BFile file(&amp;ref, B_READ_ONLY);
+ 		if (file.InitCheck() &lt; B_OK)
+ 			continue;
+@@ -217,7 +224,8 @@
+ 
+ 
+ status_t
+-RunPopUpMenu(BPoint where, BString &amp;header, BString &amp;fileName)
++RunPopUpMenu(BPoint where, BString &amp;header, BString &amp;fileName, 
++	CLanguageInterface *languageInterface)
+ {
+ 	status_t err;
+ 	BPath path;
+@@ -232,7 +240,8 @@
+ 	//if (item &amp;&amp; item-&gt;Message())
+ 	//	item-&gt;Message()-&gt;PrintToStream();
+ 
+-	switch ((item &amp;&amp; item-&gt;Message()) ? item-&gt;Message()-&gt;what : 0) {
++	switch ((item &amp;&amp; item-&gt;Message()) ? item-&gt;Message()-&gt;what : 0)
++	{
+ 		case 'head':
+ 		{
+ 			if (item-&gt;Message()-&gt;FindString(&quot;template&quot;, &amp;header) &lt; B_OK)
+@@ -284,15 +293,60 @@
+ 			tmp.Truncate(0);
+ 			*/
+ 
+-			// TODO: depend on language
++			// better values for C++
++			BString language(&quot;C/C++&quot;);
++			BString commentLineStart(&quot;/*&quot;);
++			BString commentLineEnd(&quot;&quot;);
++			BString commentBlockStart(&quot;/*&quot;);
++			BString commentBlockCont(&quot; *&quot;);
++			BString commentBlockLazy(&quot;&quot;);
++			BString commentBlockLineEnd(&quot;&quot;);
++			BString commentBlockEnd(&quot; */&quot;);
++			if (languageInterface)
++			{
++				// if not C++
++				if (language != languageInterface-&gt;Name())
++				{
++					language = languageInterface-&gt;Name();
++					commentLineStart = languageInterface-&gt;LineCommentStart();
++					commentLineEnd = languageInterface-&gt;LineCommentEnd();
++					// I'd miss a CommentCanSpanLines()
++					// let's assume line end means can span
++					if (commentLineEnd.Length())
++					{
++						commentBlockStart = commentLineStart;
++						commentBlockCont = &quot;&quot;;
++						commentBlockLazy = &quot;&quot;;
++						commentBlockLineEnd = &quot;&quot;;
++						commentBlockEnd = commentLineEnd;
++					}
++					else
++					{
++						commentBlockStart = commentLineStart;
++						commentBlockCont = commentLineStart;
++						commentBlockLazy = commentLineStart;
++						commentBlockLineEnd = commentLineEnd;
++						commentBlockEnd = commentLineStart;
++					}
++					/*
++					printf(&quot;LANG:'%s' CS:'%s' CE:'%s'\n&quot;, 
++						language.String(), 
++						commentLineStart.String(), 
++						commentLineEnd.String());
++					*/
++				}
++			}
+ 			// comment start
+-			header.ReplaceAll(&quot;%COMMS%&quot;, &quot;/*&quot;);
++			header.ReplaceAll(&quot;%COMMS%&quot;, commentBlockStart.String());
+ 			// comment cont'd
+-			header.ReplaceAll(&quot;%COMMC%&quot;, &quot; *&quot;);
++			header.ReplaceAll(&quot;%COMMC%&quot;, commentBlockCont.String());
+ 			// comment cont'd lazy (blank if possible)
+-			header.ReplaceAll(&quot;%COMML%&quot;, &quot;&quot;);
++			header.ReplaceAll(&quot;%COMML%&quot;, commentBlockLazy.String());
+ 			// comment end
+-			header.ReplaceAll(&quot;%COMME%&quot;, &quot; */&quot;);
++			header.ReplaceAll(&quot;%COMME%&quot;, commentBlockEnd.String());
++			// comment line end
++			commentBlockLineEnd &lt;&lt; &quot;\n&quot;;
++			header.ReplaceAll(&quot;\n&quot;, commentBlockLineEnd.String());
+ 
+ 
+ 			err = B_OK;
+@@ -339,7 +393,8 @@
+ 	entry_ref headerFile;
+ 	BPoint where(0,0);
+ 
+-	if (addon-&gt;Window() &amp;&amp; addon-&gt;Window()-&gt;Lock()) {
++	if (addon-&gt;Window() &amp;&amp; addon-&gt;Window()-&gt;Lock())
++	{
+ 		uint32 buttons;
+ 		addon-&gt;Window()-&gt;ChildAt(0)-&gt;GetMouse(&amp;where, &amp;buttons);
+ 		addon-&gt;Window()-&gt;ChildAt(0)-&gt;ConvertToScreen(&amp;where);
+@@ -352,8 +407,20 @@
+ 	if (result &gt;= B_OK)
+ 		fileName = headerFile.name;
+ 
++	CLanguageInterface *languageInterface = NULL;
++	if (addon-&gt;Window())
++	{
++		PDoc *doc = dynamic_cast&lt;PDoc *&gt;(addon-&gt;Window());
++		if (doc &amp;&amp; doc-&gt;TextView())
++		{
++			int lang = doc-&gt;TextView()-&gt;Language();
++			if (lang &gt; -1)
++				languageInterface = CLanguageInterface::FindIntf(lang);
++		}
++	}
++
+ 	BString header;
+-	result = RunPopUpMenu(where, header, fileName);
++	result = RunPopUpMenu(where, header, fileName, languageInterface);
+ 	//printf(&quot;result %s\n&quot;, strerror(result));
+ 	if (result == B_CANCELED)
+ 		return B_OK;
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-04-22 01:26:21 UTC (rev 520)
++++ trunk/Extensions/Jamfile	2008-04-22 02:03:15 UTC (rev 521)
+@@ -66,7 +66,7 @@
+ # &lt;pe-src&gt;
+ PeExtension HeaderHeader
+ 	: HeaderHeader.cpp 
+-	: be tracker
++	: libhekkel.so &lt;nogrist&gt;pe be tracker $(STDC++LIB)
+ 	;
+ # &lt;/pe-src&gt;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000115.html">[pe-commits] r520 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000117.html">[pe-commits] r522 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

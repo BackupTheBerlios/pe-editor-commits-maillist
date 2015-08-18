@@ -1,0 +1,1090 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r467 - in trunk: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r467%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200611242339.kAONdg6p030975%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000059.html">
+   <LINK REL="Next"  HREF="000061.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r467 - in trunk: Resources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r467%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200611242339.kAONdg6p030975%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r467 - in trunk: Resources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 25 00:39:42 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000059.html">[pe-commits] r466 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000061.html">[pe-commits] r468 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-25 00:39:37 +0100 (Sat, 25 Nov 2006)
+New Revision: 467
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=467&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=467&amp;view=rev</A>
+
+Added:
+   trunk/Sources/PrefControls.h
+Modified:
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CDiffWindow.cpp
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocWindow.cpp
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/CPrefsDialog.h
+   trunk/Sources/CProjectJamFile.cpp
+   trunk/Sources/CProjectMakeFile.cpp
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PProjectWindow.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/Prefs.h
+Log:
+* Pref controls names now live centralized as defines in a file
+* Some cleanup
+
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2006-11-22 20:34:07 UTC (rev 466)
++++ trunk/Resources/Dialog-Preferences.r	2006-11-24 23:39:37 UTC (rev 467)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,10 +28,11 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include &quot;Types.r&quot;
++#include &quot;PrefControls.h&quot;
+ 
+ 
+ resource rtyp_Popu (rid_Popu_PrfFont, &quot;Font menu&quot;) {
+@@ -62,160 +63,162 @@
+ 	}
+ };
+ 
++
+ resource 'DLOG' (132, &quot;Preferences&quot;) {
+ 	{0, 0, 415, 266}, &quot;Preferences&quot;, B_TITLED_WINDOW, NORMAL,
+ 	{
+ 		TabbedBook				{{   0,   0, 415, 266 }, &quot;tabB&quot; 															},
+ 			TabSheet			{ &quot;Colours&quot;, &quot;The colours used for syntax colouring and window layout&quot;						},
+-				ColorControl	{{   0,   0, 145,  16 }, &quot;lowc&quot;,		&quot;Background&quot;										},
+-				ColorControl	{{ 155,   0, 290,  16 }, &quot;txtc&quot;,		&quot;Normal Text&quot;										},
++				ColorControl	{{   0,   0, 145,  16 }, pnm_Col_C_Low,					&quot;Background&quot;						},
++				ColorControl	{{ 155,   0, 290,  16 }, pnm_Col_C_Text,				&quot;Normal Text&quot;						},
+ 
+-				ColorControl	{{   0,  16, 145,  32 }, &quot;selc&quot;,		&quot;Selection&quot;											},
+-				ColorControl	{{ 155,  16, 290,  32 }, &quot;mrkc&quot;,		&quot;Mark&quot;												},
+-				
++				ColorControl	{{   0,  16, 145,  32 }, pnm_Col_C_Selection,			&quot;Selection&quot;							},
++				ColorControl	{{ 155,  16, 290,  32 }, pnm_Col_C_Mark,				&quot;Mark&quot;								},
++
+ 				Line			{{   0,  36, 290,  37 }																		},
+ 
+-				ColorControl	{{   0,  40, 110,  56 }, &quot;keyc&quot;,		&quot;Keywords&quot;											},
+-				ColorControl	{{ 110,  40, 145,  56 }, &quot;ke2c&quot;,		&quot;&quot;													},
+-				ColorControl	{{ 155,  40, 255,  56 }, &quot;cmtc&quot;,		&quot;Comments&quot;											},
+-				ColorControl	{{ 255,  40, 290,  56 }, &quot;cm2c&quot;,		&quot;&quot;													},
+-				
+-				ColorControl	{{   0,  56, 110,  72 }, &quot;strc&quot;,		&quot;Strings&quot;											},
+-				ColorControl	{{ 110,  56, 145,  72 }, &quot;tgsc&quot;,		&quot;&quot;													},
+-				ColorControl	{{ 155,  56, 255,  72 }, &quot;numc&quot;,		&quot;Numbers&quot;											},
+-				ColorControl	{{ 255,  56, 290,  72 }, &quot;nu2c&quot;,		&quot;&quot;													},
++				ColorControl	{{   0,  40, 110,  56 }, pnm_Col_C_Keyword1,			&quot;Keywords&quot;							},
++				ColorControl	{{ 110,  40, 145,  56 }, pnm_Col_C_Keyword2,			&quot;&quot;									},
++				ColorControl	{{ 155,  40, 255,  56 }, pnm_Col_C_Comment1,			&quot;Comments&quot;							},
++				ColorControl	{{ 255,  40, 290,  56 }, pnm_Col_C_Comment2,			&quot;&quot;									},
+ 
+-				ColorControl	{{   0,  72, 110,  88 }, &quot;opec&quot;,		&quot;Operators&quot;											},
+-				ColorControl	{{ 110,  72, 145,  88 }, &quot;op2c&quot;,		&quot;&quot;													},
+-				ColorControl	{{ 155,  72, 255,  88 }, &quot;sepc&quot;,		&quot;Separators&quot;										},
+-				ColorControl	{{ 255,  72, 290,  88 }, &quot;se2c&quot;,		&quot;&quot;													},
+-				
+-				ColorControl	{{   0,  88, 110, 104 }, &quot;proc&quot;,		&quot;PreProcessor&quot;										},
+-				ColorControl	{{ 110,  88, 145, 104 }, &quot;pr2c&quot;,		&quot;&quot;													},
+-				ColorControl	{{ 155,  88, 255, 104 }, &quot;errc&quot;,		&quot;Errors&quot;											},
+-				ColorControl	{{ 255,  88, 290, 104 }, &quot;er2c&quot;,		&quot;&quot;													},
+-				
++				ColorControl	{{   0,  56, 110,  72 }, pnm_Col_C_String1,				&quot;Strings&quot;							},
++				ColorControl	{{ 110,  56, 145,  72 }, pnm_Col_C_String2,				&quot;&quot;									},
++				ColorControl	{{ 155,  56, 255,  72 }, pnm_Col_C_Number1,				&quot;Numbers&quot;							},
++				ColorControl	{{ 255,  56, 290,  72 }, pnm_Col_C_Number2,				&quot;&quot;									},
++
++				ColorControl	{{   0,  72, 110,  88 }, pnm_Col_C_Operator1,			&quot;Operators&quot;							},
++				ColorControl	{{ 110,  72, 145,  88 }, pnm_Col_C_Operator2,			&quot;&quot;									},
++				ColorControl	{{ 155,  72, 255,  88 }, pnm_Col_C_Separator1,			&quot;Separators&quot;						},
++				ColorControl	{{ 255,  72, 290,  88 }, pnm_Col_C_Separator2,			&quot;&quot;									},
++
++				ColorControl	{{   0,  88, 110, 104 }, pnm_Col_C_Preprocessor1,		&quot;PreProcessor&quot;						},
++				ColorControl	{{ 110,  88, 145, 104 }, pnm_Col_C_Preprocessor2,		&quot;&quot;									},
++				ColorControl	{{ 155,  88, 255, 104 }, pnm_Col_C_Error1,				&quot;Errors&quot;							},
++				ColorControl	{{ 255,  88, 290, 104 }, pnm_Col_C_Error2,				&quot;&quot;									},
++
+ 				Line			{{   0, 108, 290, 109 }},
+-				
+-				ColorControl	{{   0, 112, 145, 128 }, &quot;sidc&quot;,		&quot;System Identifiers&quot;								},
+-				ColorControl	{{ 155, 112, 290, 128 }, &quot;chcc&quot;,		&quot;Char Constants&quot;									},
+-				ColorControl	{{   0, 128, 145, 144 }, &quot;uidc&quot;,		&quot;User Identifiers&quot;									},
+-				ColorControl	{{ 155, 128, 255, 144 }, &quot;tagc&quot;,		&quot;Tags/Attribut.&quot;									},
+-				ColorControl	{{ 255, 128, 290, 144 }, &quot;attr&quot;,		&quot;&quot;													},
+-				
++
++				ColorControl	{{   0, 112, 145, 128 }, pnm_Col_C_IdentifierSystem,	&quot;System Identifiers&quot;				},
++				ColorControl	{{ 155, 112, 290, 128 }, pnm_Col_C_CharConst,			&quot;Char Constants&quot;					},
++				ColorControl	{{   0, 128, 145, 144 }, pnm_Col_C_IdentifierUser,		&quot;User Identifiers&quot;					},
++				ColorControl	{{ 155, 128, 255, 144 }, pnm_Col_C_Tag,					&quot;Tags/Attribut.&quot;					},
++				ColorControl	{{ 255, 128, 290, 144 }, pnm_Col_C_Attribute,			&quot;&quot;									},
++
+ 				Line			{{   0, 148, 290, 149 }																		},
+ 
+-				ColorControl	{{   0, 152, 145, 168 }, &quot;us1c&quot;,		&quot;User defined 1&quot;									},
+-				ColorControl	{{ 155, 152, 290, 168 }, &quot;us2c&quot;,		&quot;User defined 2&quot;									},
+-				ColorControl	{{   0, 168, 145, 184 }, &quot;us3c&quot;,		&quot;User defined 3&quot;									},
+-				ColorControl	{{ 155, 168, 290, 184 }, &quot;us4c&quot;,		&quot;User defined 4&quot;									},
++				ColorControl	{{   0, 152, 145, 168 }, pnm_Col_C_UserSet1,			&quot;User defined 1&quot;					},
++				ColorControl	{{ 155, 152, 290, 168 }, pnm_Col_C_UserSet2,			&quot;User defined 2&quot;					},
++				ColorControl	{{   0, 168, 145, 184 }, pnm_Col_C_UserSet3,			&quot;User defined 3&quot;					},
++				ColorControl	{{ 155, 168, 290, 184 }, pnm_Col_C_UserSet4,			&quot;User defined 4&quot;					},
+ 
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Connections&quot;, &quot;Options that control the connections to other programs&quot;					},
+-				CheckBox		{{   0,   0, 200,  16 }, &quot;idmn&quot;,		&quot;Show Metrowerks BeIDE Menu&quot;						},
+-				CheckBox		{{   0,  20, 200,  36 }, &quot;mwpl&quot;,		&quot;Load Metrowerks BeIDE Extensions&quot;					},
+-				CheckBox		{{   0,  50, 200,  66 }, &quot;pftp&quot;,		&quot;Use Passive FTP by default&quot;						},
++				CheckBox		{{   0,   0, 200,  16 }, pnm_Con_X_ShowBeIdeMenu,		&quot;Show Metrowerks BeIDE Menu&quot;		},
++				CheckBox		{{   0,  20, 200,  36 }, pnm_Con_X_LoadBeIdeExt,		&quot;Load Metrowerks BeIDE Extensions&quot;	},
++				CheckBox		{{   0,  50, 200,  66 }, pnm_Con_X_PassiveFtp,			&quot;Use Passive FTP by default&quot;		},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Differences&quot;, &quot;Options that control the Find Differences command&quot;						},
+-				CheckBox		{{   0,   0, 200,  16 }, &quot;dica&quot;,		&quot;Ignore Case Change&quot;								},
+-				CheckBox		{{   0,  20, 200,  36 }, &quot;diwh&quot;,		&quot;Ignore White Space&quot;								},
++				CheckBox		{{   0,   0, 200,  16 }, pnm_Dif_X_DiffCaseInsensitive,	&quot;Ignore Case Change&quot;				},
++				CheckBox		{{   0,  20, 200,  36 }, pnm_Dif_X_IgnoreWhiteSpace,	&quot;Ignore White Space&quot;				},
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Editor&quot;, &quot;How the editor should behave&quot;													},
+-				CheckBox		{{   0,   0, 140,  16 }, &quot;stab&quot;,		&quot;Show Tabstops&quot;										},
+-				Edit			{{ 150,   0, 290,  16 }, &quot;tabs&quot;,		&quot;Spaces per Tab:&quot;,		&quot;&quot;, &quot;0123456789&quot;, 3, 90		},
++				CheckBox		{{   0,   0, 140,  16 }, pnm_Edi_X_ShowTabs,			&quot;Show Tabstops&quot;						},
++				Edit			{{ 150,   0, 290,  16 }, pnm_Edi_T_SpacesPerTab,		&quot;Spaces per Tab:&quot;,		&quot;&quot;, &quot;0123456789&quot;, 3, 90		},
+ 
+-				CheckBox		{{   0,  20, 140,  36 }, &quot;syco&quot;,		&quot;Syntax Colouring&quot;									},
+-				CheckBox		{{ 150,  20, 290,  36 }, &quot;auin&quot;,		&quot;Auto Indent&quot;										},
++				CheckBox		{{   0,  20, 140,  36 }, pnm_Edi_X_SyntaxColoring,		&quot;Syntax Colouring&quot;					},
++				CheckBox		{{ 150,  20, 290,  36 }, pnm_Edi_X_AutoIndent,			&quot;Auto Indent&quot;						},
+ 
+-				CheckBox		{{   0,  40, 140,  56 }, &quot;baty&quot;,		&quot;Balance While Typing&quot;								},
+-				CheckBox		{{ 150,  40, 290,  56 }, &quot;smbr&quot;,		&quot;Smart Braces&quot;										},
+-				
+-				CheckBox		{{   0,  60, 140,  76 }, &quot;blcu&quot;,		&quot;Block Cursor&quot;										},
+-				CheckBox		{{ 150,  60, 290,  76 }, &quot;flcu&quot;,		&quot;Flashing Cursor&quot;									},
+-				
+-				CheckBox		{{   0,  80, 140,  96 }, &quot;smwo&quot;,		&quot;Smart Workspaces&quot;									},
+-				CheckBox		{{ 150,  80, 290,  96 }, &quot;alho&quot;,		&quot;Alternate Home&quot;									},
+-											
++				CheckBox		{{   0,  40, 140,  56 }, pnm_Edi_X_BalanceWhileTyping,	&quot;Balance While Typing&quot;				},
++				CheckBox		{{ 150,  40, 290,  56 }, pnm_Edi_X_SmartBraces,			&quot;Smart Braces&quot;						},
++
++				CheckBox		{{   0,  60, 140,  76 }, pnm_Edi_X_BlockCursor,			&quot;Block Cursor&quot;						},
++				CheckBox		{{ 150,  60, 290,  76 }, pnm_Edi_X_FlashingCursor,		&quot;Flashing Cursor&quot;					},
++
++				CheckBox		{{   0,  80, 140,  96 }, pnm_Edi_X_SmartWorkspaces,		&quot;Smart Workspaces&quot;					},
++				CheckBox		{{ 150,  80, 290,  96 }, pnm_Edi_X_AlternateHome,		&quot;Alternate Home&quot;					},
++
+ 				Line			{{   0, 103, 290, 104 }},
+ 
+-				PopupMenu		{{   0, 111, 190, 127 }, &quot;font&quot;,		&quot;Font:&quot;,				rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 111, 290, 127 }, &quot;fons&quot;,		&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++				PopupMenu		{{   0, 111, 190, 127 }, pnm_Edi_P_Font1Face,			&quot;Font:&quot;,				rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 111, 290, 127 }, pnm_Edi_T_Font1Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
+ 
+-				PopupMenu		{{   0, 131, 190, 147 }, &quot;alfo&quot;,		&quot;Alt. Font:&quot;,			rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 131, 290, 147 }, &quot;alfs&quot;,		&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++				PopupMenu		{{   0, 131, 190, 147 }, pnm_Edi_P_Font2Face,			&quot;Alt. Font:&quot;,			rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 131, 290, 147 }, pnm_Edi_T_Font2Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
+ 
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;File Types&quot;, &quot;These types show up in the Save Dialogbox&quot;									},
+-				StringListBox	{{   0,   0, 290, 120 }, &quot;mimetypes&quot;														},
++				StringListBox	{{   0,   0, 290, 120 }, pnm_Typ_L_Mimetypes												},
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Files&quot;, &quot;Options for files on disk&quot;														},
+-				Caption			{{   0,   0, 120,  16 }, &quot;sv&quot;,			&quot;When saving a file&quot;								},
++				Caption			{{   0,   0, 120,  16 }, &quot;sv&quot;,							&quot;When saving a file&quot;				},
+ 
+-				CheckBox		{{ 140,  20, 290,  36 }, &quot;maba&quot;,		&quot;Make backup (filename~)&quot;							},
+-				CheckBox		{{ 140,  40, 290,  56 }, &quot;fonl&quot;,		&quot;End with newline&quot;									},
+-				
++				CheckBox		{{ 140,  20, 290,  36 }, pnm_Fil_X_MakeBackup,			&quot;Make backup (filename~)&quot;			},
++				CheckBox		{{ 140,  40, 290,  56 }, pnm_Fil_X_EndWithNewline,		&quot;End with newline&quot;					},
++
+ 				Line			{{   0,  63, 290,  64 }},
+-				
+-				CheckBox		{{   0,  71, 290,  87 }, &quot;vofm&quot;,		&quot;Verify open files for modification&quot;				},
+-				
++
++				CheckBox		{{   0,  71, 290,  87 }, pnm_Fil_X_VerifyOpenFiles,		&quot;Verify open files for modification&quot;},
++
+ 				Line			{{   0,  94, 290,  95 }},
+ 
+-				Edit			{{   0, 102, 180, 118 }, &quot;resi&quot;,		&quot;Nr of Recent Documents&quot;, &quot;&quot;, &quot;0123456789&quot;, 2, 140	},
+-				CheckBox		{{ 190, 102, 290, 118 }, &quot;sktm&quot;,		&quot;Ignore tmp files&quot;									},
+-				
++				Edit			{{   0, 102, 180, 118 }, pnm_Fil_T_NrOfRecentDocs,		&quot;Nr of Recent Documents&quot;, &quot;&quot;, &quot;0123456789&quot;, 2, 140	},
++				CheckBox		{{ 190, 102, 290, 118 }, pnm_Fil_X_SkipTmpFiles,		&quot;Ignore tmp files&quot;					},
++
+ 				Line			{{   0, 125, 290, 126 }},
+ 
+-				CheckBox		{{   0, 133, 120, 149 }, &quot;zoop&quot;,		&quot;Zoom Open Panel&quot;									},
+-				CheckBox		{{ 140, 133, 290, 149 }, &quot;fupa&quot;,		&quot;Full Path in Window Title&quot;							},
++				CheckBox		{{   0, 133, 120, 149 }, pnm_Fil_X_ZoomOpenPanel,		&quot;Zoom Open Panel&quot;					},
++				CheckBox		{{ 140, 133, 290, 149 }, pnm_Fil_X_FullPathInTitle,		&quot;Full Path in Window Title&quot;			},
+ 
+ 			TabSheetEnd			{																							},
++
+ 			TabSheet			{ &quot;Glossary&quot;, &quot;Glossary options&quot; },
+-				Button			{{   0,   0, 110,  20 }, &quot;reloadglos&quot;,	&quot;Reload Glossary&quot;,						'RelG'		},
+-				CheckBox		{{   0,  30, 290,  46 }, &quot;shgl&quot;,		&quot;Show Glossary Window at startup&quot;					},
+-				CheckBox		{{   0,  50, 290,  66 }, &quot;scgl&quot;,		&quot;Act on single click&quot;								},
++				Button			{{   0,   0, 110,  20 }, &quot;reloadglos&quot;,					&quot;Reload Glossary&quot;,		'RelG'		},
++				CheckBox		{{   0,  30, 290,  46 }, pnm_Glo_X_ShowGlossary,		&quot;Show Glossary Window at startup&quot;	},
++				CheckBox		{{   0,  50, 290,  66 }, pnm_Glo_X_SingleClickGlossary,	&quot;Act on single click&quot;				},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Grep Patterns&quot;, &quot;Standard Grep Patterns to use in the Find Dialog&quot;						},
+-				
++
+ 				GrepListBox		{{   0,   0, 290, 170 }, &quot;grls&quot;																},
+-				
++
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Groups&quot;, &quot;Group file options&quot; },
+-				CheckBox		{{   0,   0, 280,  16 }, &quot;sogr&quot;,		&quot;Sort the files inside a group&quot;						},
+-				CheckBox		{{   0,  20, 280,  36 }, &quot;rlgp&quot;,		&quot;Store relative paths in a group file&quot;				},
++				CheckBox		{{   0,   0, 280,  16 }, pnm_Grp_X_SortGroup,			&quot;Sort the files inside a group&quot;		},
++				CheckBox		{{   0,  20, 280,  36 }, pnm_Grp_X_RelativeGroupPaths,	&quot;Store relative paths in a group file&quot;},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Include Paths&quot;, &quot;Paths to use when searching for include files&quot;							},
+-				CheckBox		{{   0,   0, 280,  16 }, &quot;sepa&quot;,		&quot;Search Parent&quot;										},
+-				CheckBox		{{   0,  20, 280,  36 }, &quot;incl&quot;,		&quot;Search the paths in $BEINCLUDES&quot;					},
+-				Caption			{{   0,  40, 200,  56 }, &quot;more&quot;,		&quot;And search the following paths:&quot;					},
++				CheckBox		{{   0,   0, 280,  16 }, pnm_Inc_X_SearchParent,		&quot;Search Parent&quot;						},
++				CheckBox		{{   0,  20, 280,  36 }, pnm_Inc_X_BeIncludes,			&quot;Search the paths in $BEINCLUDES&quot;	},
++				Caption			{{   0,  40, 200,  56 }, &quot;more&quot;,						&quot;And search the following paths:&quot;	},
+ 				PathBox			{{   0,  60, 290, 160 }, &quot;incP&quot; },
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Invisibles&quot;, &quot;Options for the way invisible characters are displayed&quot;					},
+-				Edit			{{   0,   0, 190,  16 }, &quot;scca&quot;,		&quot;Show Control Characters as:&quot;,		&quot;&#191;&quot;, &quot;&quot;, 1, 170	},
+-				
++				Edit			{{   0,   0, 190,  16 }, pnm_Inv_T_ControlChar,		&quot;Show Control Characters as:&quot;,		&quot;&#191;&quot;, &quot;&quot;, 1, 170	},
++
+ 				Line			{{   0,  21, 290,  22 }},
+-				
+-				Caption			{{   0,  27, 290,  43 }, &quot;invc&quot;,		&quot;Options below are effective only when showing invisibles&quot; },
+-				
+-				ColorControl	{{   0,  47, 190,  63 }, &quot;invc&quot;,		&quot;Invisibles Colour&quot;									},
+-				Edit			{{   0,  67, 190,  83 }, &quot;stca&quot;,		&quot;Show Tab Character as:&quot;,			&quot;&quot;, &quot;&quot;, 1, 170	},
+-				Edit			{{   0,  87, 190, 103 }, &quot;ssca&quot;,		&quot;Show Space Character as:&quot;,			&quot;&quot;, &quot;&quot;, 1, 170	},
+-				Edit			{{   0, 107, 190, 123 }, &quot;srca&quot;,		&quot;Show Return Character as:&quot;,		&quot;&quot;, &quot;&quot;, 1, 170	},
++
++				Caption			{{   0,  27, 290,  43 }, &quot;invccap&quot;,		&quot;Options below are effective only when showing invisibles&quot; },
++
++				ColorControl	{{   0,  47, 190,  63 }, pnm_Inv_C_Invisibles,			&quot;Invisibles Colour&quot;					},
++				Edit			{{   0,  67, 190,  83 }, pnm_Inv_T_TabChar,				&quot;Show Tab Character as:&quot;,		&quot;&quot;, &quot;&quot;, 1, 170	},
++				Edit			{{   0,  87, 190, 103 }, pnm_Inv_T_SpaceChar,			&quot;Show Space Character as:&quot;,		&quot;&quot;, &quot;&quot;, 1, 170	},
++				Edit			{{   0, 107, 190, 123 }, pnm_Inv_T_ReturnChar,			&quot;Show Return Character as:&quot;,	&quot;&quot;, &quot;&quot;, 1, 170	},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Keybindings&quot;, &quot;The bindings between key shortcuts and actions&quot;							},
+ 
+ 				Caption			{{   0,   0,  40,  16 }, &quot;actcap&quot;,		&quot;Action:&quot;											},
+ 				OutlineList		{{  42,   2, 288, 131 }, &quot;kact&quot;																},
+-				
++
+ 				Caption			{{   0, 139,  40, 155 }, &quot;keycap&quot;,		&quot;Keys:&quot;												},
+ 				List			{{  42, 141, 168, 179 }, &quot;keys&quot;																},
+ 
+@@ -224,80 +227,80 @@
+ 				Button			{{ 180, 159, 230, 179 }, &quot;adke&quot;,		&quot;Add&quot;,							'AddK'				},
+ 				Button			{{ 240, 159, 290, 179 }, &quot;deke&quot;,		&quot;Delete&quot;,						'DelK'				},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Languages&quot;, &quot;Options for Syntax Colouring and the Function Popup&quot;						},
+-				CheckBox		{{   0,   0, 140,  16 }, &quot;shin&quot;,		&quot;Show Includes&quot;										},
+-				CheckBox		{{   0,  20, 140,  36 }, &quot;shpr&quot;,		&quot;Show Function Prototypes&quot;							},
+-				CheckBox		{{ 150,   0, 290,  16 }, &quot;shty&quot;,		&quot;Show Types&quot;										},
+-				CheckBox		{{ 150,  20, 290,  36 }, &quot;sopo&quot;,		&quot;Sort Alphabetically&quot;								},
+-				
++				CheckBox		{{   0,   0, 140,  16 }, pnm_Lng_X_ShowIncludes,		&quot;Show Includes&quot;						},
++				CheckBox		{{   0,  20, 140,  36 }, pnm_Lng_X_ShowPrototypes,		&quot;Show Function Prototypes&quot;			},
++				CheckBox		{{ 150,   0, 290,  16 }, pnm_Lng_X_ShowTypes,			&quot;Show Types&quot;						},
++				CheckBox		{{ 150,  20, 290,  36 }, pnm_Lng_X_SortPopup,			&quot;Sort Alphabetically&quot;				},
++
+ 				Line			{{   0,  40, 290,  41 }},
+-				
+-				Caption			{{   0,  50, 200,  66 }, &quot;lc&quot;,			&quot;Suffix Mapping:&quot;									},
+-				PopupMenu		{{   0,  70, 120,  86 }, &quot;lang&quot;,		&quot;Language:&quot;,			rid_Popu_PrfLang, 55		},
+-				Edit			{{ 130,  70, 290,  86 }, &quot;sufx&quot;,		&quot;Suffixes:&quot;,			&quot;&quot;, &quot;&quot;, 0, 45				},
+-				
++
++				Caption			{{   0,  50, 200,  66 }, &quot;lc&quot;,							&quot;Suffix Mapping:&quot;					},
++				PopupMenu		{{   0,  70, 120,  86 }, pnm_Lng_P_Language,			&quot;Language:&quot;,			rid_Popu_PrfLang, 55},
++				Edit			{{ 130,  70, 290,  86 }, pnm_Lng_T_Suffixes,			&quot;Suffixes:&quot;,			&quot;&quot;, &quot;&quot;, 0, 45},
++
+ 				Line			{{   0,  93, 290,  94 }},
+-				
+-				PopupMenu		{{   0, 101, 200, 117 }, &quot;dela&quot;,		&quot;Default Language:&quot;,	rid_Popu_PrfDefaultLang, 90	},
++
++				PopupMenu		{{   0, 101, 200, 117 }, pnm_Lng_P_DefaultLanguage,		&quot;Default Language:&quot;,	rid_Popu_PrfDefaultLang, 90	},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Projects&quot;, &quot;Project window options&quot;														},
+-				CheckBox		{{   0,   0, 280,  16 }, &quot;prso&quot;,		&quot;Sort the files inside a project&quot;					},
+-				CheckBox		{{   0,  20, 280,  36 }, &quot;prad&quot;,		&quot;Autodetect mimetypes of 'Jamfile' &amp; 'Makefile'&quot;	},
++				CheckBox		{{   0,   0, 280,  16 }, pnm_Prj_X_SortProjectFiles,	&quot;Sort the files inside a project&quot;	},
++				CheckBox		{{   0,  20, 280,  36 }, pnm_Prj_X_AutodetectProjects,	&quot;Autodetect mimetypes of 'Jamfile' &amp; 'Makefile'&quot;},
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Searching&quot;, &quot;Paths in the directory popup of the Find Dialog and more&quot;					},
+ 				PathBox			{{   0,   0, 290, 100 }, &quot;srcP&quot;																},
+-				
++
+ 				Line			{{   0, 107, 290, 108 }},
+-				
+-				CheckBox		{{   0, 115, 200, 131 }, &quot;isic&quot;,		&quot;Incremental Search Ignores Case&quot;					},
+-				CheckBox		{{   0, 135, 200, 151 }, &quot;cesf&quot;,		&quot;Center the String Found&quot;							},
+-				
++
++				CheckBox		{{   0, 115, 200, 131 }, pnm_Src_X_InclSearchIgnoreCase,&quot;Incremental Search Ignores Case&quot;	},
++				CheckBox		{{   0, 135, 200, 151 }, pnm_Src_X_CenterFoundString,	&quot;Center the String Found&quot;			},
++
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Startup&quot;, &quot;What to do when Pe is launched&quot;												},
+-				RadioButton		{{   0,   0, 145,  16 }, &quot;swne&quot;,		&quot;Create New Document&quot;								},
+-				RadioButton		{{   0,  20, 145,  36 }, &quot;swop&quot;,		&quot;Show Open Dialog&quot;									},
+-				RadioButton		{{   0,  40, 290,  56 }, &quot;swno&quot;,		&quot;Do Nothing&quot;										},
++				RadioButton		{{   0,   0, 145,  16 }, pnm_Sup_R_CreateNewDocument,	&quot;Create New Document&quot;				},
++				RadioButton		{{   0,  20, 145,  36 }, pnm_Sup_R_ShowOpenDialog,		&quot;Show Open Dialog&quot;					},
++				RadioButton		{{   0,  40, 290,  56 }, pnm_Sup_R_DoNothing,			&quot;Do Nothing&quot;						},
+ 				Caption			{{  40,  56, 290,  72 }, &quot;s_w_c&quot;,		&quot; (only effective in combination with a worksheet)&quot;	},
+-				
++
+ 				Line			{{   0,  79, 290,  80 }},
+ 
+-				CheckBox		{{   0,  87, 290, 103 }, &quot;shtp&quot;,		&quot;Show HTML Palette&quot;									},
+-				CheckBox		{{  20, 107, 290, 123 }, &quot;shtP&quot;,		&quot;Only when editing HTML files&quot;						},
++				CheckBox		{{   0,  87, 290, 103 }, pnm_Sup_X_ShowHtmlPalette,		&quot;Show HTML Palette&quot;					},
++				CheckBox		{{  20, 107, 290, 123 }, pnm_Sup_X_ShowPaletteForHtml,	&quot;Only when editing HTML files&quot;		},
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;State&quot;, &quot;What to do with state information in saved documents&quot;							},
+-				Caption			{{   0,   0, 140,  16 }, &quot;state&quot;,		&quot;When opening a file restore&quot;						},
+-				CheckBox		{{   0,  20, 140,  36 }, &quot;repo&quot;,		&quot;Position&quot;											},
+-				CheckBox		{{   0,  40, 140,  56 }, &quot;refo&quot;,		&quot;Font Settings&quot;										},
+-				CheckBox		{{   0,  60, 140,  76 }, &quot;rese&quot;,		&quot;Selection&quot;											},
+-				CheckBox		{{   0,  80, 140,  96 }, &quot;resc&quot;,		&quot;Scrollbar Settings&quot;								},
+-				CheckBox		{{   0, 100, 140, 116 }, &quot;recw&quot;,		&quot;Working Directory&quot;									},
+-				PopupMenu		{{   0, 120, 140, 140 }, &quot;sast&quot;,		&quot;Use state format:&quot;,		rid_Popu_PrfState, 90	},
++				Caption			{{   0,   0, 140,  16 }, &quot;state&quot;,						&quot;When opening a file restore&quot;		},
++				CheckBox		{{   0,  20, 140,  36 }, pnm_Sta_X_RestorePosition,		&quot;Position&quot;							},
++				CheckBox		{{   0,  40, 140,  56 }, pnm_Sta_X_RestoreFont,			&quot;Font Settings&quot;						},
++				CheckBox		{{   0,  60, 140,  76 }, pnm_Sta_X_RestoreSelection,	&quot;Selection&quot;							},
++				CheckBox		{{   0,  80, 140,  96 }, pnm_Sta_X_RestoreScrollbar,	&quot;Scrollbar Settings&quot;				},
++				CheckBox		{{   0, 100, 140, 116 }, pnm_Sta_X_RestoreCwd,			&quot;Working Directory&quot;					},
++				PopupMenu		{{   0, 120, 140, 140 }, pnm_Sta_P_UseStateFormat,		&quot;Use state format:&quot;,	rid_Popu_PrfState, 90	},
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;Worksheet&quot;, &quot;Options having effect on worksheets&quot;										},
+-				CheckBox		{{   0,   0, 284,  16 }, &quot;wosh&quot;,		&quot;Always keep a worksheet open&quot;						},
+-				CheckBox		{{   0,  20, 284,  36 }, &quot;rdse&quot;,		&quot;Redirect stderr to Error Window&quot;					},
++				CheckBox		{{   0,   0, 284,  16 }, pnm_Wor_X_KeepWorksheetOpen,	&quot;Always keep a worksheet open&quot;		},
++				CheckBox		{{   0,  20, 284,  36 }, pnm_Wor_X_RedirectStderr,		&quot;Redirect stderr to Error Window&quot;	},
+ 				StdErrBox		{{   0,  40, 284, 166 }, &quot;StEb&quot;																},
+ 			TabSheetEnd			{																							},
+-			
++
+ 			TabSheet			{ &quot;Wrapping&quot;, &quot;Options for softwrapping&quot; },
+-				CheckBox		{{   0,   0, 100,  16 }, &quot;sowr&quot;,		&quot;Soft Wrap Files&quot;									},
+-				
++				CheckBox		{{   0,   0, 100,  16 }, pnm_Wrp_X_SoftWrapFiles,		&quot;Soft Wrap Files&quot;					},
++
+ 				Caption			{{   0,  40, 238,  56 }, &quot;w&quot;,			&quot;And when wrapping use these settings:&quot;				},
+-				
+-				RadioButton		{{   0,  60, 100,  76 }, &quot;wrwi&quot;,		&quot;Window Width&quot;										},
+-				RadioButton		{{   0,  80, 100,  96 }, &quot;wrpa&quot;,		&quot;Paper Width&quot;										},
+-				RadioButton		{{   0, 100,  98, 116 }, &quot;wrfi&quot;,		&quot;Fixed Column:&quot;										},
+-				
+-				Edit			{{ 100, 100, 140, 116 }, &quot;wrft&quot;,		&quot;&quot;,					&quot;&quot;, &quot;0123456789&quot;, 3, 0			},
+-				
++
++				RadioButton		{{   0,  60, 100,  76 }, pnm_Wrp_R_WindowWidth,			&quot;Window Width&quot;						},
++				RadioButton		{{   0,  80, 100,  96 }, pnm_Wrp_R_PaperWidth,			&quot;Paper Width&quot;						},
++				RadioButton		{{   0, 100,  98, 116 }, pnm_Wrp_R_FixedColumn,			&quot;Fixed Column:&quot;						},
++
++				Edit			{{ 100, 100, 140, 116 }, pnm_Wrp_T_FixedColumn,			&quot;&quot;,		&quot;&quot;, &quot;0123456789&quot;, 3, 0		},
++
+ 			TabSheetEnd			{																							},
+-			
++
+ 			Button				{{ 335, 235, 390, 255 }, &quot;ok  &quot;,		&quot;Apply&quot;,			'ok  '							},
+ 			Button				{{ 265, 235, 320, 255 }, &quot;cncl&quot;,		&quot;Revert&quot;,			'cncl'							},
+ 		TabbedBookEnd			{}
+
+Modified: trunk/Sources/CDiffWindow.cpp
+===================================================================
+--- trunk/Sources/CDiffWindow.cpp	2006-11-22 20:34:07 UTC (rev 466)
++++ trunk/Sources/CDiffWindow.cpp	2006-11-24 23:39:37 UTC (rev 467)
+@@ -367,16 +367,16 @@
+ 		do
+ 		{
+ 			BAutolock lock(docA);
+-			docA-&gt;TextView()-&gt;HashLines(va, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-				gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++			docA-&gt;TextView()-&gt;HashLines(va, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++				gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 		}
+ 		while (false);
+ 		
+ 		do
+ 		{
+ 			BAutolock lock(docB);
+-			docB-&gt;TextView()-&gt;HashLines(vb, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-				gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++			docB-&gt;TextView()-&gt;HashLines(vb, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++				gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 		}
+ 		while (false);
+ 		
+@@ -580,22 +580,22 @@
+ 	if ((doc = dynamic_cast&lt;PDoc*&gt;(CDoc::FindDoc(f1))) != NULL)
+ 	{
+ 		BAutolock lock(doc);
+-		doc-&gt;TextView()-&gt;HashLines(v1, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-			gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++		doc-&gt;TextView()-&gt;HashLines(v1, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++			gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 	}
+ 	else
+-		HashFile(f1, v1, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-				gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++		HashFile(f1, v1, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++				gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 	
+ 	if ((doc = dynamic_cast&lt;PDoc*&gt;(CDoc::FindDoc(f2))) != NULL)
+ 	{
+ 		BAutolock lock(doc);
+-		doc-&gt;TextView()-&gt;HashLines(v2, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-			gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++		doc-&gt;TextView()-&gt;HashLines(v2, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++			gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 	}
+ 	else
+-		HashFile(f2, v2, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false),
+-				gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
++		HashFile(f2, v2, gPrefs-&gt;GetPrefInt(prf_I_DiffCaseInsensitive, false),
++				gPrefs-&gt;GetPrefInt(prf_I_DiffIgnoreWhiteSpace, false));
+ 
+ 	if (v1.back() != v2.back())
+ 	{
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2006-11-22 20:34:07 UTC (rev 466)
++++ trunk/Sources/CDoc.cpp	2006-11-24 23:39:37 UTC (rev 467)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 09/10/97 13:20:21
+ */
+@@ -73,8 +73,8 @@
+ 		struct stat st;
+ 		FailOSErr(node.GetStat(&amp;st));
+ 
+-		fReadOnly = !((gUid == st.st_uid &amp;&amp; (S_IWUSR &amp; st.st_mode)) 
+-						||	(gGid == st.st_gid &amp;&amp; (S_IWGRP &amp; st.st_mode)) 
++		fReadOnly = !((gUid == st.st_uid &amp;&amp; (S_IWUSR &amp; st.st_mode))
++						||	(gGid == st.st_gid &amp;&amp; (S_IWGRP &amp; st.st_mode))
+ 						||	(S_IWOTH &amp; st.st_mode));
+ 
+ 		char s[NAME_MAX];
+@@ -98,7 +98,7 @@
+ CDoc::~CDoc()
+ {
+ 	StopWatchingFile();
+-	
++
+ 	sfDocList.remove(this);
+ 	be_app-&gt;PostMessage(msg_DocClosed);
+ }
+@@ -169,13 +169,13 @@
+ 	BWindow *w = fSavePanel-&gt;Window();
+ 	FailNil(w);
+ 	w-&gt;Lock();
+-	
++
+ 	char s[256];
+ 	sprintf(s, &quot;Save %s as:&quot;, Name());
+-	
++
+ 	w-&gt;SetTitle(s);
+ 	fSavePanel-&gt;SetSaveText(Name());
+-	
++
+ 	if (EntryRef())
+ 	{
+ 		BEntry e(EntryRef()), p;
+@@ -217,9 +217,9 @@
+ 		if (e.Exists())
+ 		{
+ 			entry_ref xr;
+-			
++
+ 			e.GetRef(&amp;xr);
+-			
++
+ 			if (EntryRef() &amp;&amp; xr == *EntryRef())	// its me, help!!!
+ 			{
+ 				BFile file;
+@@ -229,23 +229,23 @@
+ 			else
+ 				e.Remove();
+ 		}
+-		
++
+ 		fReadOnly = false;
+-		
++
+ 		entry_ref eref;
+ 		FailOSErr(e.GetRef(&amp;eref));
+ 		fDocIO-&gt;SetEntryRef(&amp;eref);
+-		
++
+ 		Save();
+ 		NameChanged();
+-		
++
+ 		if (EntryRef())
+ 		{
+ 			BPath p;
+ 			FailOSErr(e.GetPath(&amp;p));
+ 			AddRecent(p.Path());
+ 		}
+-		
++
+ 		if (fSavePanel)
+ 		{
+ 			delete fSavePanel;
+@@ -262,18 +262,18 @@
+ {
+ 	if (!fSavePanel)
+ 		fSavePanel = new BFilePanel(B_SAVE_PANEL);
+-	
++
+ 	FailNil(fSavePanel);
+ 
+ 	BWindow *w = fSavePanel-&gt;Window();
+ 	w-&gt;Lock();
+-	
++
+ 	char s[256];
+ 	sprintf(s, &quot;Save a copy of %s as:&quot;, Name());
+-	
++
+ 	w-&gt;SetTitle(s);
+ 	fSavePanel-&gt;SetSaveText(Name());
+-	
++
+ 	if (EntryRef())
+ 	{
+ 		BEntry e(EntryRef()), p;
+@@ -306,7 +306,7 @@
+ 		FailOSErr(e.InitCheck());
+ 		if (e.Exists())
+ 			e.Remove();
+-		
++
+ 		entry_ref eref;
+ 		FailOSErr(e.GetRef(&amp;eref));
+ 		CLocalDocIO writer(this, &amp;eref, NULL);
+@@ -336,7 +336,7 @@
+ {
+ 	char title[256];
+ 	sprintf(title, &quot;Revert to the last saved version of %s?&quot;, Name());
+-	
++
+ 	MInfoAlert a(title, &quot;Cancel&quot;, &quot;OK&quot;);
+ 	if (a == 2)
+ 	{
+@@ -360,10 +360,10 @@
+ 			FailOSErr(e.SetTo(EntryRef(), true));
+ 			BPath p;
+ 			FailOSErr(e.GetPath(&amp;p));
+-			
++
+ 			struct stat st;
+ 			FailOSErr(stat(p.Path(), &amp;st));
+-			
++
+ 			if (readOnly)
+ 				st.st_mode &amp;= ~(S_IWUSR | S_IWGRP | S_IWOTH);
+ 			else
+@@ -373,7 +373,7 @@
+ 				umask(t);				// and reset it.
+ 				st.st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH) &amp; ~t;
+ 			}
+-			
++
+ 			FailOSErr(chmod(p.Path(), st.st_mode));
+ 
+ 			fReadOnly = readOnly;
+@@ -388,7 +388,7 @@
+ void CDoc::SetMimeType(const char *type, bool updateOnDisk)
+ {
+ 	fMimeType = type;
+-	
++
+ 	if (updateOnDisk &amp;&amp; EntryRef())
+ 	{
+ 		BNode node;
+@@ -462,11 +462,11 @@
+ void CDoc::AddRecent(const char *path)
+ {
+ 	char *s;
+-	if ((s = strstr(path, &quot;/config/settings/pe/Worksheet&quot;)) != NULL &amp;&amp; 
++	if ((s = strstr(path, &quot;/config/settings/pe/Worksheet&quot;)) != NULL &amp;&amp;
+ 		strlen(s) == 29 /*strlen(&quot;/config/settings/pe/Worksheet&quot;)*/)
+ 		return; // don't add the worksheet
+-	
+-	if (gPrefs-&gt;GetPrefInt(prf_I_SkipTmp, 1))
++
++	if (gPrefs-&gt;GetPrefInt(prf_I_SkipTmpFiles, 1))
+ 	{
+ 		BPath tp;
+ 		try
+@@ -479,7 +479,7 @@
+ 	}
+ 
+ 	vector&lt;char*&gt;::iterator di;
+-	
++
+ 	for (di = sfTenLastDocs.begin(); di != sfTenLastDocs.end(); di++)
+ 	{
+ 		char *p = *di;
+@@ -500,7 +500,7 @@
+ 		sfTenLastDocs.erase(sfTenLastDocs.end() - 1);
+ 		free(p);
+ 	}
+-	
++
+ 	sfTenLastDocs.insert(sfTenLastDocs.begin(), strdup(path));
+ }
+ 
+@@ -511,9 +511,9 @@
+ 	else
+ 	{
+ 		vector&lt;char*&gt;::iterator li;
+-		
++
+ 		li = sfTenLastDocs.begin() + indx++;
+-		
++
+ 		strcpy(path, *(li));
+ 		return true;
+ 	}
+@@ -524,7 +524,7 @@
+ CDoc* CDoc::FindDoc(const entry_ref&amp; doc)
+ {
+ 	doclist::iterator di;
+-	
++
+ 	for (di = sfDocList.begin(); di != sfDocList.end(); di++)
+ 	{
+ 		if ((*di)-&gt;EntryRef() &amp;&amp; *(*di)-&gt;EntryRef() == doc)
+@@ -536,9 +536,9 @@
+ void CDoc::PostToAll(unsigned long msg, bool async)
+ {
+ 	doclist::iterator di;
+-	
++
+ 	doclist lst = sfDocList;
+-	
++
+ 	BLooper *me = BLooper::LooperForThread(find_thread(NULL));
+ 
+ 	for (di = lst.begin(); di != lst.end(); di++)
+@@ -547,7 +547,7 @@
+ 		if (w)
+ 		{
+ 			BMessage reply;
+-			
++
+ 			if (async || w == dynamic_cast&lt;BWindow*&gt;(me))
+ 				w-&gt;PostMessage(msg);
+ 			else
+@@ -562,9 +562,9 @@
+ void CDoc::HandleFolderNodeMonitorMsg(BMessage* msg)
+ {
+ 	doclist::iterator di;
+-	
++
+ 	doclist lst = sfDocList;
+-	
++
+ 	for (di = lst.begin(); di != lst.end(); di++)
+ 	{
+ 		if ((*di)-&gt;fDocIO &amp;&amp; (*di)-&gt;fDocIO-&gt;MatchesNodeMonitorMsg(msg))
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-11-22 20:34:07 UTC (rev 466)
++++ trunk/Sources/CDocIO.cpp	2006-11-24 23:39:37 UTC (rev 467)
+@@ -1,6 +1,6 @@
+ /*
+ 	Copyright 2005 Oliver Tappe
+-	
++
+ 	Distributed under the MIT License
+ */
+ 
+@@ -53,7 +53,7 @@
+ 			{
+ 				pos = posVect[i];
+ 				len = pos - lastPos;
+-				if (len &gt; 0) 
++				if (len &gt; 0)
+ 				{
+ 					memcpy(newAdr, oldAdr, len);
+ 					oldAdr += len;
+@@ -87,7 +87,7 @@
+ 
+ static int32 DetermineEncoding(const BString&amp; str)
+ {
+-	/* HACK: Get the first line and see if there's something like 
++	/* HACK: Get the first line and see if there's something like
+ 	  &quot;[PE:ENC=&lt;encoding&gt;]&quot; in there. &lt;encoding&gt; is supported encodings
+ 	  with spaces replaced by &quot;-&quot;, eg.: &quot;ISO-8859-15&quot; */
+ 	int32			pos;
+@@ -132,22 +132,22 @@
+ 	try
+ 	{
+ 		char name[NAME_MAX];
+-		
++
+ 		while (from.GetNextAttrName(name) == B_OK)
+ 		{
+ 			attr_info ai;
+-			
++
+ 			if (strcmp(name, &quot;_trk/_clipping_file_&quot;) == 0)
+ 				continue;
+-			
++
+ 			FailOSErr(from.GetAttrInfo(name, &amp;ai));
+-			
++
+ 			char *buf = new char [ai.size];
+ 			from.ReadAttr(name, ai.type, 0, buf, ai.size);
+ 			to.WriteAttr(name, ai.type, 0, buf, ai.size);
+ 			delete [] buf;
+-		}	
+-		
++		}
++
+ 		mode_t perm;
+ 		from.GetPermissions(&amp;perm);
+ 		to.SetPermissions(perm);
+@@ -301,7 +301,7 @@
+ 		if (fConv.HadToSubstitute() &amp;&amp; fConv.ErrorPos() &gt;= 0)
+ 		{
+ 			fDoc-&gt;HighlightErrorPos(fConv.ErrorPos());
+-			BString err = 
++			BString err =
+ 				BString(&quot;An error occurred when converting the document &quot;)
+ 					&lt;&lt; &quot;to the requested destination encoding. The first &quot;
+ 					&lt;&lt; &quot;problematic character is highlighted.\n&quot;
+@@ -313,7 +313,7 @@
+ 		}
+ 	}
+ 
+-	if (gPrefs-&gt;GetPrefInt(prf_I_NlAtEof, 1) &amp;&amp; docText.Length() &gt; 0 
++	if (gPrefs-&gt;GetPrefInt(prf_I_EndWithNewline, 1) &amp;&amp; docText.Length() &gt; 0
+ 		&amp;&amp; docText[docText.Length() - 1] != '\n')
+ 	{
+ 		docText &lt;&lt; &quot;\n&quot;;
+@@ -374,7 +374,7 @@
+ 
+ 	off_t size;
+ 	FailOSErr(file.GetSize(&amp;size));
+-	
++
+ 	BString docText;
+ 
+ 	if (size &gt; 0)
+@@ -394,7 +394,7 @@
+ 		if (settingsMsg.FindInt32(&quot;line breaks&quot;, &amp;lineEndType) != B_OK)
+ 			lineEndType = DetermineLineEndType(docText);
+ 		fDoc-&gt;SetLineEndType(lineEndType);
+-	
++
+ 		// set the encoding:
+ 		int32 encoding;
+ 		if (settingsMsg.FindInt32(&quot;encoding&quot;, &amp;encoding) != B_OK)
+@@ -405,15 +405,15 @@
+ 			encoding = B_UNICODE_UTF8;
+ 		fDoc-&gt;SetEncoding(encoding);
+ 	}
+-	
++
+ 	bool result = DoPreEditTextConversions(docText);
+ 
+ 	fDoc-&gt;SetText(docText);
+ 	fDoc-&gt;SetDirty(false);
+-	
++
+ 	if (readAttributes)
+ 		fDoc-&gt;ApplySettings(settingsMsg);
+-		
++
+ 	if (!result &amp;&amp; fConv.ErrorPos() &gt;= 0)
+ 		fDoc-&gt;HighlightErrorPos(fConv.ErrorPos());
+ 
+@@ -440,7 +440,7 @@
+ 
+ 		FailOSErr(e.GetName(name));
+ 
+-		if (existed) 
++		if (existed)
+ 		{	// Create a backup file
+ 			if (!CopyFile(e, backup))
+ 				return false;
+@@ -454,16 +454,16 @@
+ 		CheckedWrite(file, docText.String(), docText.Length());
+ 		fDoc-&gt;WriteAttr(file, settingsMsg);
+ 		file.Sync();
+-		
++
+ 		// Remove backup file
+-		if (existed &amp;&amp; !gPrefs-&gt;GetPrefInt(prf_I_Backup))
++		if (existed &amp;&amp; !gPrefs-&gt;GetPrefInt(prf_I_MakeBackup))
+ 			FailOSErr(backup.Remove());
+ 
+ 		// Update MIME type info
+ 		e.SetTo(&amp;dir, name);
+ 		BPath path(&amp;e);
+ 		if (!strlen(fDoc-&gt;MimeType()) &amp;&amp; path.InitCheck() == B_OK
+-			&amp;&amp; update_mime_info(path.Path(), false, true, false) == B_OK) 
++			&amp;&amp; update_mime_info(path.Path(), false, true, false) == B_OK)
+ 		{
+ 			// takeover MIME type from file
+ 			char s[NAME_MAX];
+@@ -506,7 +506,7 @@
+ 		&amp;&amp; node.SetTo(&amp;entry) == B_OK
+ 		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) 
++		if (sfDocListLock.Lock())
+ 		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]++ == 0)
+ 				watch_node(&amp;directoryNodeRef, B_WATCH_DIRECTORY, be_app);
+@@ -524,7 +524,7 @@
+ 		&amp;&amp; node.SetTo(&amp;entry) == B_OK
+ 		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) 
++		if (sfDocListLock.Lock())
+ 		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]-- == 1)
+ 				watch_node(&amp;directoryNodeRef, B_STOP_WATCHING, be_app);
+@@ -619,7 +619,7 @@
+ bool CLocalDocIO::MatchesNodeMonitorMsg(BMessage* msg)
+ {
+ 	node_ref nref;
+-	if (fEntryRef == NULL 
++	if (fEntryRef == NULL
+ 	|| msg-&gt;FindInt64(&quot;node&quot;, &amp;nref.node) != B_OK
+ 	|| msg-&gt;FindInt32(&quot;device&quot;, &amp;nref.device) != B_OK)
+ 		return false;
+@@ -632,7 +632,7 @@
+ 	bool result = true;
+ 	try
+ 	{
+-		if (gPrefs-&gt;GetPrefInt(prf_I_Verify, 1))
++		if (gPrefs-&gt;GetPrefInt(prf_I_VerifyOpenFiles, 1))
+ 		{
+ 			BFile file;
+ 			FailOSErr(file.SetTo(fEntryRef, B_READ_ONLY));
+@@ -645,7 +645,7 @@
+ 				sprintf(s, &quot;File %s was modified by another application, reload it?&quot;, fEntryRef-&gt;name);
+ 				MInfoAlert a(s, &quot;Reload&quot;, &quot;Cancel&quot;);
+ 
+-				if (a.Go() == 1) 
++				if (a.Go() == 1)
+ 				{
+ 					result = false;
+ 					// restart watching, the file may have changed:
+@@ -659,7 +659,7 @@
+ 				// in the mean time, only the first one is
+ 				// considered
+ 				// the max() takes care of mod-times in the future
+-				// (cvs may cause that kind of thing). 
++				// (cvs may cause that kind of thing).
+ 		}
+ 	}
+ 	catch (HErr&amp; e)
+@@ -722,7 +722,7 @@
+ 		// determine and set the type of linebreaks:
+ 		int32 lineEndType = DetermineLineEndType(docText);
+ 		fDoc-&gt;SetLineEndType(lineEndType);
+-	
++
+ 		// set the encoding:
+ 		int32 encoding = DetermineEncoding(docText);
+ 		// [zooey]: For a short period of time (one of my bugs),
+@@ -731,17 +731,17 @@
+ 			encoding = B_UNICODE_UTF8;
+ 		fDoc-&gt;SetEncoding(encoding);
+ 	}
+-	
++
+ 	bool result = DoPreEditTextConversions(docText);
+ 
+ 	fDoc-&gt;SetText(docText);
+-	
++
+ 	if (!result &amp;&amp; fConv.ErrorPos() &gt;= 0)
+ 		fDoc-&gt;HighlightErrorPos(fConv.ErrorPos());
+ 
+ 	return result;
+ }
+-	
++
+ bool CFtpDocIO::WriteDoc()
+ {
+ 	try
+@@ -752,8 +752,8 @@
+ 		fDoc-&gt;GetText(docText);
+ 		if (!DoPostEditTextConversions(docText))
+ 			return false;
+
+[... truncated: 6862 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000059.html">[pe-commits] r466 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000061.html">[pe-commits] r468 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

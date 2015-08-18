@@ -1,0 +1,31 @@
+From mmu_man at mail.berlios.de  Mon Oct 19 14:53:40 2009
+From: mmu_man at mail.berlios.de (mmu_man at BerliOS)
+Date: Mon, 19 Oct 2009 14:53:40 +0200
+Subject: [pe-commits] r595 - in trunk/Resources: . AlternativeKeybindings
+Message-ID: <200910191253.n9JCrem7016919@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2009-10-19 14:53:37 +0200 (Mon, 19 Oct 2009)
+New Revision: 595
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=595&view=rev
+
+Added:
+   trunk/Resources/AlternativeKeybindings/
+   trunk/Resources/AlternativeKeybindings/keybindings.azerty
+Log:
+Placeholder for language/keymap specific keybindings.
+Add a (binary only for now, rez doesn't know how to decompile) french one for azerty.
+
+
+Added: trunk/Resources/AlternativeKeybindings/keybindings.azerty
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/Resources/AlternativeKeybindings/keybindings.azerty
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+
+

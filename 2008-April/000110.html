@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r516 - branches/model-based-editing/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r516%20-%20branches/model-based-editing/Sources&In-Reply-To=%3C200804121234.m3CCYJeX015180%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000109.html">
+   <LINK REL="Next"  HREF="000112.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r516 - branches/model-based-editing/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r516%20-%20branches/model-based-editing/Sources&In-Reply-To=%3C200804121234.m3CCYJeX015180%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r516 - branches/model-based-editing/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 14:34:19 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000109.html">[pe-commits] r515 - in branches/model-based-editing:	Languages/Sources Sources
+</A></li>
+        <LI>Next message: <A HREF="000112.html">[pe-commits] r517 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#110">[ date ]</a>
+              <a href="thread.html#110">[ thread ]</a>
+              <a href="subject.html#110">[ subject ]</a>
+              <a href="author.html#110">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-04-12 14:34:19 +0200 (Sat, 12 Apr 2008)
+New Revision: 516
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=516&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=516&amp;view=rev</A>
+
+Added:
+   branches/model-based-editing/Sources/CTextSearch.cpp
+   branches/model-based-editing/Sources/CTextSearch.h
+   branches/model-based-editing/Sources/CTextSelection.cpp
+   branches/model-based-editing/Sources/CTextSelection.h
+   branches/model-based-editing/Sources/CTextStructure.cpp
+   branches/model-based-editing/Sources/CTextStructure.h
+Log:
+* add several files I forgot during last commit
+
+
+Added: branches/model-based-editing/Sources/CTextSearch.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CTextSearch.cpp	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextSearch.cpp	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,21 @@
++/*	$Id: $
++
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#include &quot;pe.h&quot;
++
++#include &quot;CTextSearch.h&quot;
++
++#include &quot;CTextBuffer.h&quot;
++
++CTextSearch::CTextSearch(CTextBuffer* buffer)
++	: fTextBuffer(buffer)
++{
++}
++
++CTextSearch::~CTextSearch()
++{
++}
+
+Added: branches/model-based-editing/Sources/CTextSearch.h
+===================================================================
+--- branches/model-based-editing/Sources/CTextSearch.h	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextSearch.h	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,22 @@
++/*	$Id: $
++	
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#ifndef CTEXTSEARCH_H
++#define CTEXTSEARCH_H
++
++class CTextBuffer;
++
++class CTextSearch {
++public:
++		CTextSearch(CTextBuffer* buffer);
++		~CTextSearch();
++
++private:
++		CTextBuffer* fTextBuffer;
++};
++
++#endif // CTEXTSEARCH_H
+
+Added: branches/model-based-editing/Sources/CTextSelection.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CTextSelection.cpp	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextSelection.cpp	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,23 @@
++/*	$Id: $
++
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#include &quot;pe.h&quot;
++
++#include &quot;CTextSelection.h&quot;
++
++#include &quot;CTextBuffer.h&quot;
++#include &quot;CTextStructure.h&quot;
++
++CTextSelection::CTextSelection(CTextBuffer* buffer, CTextStructure* structure)
++	: fTextBuffer(buffer)
++	, fTextStructure(structure)
++{
++}
++
++CTextSelection::~CTextSelection()
++{
++}
+
+Added: branches/model-based-editing/Sources/CTextSelection.h
+===================================================================
+--- branches/model-based-editing/Sources/CTextSelection.h	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextSelection.h	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,24 @@
++/*	$Id: $
++	
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#ifndef CTEXTSELECTION_H
++#define CTEXTSELECTION_H
++
++class CTextBuffer;
++class CTextStructure;
++
++class CTextSelection {
++public:
++		CTextSelection(CTextBuffer* buffer, CTextStructure* structure);
++		~CTextSelection();
++
++private:
++		CTextBuffer* fTextBuffer;
++		CTextStructure* fTextStructure;
++};
++
++#endif // CTEXTSELECTION_H
+
+Added: branches/model-based-editing/Sources/CTextStructure.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CTextStructure.cpp	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextStructure.cpp	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,21 @@
++/*	$Id: $
++
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#include &quot;pe.h&quot;
++
++#include &quot;CTextStructure.h&quot;
++
++#include &quot;CTextBuffer.h&quot;
++
++CTextStructure::CTextStructure(CTextBuffer* buffer)
++	: fTextBuffer(buffer)
++{
++}
++
++CTextStructure::~CTextStructure()
++{
++}
+
+Added: branches/model-based-editing/Sources/CTextStructure.h
+===================================================================
+--- branches/model-based-editing/Sources/CTextStructure.h	2008-04-12 12:33:24 UTC (rev 515)
++++ branches/model-based-editing/Sources/CTextStructure.h	2008-04-12 12:34:19 UTC (rev 516)
+@@ -0,0 +1,22 @@
++/*	$Id: $
++	
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#ifndef CTEXTSTRUCTURE_H
++#define CTEXTSTRUCTURE_H
++
++class CTextBuffer;
++
++class CTextStructure {
++public:
++		CTextStructure(CTextBuffer* buffer);
++		~CTextStructure();
++
++private:
++		CTextBuffer* fTextBuffer;
++};
++
++#endif // CTEXTSTRUCTURE_H
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000109.html">[pe-commits] r515 - in branches/model-based-editing:	Languages/Sources Sources
+</A></li>
+	<LI>Next message: <A HREF="000112.html">[pe-commits] r517 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#110">[ date ]</a>
+              <a href="thread.html#110">[ thread ]</a>
+              <a href="subject.html#110">[ subject ]</a>
+              <a href="author.html#110">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

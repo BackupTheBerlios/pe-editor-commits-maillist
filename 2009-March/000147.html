@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] error in Jamrules
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-March/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20error%20in%20Jamrules&In-Reply-To=%3C20090307180500.20829.1%40bee.hirschkaefer.site%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000144.html">
+   <LINK REL="Next"  HREF="000145.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] error in Jamrules</H1>
+    <B>Oliver Tappe</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20error%20in%20Jamrules&In-Reply-To=%3C20090307180500.20829.1%40bee.hirschkaefer.site%3E"
+       TITLE="[pe-commits] error in Jamrules">pecvs at hirschkaefer.de
+       </A><BR>
+    <I>Sat Mar  7 18:05:00 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000144.html">[pe-commits] error in Jamrules
+</A></li>
+        <LI>Next message: <A HREF="000145.html">[pe-commits] r550 - trunk/build
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#147">[ date ]</a>
+              <a href="thread.html#147">[ thread ]</a>
+              <a href="subject.html#147">[ subject ]</a>
+              <a href="author.html#147">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi Matt,
+
+On 2009-03-07 at 16:10:01 [+0100], Matt Madia &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">mattmadia at gmail.com</A>&gt; wrote:
+&gt;<i> First, is there a better list to be sending Pe-related emails to?
+</I>
+Yes, you can find Pe's discussion list here: <A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">pedevel at freelists.org</A>
+Hope to see you there ;-)
+
+&gt;<i> After jam runs successfully, i tried `jam distro` to see what it'd do..
+</I>&gt;<i> 
+</I>&gt;<i> jam distro
+</I>&gt;<i> ...found 1 target(s)...
+</I>&gt;<i> ...updating 1 target(s)...
+</I>&gt;<i> MakeDistro distro
+</I>&gt;<i> making distro generated/distro
+</I>&gt;<i> /bin/sh: -c: line 9: syntax error near unexpected token `)'
+</I>&gt;<i> /bin/sh: -c: line 9: `if  -s) = &quot;Haiku&quot;; then'
+</I>&gt;<i> 
+</I>&gt;<i> echo &quot;making distro generated/distro&quot; ;
+</I>&gt;<i> rm -rf generated/distro/Documentation ;
+</I>&gt;<i> mkdir generated/distro/Documentation ;
+</I>&gt;<i> cp -a ./doc/*.html generated/distro/Documentation/ ;
+</I>&gt;<i> mkdir generated/distro/Documentation/gifs ;
+</I>&gt;<i> cp -a ./doc/gifs/*.gif generated/distro/Documentation/gifs/ ;
+</I>&gt;<i> ln -sf Documentation/index.html generated/distro/Documentation.html ;
+</I>&gt;<i> if  -s) = &quot;Haiku&quot;; then
+</I>&gt;<i> ln -sf /boot/common/bin/ generated/distro/\(drag\ lpe\ here\ to\ install\) ;
+</I>&gt;<i> cp -a /boot/common/lib/libpcre*.so generated/distro/lib/ ;
+</I>&gt;<i> else
+</I>&gt;<i> ln -sf /boot/home/config/bin/ generated/distro/\(drag\ lpe\ here\ to\
+</I>&gt;<i> install\) ;
+</I>&gt;<i> cp -a /boot/home/config/lib/libpcre*.so generated/distro/lib/ ;
+</I>&gt;<i> fi
+</I>&gt;<i> 
+</I>&gt;<i> ...failed MakeDistro distro ...
+</I>&gt;<i> ...failed updating 1 target(s)...
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Here's the offending line in Jamrules:
+</I>&gt;<i>     if $(uname -s) = &quot;Haiku&quot;; then
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Here's the patch:
+</I>&gt;<i> 
+</I>&gt;<i> Index: Jamrules
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- Jamrules    (revision 549)
+</I>&gt;<i> +++ Jamrules    (working copy)
+</I>&gt;<i> @@ -48,7 +48,7 @@
+</I>&gt;<i>         mkdir $(DISTRO_DIR)/Documentation/gifs ;
+</I>&gt;<i>         cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+</I>&gt;<i>         ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+</I>&gt;<i> -       if $(uname -s) = &quot;Haiku&quot;; then
+</I>&gt;<i> +       if [ &quot;$(OS)&quot; = &quot;HAIKU&quot; ] ; then
+</I>&gt;<i>                 ln -sf /boot/common/bin/ $(DISTRO_DIR)/\(drag\ lpe\
+</I>&gt;<i> here\ to\ install\) ;
+</I>&gt;<i>                 cp -a /boot/common/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+</I>&gt;<i>         else
+</I>
+Many thanks for the note. I have fixed it a little bit differently though, by
+declaring COMMON_FOLDER in BuildSettings as appropriate and make use of it in
+the distro rule.
+
+cheers,
+    Oliver
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000144.html">[pe-commits] error in Jamrules
+</A></li>
+	<LI>Next message: <A HREF="000145.html">[pe-commits] r550 - trunk/build
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#147">[ date ]</a>
+              <a href="thread.html#147">[ thread ]</a>
+              <a href="subject.html#147">[ subject ]</a>
+              <a href="author.html#147">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

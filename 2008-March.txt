@@ -1,0 +1,211 @@
+From mmu_man at mail.berlios.de  Sat Mar  1 17:42:56 2008
+From: mmu_man at mail.berlios.de (mmu_man at BerliOS)
+Date: Sat, 1 Mar 2008 17:42:56 +0100
+Subject: [pe-commits] r498 - trunk/Sources
+Message-ID: <200803011642.m21Ggu0N008495@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2008-03-01 17:42:55 +0100 (Sat, 01 Mar 2008)
+New Revision: 498
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=498&view=rev
+
+Modified:
+   trunk/Sources/CStdErrBox.cpp
+Log:
+This should prevent the first 2 stderr regexps from being always overwritten I think.
+
+Modified: trunk/Sources/CStdErrBox.cpp
+===================================================================
+--- trunk/Sources/CStdErrBox.cpp	2008-02-28 21:59:59 UTC (rev 497)
++++ trunk/Sources/CStdErrBox.cpp	2008-03-01 16:42:55 UTC (rev 498)
+@@ -287,7 +287,7 @@
+ 	{
+ 		gPrefs->SetIxPrefString(prf_X_StdErrPattern, 0, "1;2;4;3;^([^:]+):([0-9]+): (warning: )?(.*)\\n");
+ 		gPrefs->SetIxPrefString(prf_X_StdErrPattern, 1, "4;5;2;1;^### [^ ]+ (.*)\\n(#[ \\t](.*\\n))+#-+\\n[ \\t]*File \"([^\"]+)\"; Line ([0-9]+)\\n(#.*\\n)*#-+\\n");
+-		gPrefs->GetPrefInt(prf_I_StdErrInitEd, 1);
++		gPrefs->SetPrefInt(prf_I_StdErrInitEd, 1);
+ 	}
+ 
+ 	i = 0;
+
+
+
+From zooey at mail.berlios.de  Fri Mar 28 11:58:46 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Fri, 28 Mar 2008 11:58:46 +0100
+Subject: [pe-commits] r499 - in trunk: Resources Sources
+Message-ID: <200803281058.m2SAwkcE007001@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-03-28 11:58:46 +0100 (Fri, 28 Mar 2008)
+New Revision: 499
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=499&view=rev
+
+Modified:
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/PrefControls.h
+Log:
+* Made the number of context lines/chars at top/bottom resp. left/right
+  edge of window configurable via the prefs dialog.
+
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Resources/Dialog-Preferences.r	2008-03-28 10:58:46 UTC (rev 499)
+@@ -141,14 +141,21 @@
+ 				CheckBox		{{   0,  80, 140,  96 }, pnm_Edi_X_SmartWorkspaces,		"Smart Workspaces"					},
+ 				CheckBox		{{ 150,  80, 290,  96 }, pnm_Edi_X_AlternateHome,		"Alternate Home"					},
+ 
+-				Line			{{   0, 103, 290, 104 }},
++				Edit			{{   0, 100, 290, 117 }, pnm_Edi_T_ContextLines,		
++									"Context Lines at Top/Bottom Edge:",	"", "0123456789", 2, 240
++								},
+ 
+-				PopupMenu		{{   0, 111, 190, 127 }, pnm_Edi_P_Font1Face,			"Font:",				rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 111, 290, 127 }, pnm_Edi_T_Font1Size,			"Size:",				"", "0123456789", 2, 40		},
++				Edit			{{   0, 120, 290, 137 }, pnm_Edi_T_ContextChars,
++									"Context Chars at Left/Right Edge:",	"", "0123456789", 2, 240		},
+ 
+-				PopupMenu		{{   0, 131, 190, 147 }, pnm_Edi_P_Font2Face,			"Alt. Font:",			rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 131, 290, 147 }, pnm_Edi_T_Font2Size,			"Size:",				"", "0123456789", 2, 40		},
++				Line			{{   0, 143, 290, 144 }},
+ 
++				PopupMenu		{{   0, 151, 190, 167 }, pnm_Edi_P_Font1Face,			"Font:",				rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 151, 290, 167 }, pnm_Edi_T_Font1Size,			"Size:",				"", "0123456789", 2, 40		},
++
++				PopupMenu		{{   0, 171, 190, 187 }, pnm_Edi_P_Font2Face,			"Alt. Font:",			rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 171, 290, 187 }, pnm_Edi_T_Font2Size,			"Size:",				"", "0123456789", 2, 40		},
++
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ "File Types", "These types show up in the Save Dialogbox"									},
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Sources/CPrefsDialog.cpp	2008-03-28 10:58:46 UTC (rev 499)
+@@ -318,6 +318,9 @@
+ 	strcpy(gControlChar, GetText(pnm_Inv_T_ControlChar));
+ 	gPrefs->SetPrefString(prf_S_ControlChar, gControlChar);
+ 
++	gPrefs->SetPrefInt(prf_I_ContextLines, atoi(GetText(pnm_Edi_T_ContextLines)));
++	gPrefs->SetPrefInt(prf_I_ContextChars, atoi(GetText(pnm_Edi_T_ContextChars)));
++
+ 	gPrefs->SetPrefInt(prf_I_SpacesPerTab, gSpacesPerTab = atoi(GetText(pnm_Edi_T_SpacesPerTab)));
+ 
+ 	CntrlGetChkbx(pnm_Edi_X_AutoIndent,				prf_I_AutoIndent,				gAutoIndent);
+@@ -562,6 +565,12 @@
+ 	sprintf(s, "%d", gSpacesPerTab);
+ 	SetText(pnm_Edi_T_SpacesPerTab, s);
+ 
++	sprintf(s, "%d", gPrefs->GetPrefInt(prf_I_ContextLines, 3));
++	SetText(pnm_Edi_T_ContextLines, s);
++
++	sprintf(s, "%d", gPrefs->GetPrefInt(prf_I_ContextChars, 5));
++	SetText(pnm_Edi_T_ContextChars, s);
++
+ 	bool sw;
+ 	SetOn(pnm_Wrp_X_SoftWrapFiles,	sw = gPrefs->GetPrefInt(prf_I_SoftWrap, false));
+ 
+
+Modified: trunk/Sources/PrefControls.h
+===================================================================
+--- trunk/Sources/PrefControls.h	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Sources/PrefControls.h	2008-03-28 10:58:46 UTC (rev 499)
+@@ -59,6 +59,8 @@
+ #define pnm_Edi_X_SmartWorkspaces		"smwo"
+ #define pnm_Edi_X_AlternateHome			"alho"
+ #define pnm_Edi_T_SpacesPerTab			"tabs"	/* TODO: Check other occurences */
++#define pnm_Edi_T_ContextLines			"ctxl"
++#define pnm_Edi_T_ContextChars			"ctxc"
+ #define pnm_Edi_T_Font1Size				"fons"
+ #define pnm_Edi_T_Font2Size				"alfs"
+ #define pnm_Edi_P_Font1Face				"font"	/* TODO: Check other occurences */
+
+
+
+From zooey at mail.berlios.de  Fri Mar 28 13:04:58 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Fri, 28 Mar 2008 13:04:58 +0100
+Subject: [pe-commits] r500 - trunk/Sources
+Message-ID: <200803281204.m2SC4ww7024972@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-03-28 13:04:57 +0100 (Fri, 28 Mar 2008)
+New Revision: 500
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=500&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+* The BeIDE menu is now shown only when BeIDE is actually installed (instead of
+  showing an empty icon).
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2008-03-28 10:58:46 UTC (rev 499)
++++ trunk/Sources/PDoc.cpp	2008-03-28 12:04:57 UTC (rev 500)
+@@ -186,9 +186,13 @@
+ 	// add the BeIDE menu, if desired
+ 	if (showIde)
+ 	{
+-		BMenu *menu = HResources::GetMenu(rid_Menu_DwBeide);
+-		BMenuItem *ideMenuItem = new CMenuItem(menu);
+-		fMBar->AddItem(ideMenuItem);
++		BMimeType mime("application/x-mw-BeIDE");
++		if (mime.IsInstalled())
++		{
++			BMenu *menu = HResources::GetMenu(rid_Menu_DwBeide);
++			BMenuItem *ideMenuItem = new CMenuItem(menu);
++			fMBar->AddItem(ideMenuItem);
++		}
+ 	}
+ 
+ 	AddChild(fMBar);
+
+
+
+From zooey at mail.berlios.de  Fri Mar 28 13:06:25 2008
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Fri, 28 Mar 2008 13:06:25 +0100
+Subject: [pe-commits] r501 - trunk/Sources
+Message-ID: <200803281206.m2SC6Ptm026559@sheep.berlios.de>
+
+Author: zooey
+Date: 2008-03-28 13:06:25 +0100 (Fri, 28 Mar 2008)
+New Revision: 501
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=501&view=rev
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+* added Francois Revol as contributor
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2008-03-28 12:04:57 UTC (rev 500)
++++ trunk/Sources/PAbout.cpp	2008-03-28 12:06:25 UTC (rev 501)
+@@ -56,7 +56,7 @@
+ 		"Copyright ? 1997, 1998, 2002.\n\n"
+ 		"-\n\n"
+ 		"This is the Open Source version of Pe,\n"
+-		"copyright ? 2003-2006, Team Pe at BeUnited,\n"
++		"copyright ? 2003-2008, Team Pe,\n"
+ 		"compiled on:\n%s\n\n"
+ 		"Pe is now hosted at BerliOS:\n"
+ 		"http://developer.berlios.de/projects/pe-editor\n\n"
+@@ -72,6 +72,7 @@
+ 		"Axel D?rfler\n"
+ 		"Chris Roberts\n"
+ 		"Christian Packmann\n"
++		"Fran?ois Revol\n"
+ 		"Guy Haviv\n"
+ 		"Ingo Weinhold\n"
+ 		"Ithamar R. Adema\n"
+
+
+

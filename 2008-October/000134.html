@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r544 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r544%20-%20trunk/Sources&In-Reply-To=%3C200810102157.m9ALvVpS014790%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000133.html">
+   <LINK REL="Next"  HREF="000135.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r544 - trunk/Sources</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r544%20-%20trunk/Sources&In-Reply-To=%3C200810102157.m9ALvVpS014790%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r544 - trunk/Sources">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 10 23:57:31 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000133.html">[pe-commits] r543 - trunk/Languages/Sources
+</A></li>
+        <LI>Next message: <A HREF="000135.html">[pe-commits] r545 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-10-10 23:57:31 +0200 (Fri, 10 Oct 2008)
+New Revision: 544
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=544&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=544&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Try to find which function we are in and mark it in the function popup.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2008-10-09 14:46:29 UTC (rev 543)
++++ trunk/Sources/PText.cpp	2008-10-10 21:57:31 UTC (rev 544)
+@@ -2321,11 +2321,20 @@
+ };
+ 
+ struct MenuFunctionScanHandler : public CFunctionScanHandler {
+-	MenuFunctionScanHandler(bool sorted, int whichVal)
++	MenuFunctionScanHandler(bool sorted, int whichVal, int where)
+ 		: sorted(sorted)
+ 		, which(whichVal)
++		, where(where)
++		, closest(-1)
++		, closestItem(NULL)
+ 	{
+ 	}
++	
++	~MenuFunctionScanHandler()
++	{
++		if (closestItem)
++			closestItem-&gt;SetMarked(true);
++	}
+ 
+ 	void AddFunction(const char *name, const char *match, int offset,
+ 		bool italic, uint32 nestLevel, const char *params)
+@@ -2344,10 +2353,16 @@
+ 			indName.Prepend(' ', indent);
+ 		}
+ 
++		BMenuItem *item;
+ 		if (italic)
+-			functions.AddItem(new PItalicMenuItem(indName.String(), msg));
++			item = new PItalicMenuItem(indName.String(), msg);
+ 		else
+-			functions.AddItem(new BMenuItem(indName.String(), msg));
++			item = new BMenuItem(indName.String(), msg);
++		functions.AddItem(item);
++
++		// we might be in this function
++		if (offset &gt; closest &amp;&amp; offset &lt; where)
++			closestItem = item;
+ 	}
+ 
+ 	void AddInclude(const char *name, const char *open, bool italic)
+@@ -2388,6 +2403,9 @@
+ 	BList includes, functions;
+ 	bool sorted;
+ 	int which;
++	int where;
++	int closest;
++	BMenuItem *closestItem;
+ };
+ 
+ void PText::ShowFunctionMenu(BPoint where, int which)
+@@ -2399,7 +2417,7 @@
+ 	bool optionDown = (ki.modifiers &amp; (B_OPTION_KEY | B_SHIFT_KEY | B_COMMAND_KEY)) != 0;
+ 	bool sorted = (optionDown != gPrefs-&gt;GetPrefInt(prf_I_SortPopup));
+ 
+-	MenuFunctionScanHandler handler(sorted, which);
++	MenuFunctionScanHandler handler(sorted, which, Caret());
+ 
+ 	BList&amp; includes = handler.includes;
+ 	BList&amp; functions = handler.functions;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000133.html">[pe-commits] r543 - trunk/Languages/Sources
+</A></li>
+	<LI>Next message: <A HREF="000135.html">[pe-commits] r545 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

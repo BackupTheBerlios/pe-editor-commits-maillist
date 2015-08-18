@@ -1,0 +1,515 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r417 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr417%20-%20trunk/Sources&In-Reply-To=%3C200601131802.k0DI2n1q029526%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000009.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r417 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr417%20-%20trunk/Sources&In-Reply-To=%3C200601131802.k0DI2n1q029526%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r417 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Fri Jan 13 19:02:49 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000009.html">[pe-commits]r418 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-01-13 19:02:46 +0100 (Fri, 13 Jan 2006)
+New Revision: 417
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=417&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=417&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDiffWindow.cpp
+   trunk/Sources/CDocWindow.cpp
+   trunk/Sources/CDocWindow.h
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PDoc.h
+   trunk/Sources/PErrorWindow.cpp
+   trunk/Sources/PGroupWindow.cpp
+   trunk/Sources/PGroupWindow.h
+   trunk/Sources/PMessageWindow.cpp
+   trunk/Sources/PProjectWindow.cpp
+   trunk/Sources/PProjectWindow.h
+Log:
+- refactored CDocWindow to be able to add support for automatically
+  storing and restoring of default layouts per doc-window-type. Pe used
+  to mix up group window sizes and normal windows sizes, which was a mess.
+
+
+
+Modified: trunk/Sources/CDiffWindow.cpp
+===================================================================
+--- trunk/Sources/CDiffWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/CDiffWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -652,9 +652,7 @@
+ 				FailOSErr(e1.GetRef(&amp;f1));
+ 				FailOSErr(e2.GetRef(&amp;f2));
+ 
+-				BRect r = PDoc::NextPosition();
+-				r.right = r.left + 400;
+-				r.bottom = r.top + 150;
++				BRect r(100,100,500,250);
+ 						
+ 				CDiffWindow *ndw = new CDiffWindow(r, &quot;Differences&quot;);
+ 				
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/CDocWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -37,6 +37,7 @@
+ 
+ #include &lt;NodeMonitor.h&gt;
+ #include &lt;fs_attr.h&gt;
++#include &lt;String.h&gt;
+ 
+ #include &quot;CDocIO.h&quot;
+ #include &quot;CDocWindow.h&quot;
+@@ -51,7 +52,7 @@
+ int CDocWindow::sfNewCount = -1;
+ 
+ CDocWindow::CDocWindow(const entry_ref *doc)
+-	: BWindow(NextPosition(), &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 0)
++	: BWindow(BRect(0,0,0,0), &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 0)
+ 	, CDoc(&quot;&quot;, this, doc)
+ 	, fWaitForSave(false)
+ {
+@@ -60,7 +61,7 @@
+ }
+ 
+ CDocWindow::CDocWindow(URLData&amp; url)
+-	: BWindow(NextPosition(), &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 0)
++	: BWindow(BRect(0,0,0,0), &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 0)
+ 	, CDoc(url)
+ 	, fWaitForSave(false)
+ {
+@@ -74,14 +75,6 @@
+ 		(*i)-&gt;Lock();
+ 		(*i)-&gt;Quit();
+ 	}
+-
+-	if (fDocIO-&gt;LastSaved() == 0)
+-	{
+-		// closing a new (unsaved) document (a.k.a. 'Untitled') defines
+-		// the default document frame:
+-		gPrefs-&gt;SetPrefRect(prf_R_DefaultDocumentRect, Frame());
+-		sfNewCount = -1;
+-	}
+ }
+ 
+ #pragma mark - settings
+@@ -182,9 +175,25 @@
+ void CDocWindow::Quit()
+ {
+ 	WriteState();
++	if (fDocIO-&gt;LastSaved() == 0)
++	{
++		// closing a new (unsaved) document (a.k.a. 'Untitled') defines
++		// the default document frame for the current window type:
++		BString prefsName = prf_R_DefaultDocumentRect;
++			prefsName &lt;&lt; DocWindowType();
++		gPrefs-&gt;SetPrefRect(prefsName.String(), Frame());
++		sfNewCount = -1;
++	}
+ 	inherited::Quit();
+ }
+ 
++void CDocWindow::SetupSizeAndLayout()
++{
++	BRect winRect = NextPosition();
++	MoveTo(winRect.LeftTop());
++	ResizeTo(winRect.Width(), winRect.Height());
++}
++
+ void CDocWindow::Show()
+ {
+ 	// try to avoid showing window-parts offscreen:
+@@ -319,8 +328,10 @@
+ 		40 + 80*textFont.StringWidth(&quot;m&quot;) + B_V_SCROLL_BAR_WIDTH + 5, 
+ 		25 + 40*lh + B_H_SCROLL_BAR_HEIGHT
+ 	);
+-	BRect defaultFrame = gPrefs-&gt;GetPrefRect(prf_R_DefaultDocumentRect, 
+-											 initialDefaultRect);
++	BString prefsName = prf_R_DefaultDocumentRect;
++		prefsName &lt;&lt; DocWindowType();
++	BRect defaultFrame 
++		= gPrefs-&gt;GetPrefRect(prefsName.String(), initialDefaultRect);
+ 
+ 	if (inc)
+ 		sfNewCount++;
+
+Modified: trunk/Sources/CDocWindow.h
+===================================================================
+--- trunk/Sources/CDocWindow.h	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/CDocWindow.h	2006-01-13 18:02:46 UTC (rev 417)
+@@ -46,12 +46,15 @@
+ 			CDocWindow(URLData&amp; url);
+ virtual		~CDocWindow();
+ 		
++virtual		void SetupSizeAndLayout();
++virtual		const char* DocWindowType() = 0;
++
+ virtual		void Show();
+ virtual		bool QuitRequested();
+ virtual		void Quit();
+ virtual 	void MessageReceived(BMessage *msg);
+ 
+-static		BRect NextPosition(bool inc = true);
++			BRect NextPosition(bool inc = true);
+ 
+ 			void AddDialog(HDialog *dlog, bool isModal);
+ 			void RemoveDialog(HDialog *dlog);
+@@ -74,6 +77,7 @@
+ 
+ 			BRect fLastStoredFrame;
+ 			BRect fInitialFrame;
++protected:
+ static		int sfNewCount;
+ };
+ 
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PApp.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -794,10 +794,7 @@
+ 			
+ 			case msg_FindDifferences:
+ 			{
+-				BRect r = PDoc::NextPosition();
+-				r.right = r.left + 400;
+-				r.bottom = r.top + 150;
+-				
++				BRect r(100,100,500,250);
+ 				new CDiffWindow(r, &quot;Differences&quot;);
+ 				break;
+ 			}
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PDoc.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -85,6 +85,7 @@
+ PDoc::PDoc(const entry_ref *doc, bool show)
+ 	: inherited(doc)
+ {
++	SetupSizeAndLayout();
+ 	fShortcut = atomic_add(&amp;sDocCount, 1);
+ 	fIsWorksheet = false;
+ 	fWindowMenuLength = -1;
+@@ -123,6 +124,7 @@
+ PDoc::PDoc(URLData&amp; url)
+ 	: inherited(url)
+ {
++	SetupSizeAndLayout();
+ 	fShortcut = atomic_add(&amp;sDocCount, 1);
+ 	fIsWorksheet = false;
+ 	fWindowMenuLength = -1;
+@@ -155,6 +157,12 @@
+ {
+ } /* PDoc::~PDoc */
+ 
++const char* PDoc::DocWindowType()
++{
++	return &quot;&quot;;	
++		// default window type
++}
++
+ bool PDoc::QuitRequested()
+ {
+ 	bool result = inherited::QuitRequested();
+
+Modified: trunk/Sources/PDoc.h
+===================================================================
+--- trunk/Sources/PDoc.h	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PDoc.h	2006-01-13 18:02:46 UTC (rev 417)
+@@ -66,6 +66,8 @@
+ 			PDoc(URLData&amp; url);
+ virtual		~PDoc();
+ 		
++virtual		const char* DocWindowType();
++
+ virtual		void MessageReceived(BMessage *msg);
+ virtual		bool QuitRequested();
+ 
+
+Modified: trunk/Sources/PErrorWindow.cpp
+===================================================================
+--- trunk/Sources/PErrorWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PErrorWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -278,7 +278,7 @@
+ } /* CReadStdErr::Execute */
+ 
+ PErrorWindow::PErrorWindow(int *fd, const char *cwd)
+-	: BWindow(PDoc::NextPosition(), &quot;stderr&quot;, B_DOCUMENT_WINDOW, 0)
++	: BWindow(BRect(100,100,100,100), &quot;stderr&quot;, B_DOCUMENT_WINDOW, 0)
+ {
+ 	ResizeTo(400, 150);
+ 	
+
+Modified: trunk/Sources/PGroupWindow.cpp
+===================================================================
+--- trunk/Sources/PGroupWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PGroupWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -36,6 +36,7 @@
+ #include &lt;fs_attr.h&gt;
+ #include &lt;String.h&gt;
+ 
++#include &quot;CDocIO.h&quot;
+ #include &quot;HAppResFile.h&quot;
+ #include &quot;HButtonBar.h&quot;
+ #include &quot;HDefines.h&quot;
+@@ -43,7 +44,6 @@
+ #include &quot;HPreferences.h&quot;
+ #include &quot;MThread.h&quot;
+ #include &quot;PApp.h&quot;
+-//#include &quot;PDoc.h&quot;
+ #include &quot;PGroupWindow.h&quot;
+ #include &quot;PKeyDownFilter.h&quot;
+ #include &quot;PMessages.h&quot;
+@@ -119,6 +119,38 @@
+ 	, fNewItems(NULL)
+ {
+ 	SetMimeType(&quot;text/x-vnd.Hekkel-Pe-Group&quot;, false);
++	SetupSizeAndLayout();
++	if (doc)
++	{
++		SetTitle(doc-&gt;name);
++		
++		BEntry e;
++		FailOSErr(e.SetTo(doc));
++		BPath p;
++		FailOSErr(e.GetPath(&amp;p));
++		fStatus-&gt;SetPath(p.Path());
++		AddRecent(p.Path());
++		
++		Read();
++	}
++	
++	fList-&gt;AddFilter(new PKeyDownFilter());
++	fList-&gt;MakeFocus();
++	Show();
++}
++
++PGroupWindow::~PGroupWindow()
++{
++	if (fPanel)
++	{
++		delete fPanel;
++		fPanel = NULL;
++	}
++} /* PGroupWindow::~PGroupWindow */
++
++void PGroupWindow::SetupSizeAndLayout()
++{
++	inherited::SetupSizeAndLayout();
+ 	SetFlags(Flags()|B_WILL_ACCEPT_FIRST_CLICK);
+ 	
+ 	ResizeTo(180, 400);
+@@ -143,7 +175,8 @@
+ 	r = Bounds();
+ 	r.top = r.bottom - B_H_SCROLL_BAR_HEIGHT + 1;
+ 	r.right -= B_V_SCROLL_BAR_WIDTH;
+-	AddChild(fStatus = new PGroupStatus(r, doc ? doc-&gt;name : NULL));
++	AddChild(fStatus 
++		= new PGroupStatus(r, fDocIO-&gt;EntryRef() ? fDocIO-&gt;EntryRef()-&gt;name : NULL));
+ 
+ 	r = Bounds();
+ 	r.top = fToolBar-&gt;Frame().bottom;
+@@ -157,33 +190,12 @@
+ 	
+ 	AddShortcut('S', 0, new BMessage(msg_Save));
+ 	
+-	if (doc)
+-	{
+-		SetTitle(doc-&gt;name);
+-		
+-		BEntry e;
+-		FailOSErr(e.SetTo(doc));
+-		BPath p;
+-		FailOSErr(e.GetPath(&amp;p));
+-		fStatus-&gt;SetPath(p.Path());
+-		AddRecent(p.Path());
+-		
+-		Read();
+-	}
+-	
+-	fList-&gt;AddFilter(new PKeyDownFilter());
+-	fList-&gt;MakeFocus();
+-	Show();
+ } /* PGroupWindow::PGroupWindow */
+ 
+-PGroupWindow::~PGroupWindow()
++const char* PGroupWindow::DocWindowType()
+ {
+-	if (fPanel)
+-	{
+-		delete fPanel;
+-		fPanel = NULL;
+-	}
+-} /* PGroupWindow::~PGroupWindow */
++	return &quot;-group-window&quot;;
++}
+ 
+ bool PGroupWindow::QuitRequested()
+ {
+
+Modified: trunk/Sources/PGroupWindow.h
+===================================================================
+--- trunk/Sources/PGroupWindow.h	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PGroupWindow.h	2006-01-13 18:02:46 UTC (rev 417)
+@@ -55,6 +55,9 @@
+ 			PGroupWindow(const entry_ref *doc = NULL);
+ 			~PGroupWindow();
+ 
++virtual	void SetupSizeAndLayout();
++virtual	const char* DocWindowType();
++
+ virtual	bool QuitRequested();
+ 
+ virtual	void MessageReceived(BMessage *msg);
+
+Modified: trunk/Sources/PMessageWindow.cpp
+===================================================================
+--- trunk/Sources/PMessageWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PMessageWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -284,7 +284,7 @@
+ const ulong msg_MsgInvoked = 'MsgI';
+ 
+ PMessageWindow::PMessageWindow(const char *title)
+-	: BWindow(PDoc::NextPosition(), title, B_DOCUMENT_WINDOW, 0)
++	: BWindow(BRect(100,100,100,100), title, B_DOCUMENT_WINDOW, 0)
+ {
+ 	ResizeTo(400, 150);
+ 	
+
+Modified: trunk/Sources/PProjectWindow.cpp
+===================================================================
+--- trunk/Sources/PProjectWindow.cpp	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PProjectWindow.cpp	2006-01-13 18:02:46 UTC (rev 417)
+@@ -39,6 +39,7 @@
+ 
+ #include &lt;fs_attr.h&gt;
+ 
++#include &quot;CDocIO.h&quot;
+ #include &quot;CProjectJamFile.h&quot;
+ #include &quot;CProjectMakeFile.h&quot;
+ #include &quot;CProjectRoster.h&quot;
+@@ -78,6 +79,23 @@
+ 	, fPanel(NULL)
+ {
+ 	SetMimeType(mimetype, false);
++	SetupSizeAndLayout();
++} /* PProjectWindow::PProjectWindow */
++
++PProjectWindow::~PProjectWindow()
++{
++	delete fPrjFile;
++	if (fPanel)
++	{
++		delete fPanel;
++		fPanel = NULL;
++	}
++	
++} /* PProjectWindow::~PProjectWindow */
++
++void PProjectWindow::SetupSizeAndLayout()
++{
++	inherited::SetupSizeAndLayout();
+ 	ResizeTo(180, 400);
+ 	SetSizeLimits(100, 100000, 100, 100000);
+ 	
+@@ -100,7 +118,8 @@
+ 	r = Bounds();
+ 	r.top = r.bottom - B_H_SCROLL_BAR_HEIGHT + 1;
+ 	r.right -= B_V_SCROLL_BAR_WIDTH;
+-	AddChild(fStatus = new PGroupStatus(r, doc ? doc-&gt;name : NULL));
++	AddChild(fStatus 
++		= new PGroupStatus(r, fDocIO-&gt;EntryRef() ? fDocIO-&gt;EntryRef()-&gt;name : NULL));
+ 
+ 	r = Bounds();
+ 	r.top = fToolBar-&gt;Frame().bottom;
+@@ -117,18 +136,12 @@
+ 
+ 	NameChanged();
+ 	SelectionChanged();
+-} /* PProjectWindow::PProjectWindow */
++}
+ 
+-PProjectWindow::~PProjectWindow()
++const char* PProjectWindow::DocWindowType()
+ {
+-	delete fPrjFile;
+-	if (fPanel)
+-	{
+-		delete fPanel;
+-		fPanel = NULL;
+-	}
+-	
+-} /* PProjectWindow::~PProjectWindow */
++	return &quot;-project-window&quot;;
++}
+ 
+ bool PProjectWindow::QuitRequested()
+ {
+
+Modified: trunk/Sources/PProjectWindow.h
+===================================================================
+--- trunk/Sources/PProjectWindow.h	2005-12-27 22:31:20 UTC (rev 416)
++++ trunk/Sources/PProjectWindow.h	2006-01-13 18:02:46 UTC (rev 417)
+@@ -61,6 +61,9 @@
+ 	static PProjectWindow* Create(const entry_ref *doc, const char* mimetype);
+ 	~PProjectWindow();
+ 
++	virtual void SetupSizeAndLayout();
++	virtual const char* DocWindowType();
++
+ 	virtual bool QuitRequested();
+ 
+ 	virtual void MessageReceived(BMessage *msg);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000009.html">[pe-commits]r418 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

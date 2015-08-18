@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r477 - in trunk: Extensions Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r477%20-%20in%20trunk%3A%20Extensions%20Sources&In-Reply-To=%3C200703111008.l2BA8d6I015323%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r477 - in trunk: Extensions Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r477%20-%20in%20trunk%3A%20Extensions%20Sources&In-Reply-To=%3C200703111008.l2BA8d6I015323%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r477 - in trunk: Extensions Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 11 11:08:39 CET 2007</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#70">[ date ]</a>
+              <a href="thread.html#70">[ thread ]</a>
+              <a href="subject.html#70">[ subject ]</a>
+              <a href="author.html#70">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2007-03-11 11:08:38 +0100 (Sun, 11 Mar 2007)
+New Revision: 477
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=477&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=477&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/BeBookFetch.cpp
+   trunk/Sources/CDoc.h
+Log:
+* applied patch provided by Ithamar, which allows for compiling with older
+  compilers (gnupro-000224).
+
+
+Modified: trunk/Extensions/BeBookFetch.cpp
+===================================================================
+--- trunk/Extensions/BeBookFetch.cpp	2006-12-17 16:38:15 UTC (rev 476)
++++ trunk/Extensions/BeBookFetch.cpp	2007-03-11 10:08:38 UTC (rev 477)
+@@ -80,7 +80,7 @@
+ 	if (messenger.IsValid())
+ 		messenger.SendMessage(&amp;msg);
+ 	else
+-		be_roster-&gt;Launch(kTrackerSig, 1, &amp;const_cast&lt;char*&gt;(fileName));
++		be_roster-&gt;Launch(kTrackerSig, 1, const_cast&lt;char**&gt;(&amp;fileName));
+ }
+ 
+ 
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-12-17 16:38:15 UTC (rev 476)
++++ trunk/Sources/CDoc.h	2007-03-11 10:08:38 UTC (rev 477)
+@@ -196,7 +196,7 @@
+ 
+ inline void CDoc::ClearErrorMsg()
+ {
+-	fErrorMsg.clear();
++	fErrorMsg.erase();
+ }
+ 
+ inline const char *CDoc::MimeType() const
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#70">[ date ]</a>
+              <a href="thread.html#70">[ thread ]</a>
+              <a href="subject.html#70">[ subject ]</a>
+              <a href="author.html#70">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

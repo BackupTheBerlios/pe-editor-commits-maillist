@@ -1,0 +1,401 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r574 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r574%20-%20trunk/Sources&In-Reply-To=%3C200905050126.n451Q9Gp031937%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000170.html">
+   <LINK REL="Next"  HREF="000172.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r574 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r574%20-%20trunk/Sources&In-Reply-To=%3C200905050126.n451Q9Gp031937%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r574 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Tue May  5 03:26:09 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000170.html">[pe-commits] r573 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000172.html">[pe-commits] r575 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#171">[ date ]</a>
+              <a href="thread.html#171">[ thread ]</a>
+              <a href="subject.html#171">[ subject ]</a>
+              <a href="author.html#171">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-05 03:26:08 +0200 (Tue, 05 May 2009)
+New Revision: 574
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=574&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=574&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PTextBuffer.cpp
+   trunk/Sources/PTextBuffer.h
+Log:
+* Added a change counter. This makes it easy to just check whether something
+  has changed.
+* Automatic white space cleanup.
+
+
+Modified: trunk/Sources/PTextBuffer.cpp
+===================================================================
+--- trunk/Sources/PTextBuffer.cpp	2009-05-04 14:46:49 UTC (rev 573)
++++ trunk/Sources/PTextBuffer.cpp	2009-05-05 01:26:08 UTC (rev 574)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include &quot;pe.h&quot;
+@@ -45,6 +45,7 @@
+ 	, fPhysicalSize(0)
+ 	, fGap(0)
+ 	, fGapSize(0)
++	, fChangeCounter(0)
+ {
+ 	FailNil(fText);
+ } /* PTextBuffer::PTextBuffer */
+@@ -60,22 +61,24 @@
+ 	ASSERT(index &gt;= 0 &amp;&amp; index &lt;= fLogicalSize);
+ 
+ 	if (numBytes &lt; 0 || index &lt; 0 || index &gt; fLogicalSize) return;
+-	
++
+ 	index = std::max(std::min(fLogicalSize, index), 0);
+-	
++
+ 	if (index != fGap)
+ 		MoveGap(index);
+-	
++
+ 	if (fGapSize &lt; numBytes)
+ 		ResizeGap(numBytes + kBlockSize);
+ 
+ 	ASSERT(numBytes &lt;= fGapSize);
+ 	memcpy(fText + fGap, bytes, numBytes);
+-	
++
+ 	fGapSize -= numBytes;
+ 	fGap += numBytes;
+ 	fLogicalSize += numBytes;
+ 
++	fChangeCounter++;
++
+ //	PrintToStream();
+ } /* PTextBuffer::Insert */
+ 
+@@ -83,23 +86,25 @@
+ {
+ 	int index = from;
+ 	int cnt = to - from;
+-	
++
+ 	ASSERT(cnt != 0);
+ 	ASSERT(from &lt; to);
+ 	ASSERT(index &gt;= 0);
+ 	ASSERT(index &lt; fLogicalSize);
+ 	if (cnt &lt;= 0 || from &lt; 0 || index &gt;= fLogicalSize)
+ 		return;
+-	
++
+ 	index = std::max(std::min(fLogicalSize - 1, index), 0);
+ 	MoveGap(index);
+-	
++
+ 	fGapSize += cnt;
+ 	fLogicalSize -= cnt;
+-	
++
+ 	if (fGapSize &gt; kBlockSize)
+ 		ResizeGap(kBlockSize);
+ 
++	fChangeCounter++;
++
+ //	PrintToStream();
+ } /* PTextBuffer::Delete */
+ 
+@@ -117,13 +122,13 @@
+ void PTextBuffer::MoveGap(int offset)
+ {
+ 	if (fGap == offset) return;
+-	
++
+ 	ASSERT(offset &gt;= 0);
+ 	ASSERT(offset &lt;= fLogicalSize);
+-	
++
+ 	int gapEnd = fGap + fGapSize;
+ 	int src, dst, cnt = 0;
+-	
++
+ 	if (offset &gt; fGap)
+ 	{
+ 		int trail = fPhysicalSize - gapEnd;
+@@ -137,13 +142,13 @@
+ 		dst = offset + fGapSize;
+ 		cnt = gapEnd - dst;
+ 	}
+-	
++
+ 	if (cnt &gt; 0)
+ 	{
+ 		ASSERT(dst + cnt &lt;= fPhysicalSize);
+ 		memmove(fText + dst, fText + src, cnt);
+ 	}
+-	
++
+ 	fGap = offset;
+ 
+ //	PrintToStream();
+@@ -152,9 +157,9 @@
+ void PTextBuffer::ResizeGap(int gapSize)
+ {
+ 	if (fGapSize == gapSize) return;
+-	
++
+ 	char *t = fText;
+-	
++
+ 	try
+ 	{
+ 		if (gapSize &gt; fGapSize)
+@@ -165,7 +170,7 @@
+ 
+ 		memmove(fText + fGap + gapSize, fText + fGap + fGapSize,
+ 			fPhysicalSize - (fGap + fGapSize));
+-		
++
+ 		if (gapSize &lt; fGapSize)
+ 		{
+ 			fText = (char *)realloc(fText, fLogicalSize + gapSize);
+@@ -207,7 +212,7 @@
+ 		int p1, p2;
+ 		p1 = fGap - index;
+ 		p2 = len - p1;
+-		
++
+ 		memcpy(buf, fText + index, p1);
+ 		memcpy(buf + p1, fText + fGap + fGapSize, p2);
+ 	}
+@@ -231,7 +236,7 @@
+ 		char b[8];
+ 		Copy(b, index, std::min(7, fLogicalSize - index));
+ 		b[7] = 0;
+-	
++
+ 		return mcharlen(b);
+ 	}
+ 	else
+@@ -249,7 +254,7 @@
+ 		int cnt = std::max(0, std::min(7, index));
+ 		Copy(b, index - cnt, cnt);
+ 		b[cnt] = 0;
+-	
++
+ 		return mprevcharlen(b + cnt);
+ 	}
+ 	else
+@@ -271,16 +276,18 @@
+ PTextBuffer&amp; PTextBuffer::operator=(const PTextBuffer&amp; b)
+ {
+ 	if (fText) free(fText);
+-	
++
+ 	fText = (char *)malloc(b.fPhysicalSize);
+ 	FailNil(fText);
+ 	memcpy(fText, b.fText, b.fPhysicalSize);
+-	
++
+ 	fLogicalSize = b.fLogicalSize;
+ 	fPhysicalSize = b.fPhysicalSize;
+ 	fGap = b.fGap;
+ 	fGapSize = b.fGapSize;
+-	
++
++	fChangeCounter++;
++
+ 	return *this;
+ } /* PTextBuffer::operator= */
+ 
+@@ -299,7 +306,7 @@
+ 		char b[8];
+ 		Copy(b, offset, std::min(7, fLogicalSize - offset));
+ 		b[7] = 0;
+-	
++
+ 		len = mcharlen(b);
+ 		unicode = municode(b);
+ 	}
+@@ -330,8 +337,10 @@
+ 		int p1, p2;
+ 		p1 = fGap - offset;
+ 		p2 = len - p1;
+-		
++
+ 		memcpy(fText + offset, txt, p1);
+ 		memcpy(fText + fGap + fGapSize, txt + p1, p2);
+ 	}
++
++	fChangeCounter++;
+ } /* PTextBuffer::Replace */
+
+Modified: trunk/Sources/PTextBuffer.h
+===================================================================
+--- trunk/Sources/PTextBuffer.h	2009-05-04 14:46:49 UTC (rev 573)
++++ trunk/Sources/PTextBuffer.h	2009-05-05 01:26:08 UTC (rev 574)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #ifndef PTEXTBUFFER_H
+@@ -47,33 +47,42 @@
+ 		void Replace(int offset, const char *txt);
+ 
+ 		char operator[] (int indx) const;
+-		
++
+ 		int Size() const;
+ 		const char* Buffer();
+-		
++
++		int ChangeCounter() const;
++
+ 		int CharLen(int offset) const;
+ 		int PrevCharLen(int offset) const;
+ 		void CharInfo(int offset, int&amp; unicode, int&amp; len) const;
+-		
++
+ 		void Copy(char *buf, int indx, int len) const;
+-		
++
+ 		void PrintToStream();
+-		
++
+ 		void ChangeToNL(int indx);
+-		
++
+ 		PTextBuffer&amp; operator=(const PTextBuffer&amp; b);
+-		
++
+ protected:
+ 		void MoveGap(int offset);
+ 		void ResizeGap(int size);
+-		
++
+ 		char *fText;
+ 		int fLogicalSize;
+ 		int fPhysicalSize;
+ 		int fGap;
+ 		int fGapSize;
++		int fChangeCounter;
+ };
+ 
++
++inline int PTextBuffer::ChangeCounter() const
++{
++	return fChangeCounter;
++}
++
+ inline char PTextBuffer::operator[] (int indx) const
+ {
+ 	ASSERT(indx &gt;= 0);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000170.html">[pe-commits] r573 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000172.html">[pe-commits] r575 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#171">[ date ]</a>
+              <a href="thread.html#171">[ thread ]</a>
+              <a href="subject.html#171">[ subject ]</a>
+              <a href="author.html#171">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

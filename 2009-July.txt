@@ -1,0 +1,354 @@
+From zooey at mail.berlios.de  Sat Jul  4 20:04:02 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sat, 4 Jul 2009 20:04:02 +0200
+Subject: [pe-commits] r587 - in trunk: Extensions Languages/Sources Sources
+	rez/Sources
+Message-ID: <200907041804.n64I4257019829@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-07-04 20:04:00 +0200 (Sat, 04 Jul 2009)
+New Revision: 587
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=587&view=rev
+
+Modified:
+   trunk/Extensions/Jamfile
+   trunk/Extensions/Pipe.cpp
+   trunk/Extensions/WebPaste.cpp
+   trunk/Languages/Sources/Antlr_Popup.cpp
+   trunk/Sources/HColorUtils.cpp
+   trunk/Sources/HPreferences.cpp
+   trunk/Sources/PAbout.cpp
+   trunk/Sources/PAddOn.cpp
+   trunk/Sources/PAddOn.h
+   trunk/Sources/PApp.cpp
+   trunk/rez/Sources/rez.cpp
+   trunk/rez/Sources/rez.h
+   trunk/rez/Sources/rez_parser.y
+   trunk/rez/Sources/rez_scanner.l
+Log:
+* fixed a number of warning with gcc4
+* the extension ImageC wasn't linking against libstdc++.so, although it
+  required it. This wasn't noticed at build time since an add-on is a
+  shared library and haiku allows shared libs to contain unresolved
+  symbols.
+
+
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/Jamfile	2009-07-04 18:04:00 UTC (rev 587)
+@@ -74,7 +74,7 @@
+ # <pe-src>
+ PeExtension ImageToC
+ 	: ImageToC.cpp 
+-	: libhekkel.so <nogrist>Pe be translation
++	: libhekkel.so <nogrist>Pe be translation $(STDC++LIB)
+ 	;
+ # </pe-src>
+ 
+
+Modified: trunk/Extensions/Pipe.cpp
+===================================================================
+--- trunk/Extensions/Pipe.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/Pipe.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -165,14 +165,14 @@
+ 			char cmd[1024];
+ 			sprintf(cmd, "cat %s | %s", fn, sText);
+ 
+-			char *args[4];
++			const char *args[4];
+ 
+ 			args[0] = "/bin/sh";
+ 			args[1] = "-c";
+ 			args[2] = cmd;
+ 			args[3] = NULL;
+ 
+-			if (execvp(args[0], args) < 0)
++			if (execvp(args[0], (char**)args) < 0)
+ 				beep();	// what else can we do???
+ 		}
+ 		else if (pid >= 0)	// parent
+
+Modified: trunk/Extensions/WebPaste.cpp
+===================================================================
+--- trunk/Extensions/WebPaste.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/WebPaste.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -19,7 +19,7 @@
+ #define OPEN_IN_BROWSER 1
+ #define COPY_TO_CLIPBOARD 1
+ 
+-struct {
++static struct {
+ 	const char *pe_name;
+ 	const char *cgi_name;
+ } kLanguageNamesMap[] = {
+
+Modified: trunk/Languages/Sources/Antlr_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/Antlr_Popup.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Languages/Sources/Antlr_Popup.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -582,8 +582,8 @@
+ 
+ void ScanForFunctions(CLanguageProxy& proxy)
+ {
+-	const char *text = proxy.Text(), *max = text + proxy.Size();
+-	char * scope = "file";
++	const char* text = proxy.Text(), *max = text + proxy.Size();
++	char* scope = (char*)"file";
+ 	if (*max != 0)
+ 		return;
+ 	
+
+Modified: trunk/Sources/HColorUtils.cpp
+===================================================================
+--- trunk/Sources/HColorUtils.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/HColorUtils.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -66,6 +66,7 @@
+ 	result.red = 255 - highColor.red; 
+ 	result.green = 255 - highColor.green; 
+ 	result.blue = 255 - highColor.blue;
++	result.alpha = highColor.alpha;
+ 	
+ 	return result;
+ } /* DistinctColor */
+
+Modified: trunk/Sources/HPreferences.cpp
+===================================================================
+--- trunk/Sources/HPreferences.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/HPreferences.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -129,6 +129,7 @@
+ 	if (pi != fPrefs.end())
+ 	{
+ 		rgb_color c;
++		c.alpha = 255;
+ 		char s[4], *p;
+ 		const char *v = (*pi).second;
+ 		
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAbout.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -585,9 +585,8 @@
+ 				p.y = kPEOffsetV;
+ 				p.x = fPStop;
+ 
+-				unsigned int c = (int)fState2 * 10;
+-
+ #ifndef __HAIKU__
++				unsigned int c = (int)fState2 * 10;
+ 				fOffView->SetHighColor(c, c, (80 * (25 - fState2) + fState2 * 250) / 25);
+ 				fOffView->DrawString("B", p);
+ 				fOffView->SetHighColor((178 * (25 - fState2) + fState2 * 250) / 25 , c, c);
+
+Modified: trunk/Sources/PAddOn.cpp
+===================================================================
+--- trunk/Sources/PAddOn.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAddOn.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -123,6 +123,12 @@
+ }
+ 
+ 
++status_t PAddOn::Perform(perform_code d, void* arg)
++{
++	return BHandler::Perform(d, arg);
++}
++
++
+ status_t PAddOn::LanguagePerform(BMessage& message)
+ {
+ 	return B_ERROR;
+
+Modified: trunk/Sources/PAddOn.h
+===================================================================
+--- trunk/Sources/PAddOn.h	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAddOn.h	2009-07-04 18:04:00 UTC (rev 587)
+@@ -58,6 +58,9 @@
+ 
+ 	virtual void	LanguageChanged(BMessage& message);
+ 
++	virtual status_t	Perform(perform_code d, void* arg);
++							// just to avoid it being hidden
++
+ protected:
+ 	/* buttons/menus */
+ 	void*			AddButton(BBitmap& bitmap, const char* toolTip, uint32 kind,
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PApp.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -35,7 +35,7 @@
+ 
+ #include "pe.h"
+ 
+-static char *rcsid = "$Id$";
++static const char *rcsid = "$Id$";
+ 
+ #include "PApp.h"
+ #include "PDoc.h"
+
+Modified: trunk/rez/Sources/rez.cpp
+===================================================================
+--- trunk/rez/Sources/rez.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -55,7 +55,7 @@
+ char *gResName;
+ void *gResData;
+ int gResSize;
+-char *gIncludePaths[kMaxIncludePaths];
++const char *gIncludePaths[kMaxIncludePaths];
+ 
+ char out[PATH_MAX] = "rez.out";
+ char *in = NULL;
+@@ -86,7 +86,7 @@
+ int getoptions(int argc, char *argv[])
+ {
+ 	int i = 1, icnt = 0;
+-	char **incl = gIncludePaths;
++	const char **incl = gIncludePaths;
+ 	
+ 	*incl++ = "";
+ 	*incl++ = ".";
+@@ -289,7 +289,8 @@
+ 	void *p;
+ 	size_t s;
+ 	FILE *f;
+-	char **i = gIncludePaths, path[PATH_MAX];
++	const char **i = gIncludePaths;
++	char path[PATH_MAX];
+ 	
+ 	do
+ 	{
+@@ -358,7 +359,8 @@
+ void Include(const char *file)
+ {
+ 	BFile f;
+-	char **i = gIncludePaths, path[PATH_MAX];
++	const char **i = gIncludePaths;
++	char path[PATH_MAX];
+ 	
+ 	do
+ 	{
+
+Modified: trunk/rez/Sources/rez.h
+===================================================================
+--- trunk/rez/Sources/rez.h	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez.h	2009-07-04 18:04:00 UTC (rev 587)
+@@ -59,6 +59,6 @@
+ extern char *gResName;
+ extern void *gResData;
+ extern int gResSize;
+-extern char *gIncludePaths[];
++extern const char *gIncludePaths[];
+ 
+ #endif
+
+Modified: trunk/rez/Sources/rez_parser.y
+===================================================================
+--- trunk/rez/Sources/rez_parser.y	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez_parser.y	2009-07-04 18:04:00 UTC (rev 587)
+@@ -73,7 +73,7 @@
+ %token ALIGN ARRAY AS BINARY BITSTRING BOOLEAN BYTE CASE CHANGE CHAR CSTRING
+ %token DECIMAL DELETE DEREZ FILL HEX INTEGER LITERAL LONGINT OCTAL INCLUDE
+ %token POINT PSTRING READ RECT RES REZ STRING SWITCH rTYPE WSTRING
+-%token LABEL IDENT REZVAR STRING NUMBER AND OR EQ NE LT LE GT GE SHR SHL
++%token LABEL IDENT REZVAR NUMBER AND OR EQ NE LT LE GT GE SHR SHL
+ %token STR_CONST WIDE BIT NIBBLE WORD LONG KEY HEXSTRING UNSIGNED rEOF COUNTOF
+ %token ARRAYINDEX LBITFIELD LBYTE FORMAT RESSIZE RESOURCE LLONG SHELL LWORD HEX_CONST
+ 
+
+Modified: trunk/rez/Sources/rez_scanner.l
+===================================================================
+--- trunk/rez/Sources/rez_scanner.l	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez_scanner.l	2009-07-04 18:04:00 UTC (rev 587)
+@@ -227,7 +227,7 @@
+ 															include_lineno_stack[include_stack_ptr] = yylineno;
+ 															include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+ 															yytext[yyleng - 1] = 0;
+-															char **i = gIncludePaths;
++															const char **i = gIncludePaths;
+ 															char p[PATH_MAX];
+ 															
+ 															do
+
+
+
+From zooey at mail.berlios.de  Sun Jul  5 17:04:28 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 5 Jul 2009 17:04:28 +0200
+Subject: [pe-commits] r588 - trunk/Sources
+Message-ID: <200907051504.n65F4Svo012334@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-07-05 17:04:23 +0200 (Sun, 05 Jul 2009)
+New Revision: 588
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=588&view=rev
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+* adjust the original copyright notice in the about view to at least
+  match the one in this source file
+
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2009-07-04 18:04:00 UTC (rev 587)
++++ trunk/Sources/PAbout.cpp	2009-07-05 15:04:23 UTC (rev 588)
+@@ -48,7 +48,7 @@
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+ 		"Hekkelman Programmatuur B.V.\n"
+-		"Copyright ? 1997, 1998, 2002.\n\n"
++		"Copyright ? 1996, 1997, 1998, 2002.\n\n"
+ 		"-\n\n"
+ 		"This is the Open Source version of Pe,\n"
+ 		"copyright ? 2003-2009, Team Pe,\n"
+
+
+
+From stippi at mail.berlios.de  Sat Jul 25 22:58:53 2009
+From: stippi at mail.berlios.de (stippi at mail.berlios.de)
+Date: Sat, 25 Jul 2009 22:58:53 +0200
+Subject: [pe-commits] r589 - trunk/Sources
+Message-ID: <200907252058.n6PKwrHm022005@sheep.berlios.de>
+
+Author: stippi
+Date: 2009-07-25 22:58:49 +0200 (Sat, 25 Jul 2009)
+New Revision: 589
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=589&view=rev
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+bonefish + stippi:
+When shifting lines and calculating the part that needs to be invalidated, don't
+include parts that could be blitted already, it will later allow to draw, where
+no man should draw. This would cause a display glitch with the new highlight
+code, when highlights have not yet been adjusted for changes in the text when
+drawing synchronously.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-07-05 15:04:23 UTC (rev 588)
++++ trunk/Sources/PText.cpp	2009-07-25 20:58:49 UTC (rev 589)
+@@ -5472,9 +5472,9 @@
+ 		CopyBits(src, dst);
+ 
+ 		if (dy > 0)
+-			src.bottom = dst.top;
++			src.bottom = dst.top - 1;
+ 		else
+-			src.top = dst.bottom;
++			src.top = dst.bottom + 1;
+ 
+ 		Invalidate(src);
+ 		Window()->UpdateIfNeeded();
+
+
+

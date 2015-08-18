@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r432 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r432%20-%20trunk/Sources&In-Reply-To=%3C200608070917.k779H0au026545%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000022.html">
+   <LINK REL="Next"  HREF="000024.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r432 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r432%20-%20trunk/Sources&In-Reply-To=%3C200608070917.k779H0au026545%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r432 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 11:17:00 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000022.html">[pe-commits] r431 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000024.html">[pe-commits] r433 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#23">[ date ]</a>
+              <a href="thread.html#23">[ thread ]</a>
+              <a href="subject.html#23">[ subject ]</a>
+              <a href="author.html#23">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 11:17:00 +0200 (Mon, 07 Aug 2006)
+New Revision: 432
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=432&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=432&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed coding style violation
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-08-07 09:12:22 UTC (rev 431)
++++ trunk/Sources/PDoc.cpp	2006-08-07 09:17:00 UTC (rev 432)
+@@ -822,7 +822,8 @@
+ 
+ void PDoc::SetDirty(bool dirty)
+ {
+-	if (LockLooper()) {
++	if (LockLooper()) 
++	{
+ 		inherited::SetDirty(dirty);
+ 		if (!dirty)
+ 			// if the new state is non-dirty, we propagate this info to the 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000022.html">[pe-commits] r431 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000024.html">[pe-commits] r433 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#23">[ date ]</a>
+              <a href="thread.html#23">[ thread ]</a>
+              <a href="subject.html#23">[ subject ]</a>
+              <a href="author.html#23">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r525 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r525%20-%20trunk/Extensions&In-Reply-To=%3C200804230945.m3N9j2aK027182%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000119.html">
+   <LINK REL="Next"  HREF="000123.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r525 - trunk/Extensions</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r525%20-%20trunk/Extensions&In-Reply-To=%3C200804230945.m3N9j2aK027182%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r525 - trunk/Extensions">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 23 11:45:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000119.html">[pe-commits] r524 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000123.html">[pe-commits] r526 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#122">[ date ]</a>
+              <a href="thread.html#122">[ thread ]</a>
+              <a href="subject.html#122">[ subject ]</a>
+              <a href="author.html#122">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-23 11:45:01 +0200 (Wed, 23 Apr 2008)
+New Revision: 525
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=525&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=525&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/HeaderHeader.cpp
+Log:
+Delete handler after deleting the panel. Thx stippi.
+
+
+Modified: trunk/Extensions/HeaderHeader.cpp
+===================================================================
+--- trunk/Extensions/HeaderHeader.cpp	2008-04-23 00:39:34 UTC (rev 524)
++++ trunk/Extensions/HeaderHeader.cpp	2008-04-23 09:45:01 UTC (rev 525)
+@@ -556,22 +556,18 @@
+ 				get_ref_for_path(path.Path(), &amp;people);
+ 			}
+ 
+-			BFilePanel panel(B_OPEN_PANEL,
+-							NULL, 
+-							&amp;people,
+-							B_FILE_NODE,
+-							false,
+-							NULL,
+-							&amp;filter);
++			BFilePanel *panel;
++			panel = new BFilePanel(B_OPEN_PANEL, NULL, &amp;people,
++				B_FILE_NODE, false, NULL, &amp;filter);
+ 			// trick to synchronously use BFilePanel
+ 			PanelHandler *handler = new PanelHandler;
+-			if (panel.Window()-&gt;Lock())
++			if (panel-&gt;Window()-&gt;Lock())
+ 			{
+-				panel.Window()-&gt;AddHandler(handler);
+-				panel.Window()-&gt;Unlock();
++				panel-&gt;Window()-&gt;AddHandler(handler);
++				panel-&gt;Window()-&gt;Unlock();
+ 			}
+-			panel.SetTarget(BMessenger(handler));
+-			panel.Show();
++			panel-&gt;SetTarget(BMessenger(handler));
++			panel-&gt;Show();
+ 			if (handler-&gt;Wait() &lt; B_OK)
+ 				break;
+ 			if (!handler-&gt;Message())
+@@ -579,14 +575,16 @@
+ 			if (handler-&gt;Message()-&gt;what == B_CANCEL)
+ 				break;
+ 			entry_ref ref;
+-			//panel.Message()-&gt;PrintToStream();
+-			if (panel.GetNextSelectedRef(&amp;ref) == B_OK)
++			//panel-&gt;Message()-&gt;PrintToStream();
++			if (panel-&gt;GetNextSelectedRef(&amp;ref) == B_OK)
+ 			{
+ 				//printf(&quot;ref:%s\n&quot;, ref.name);
+ 				path.SetTo(&amp;ref);
+ 				dir.WriteAttr(&quot;pe:author_people&quot;, B_STRING_TYPE, 0LL, 
+ 					path.Path(), strlen(path.Path()));
+ 			}
++			delete panel;
++			delete handler;
+ 			err = B_CANCELED;
+ 			break;
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000119.html">[pe-commits] r524 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000123.html">[pe-commits] r526 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#122">[ date ]</a>
+              <a href="thread.html#122">[ thread ]</a>
+              <a href="subject.html#122">[ subject ]</a>
+              <a href="author.html#122">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

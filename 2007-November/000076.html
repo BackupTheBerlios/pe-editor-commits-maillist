@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r482 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r482%20-%20trunk/Sources&In-Reply-To=%3C200711120006.lAC0698n010763%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000075.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r482 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r482%20-%20trunk/Sources&In-Reply-To=%3C200711120006.lAC0698n010763%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r482 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 12 01:06:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000075.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2007-11-12 01:06:07 +0100 (Mon, 12 Nov 2007)
+New Revision: 482
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=482&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=482&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed problem with node monitor that caused pe to lose track of files 
+  changed by svn
+
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2007-11-11 19:17:57 UTC (rev 481)
++++ trunk/Sources/CDocIO.cpp	2007-11-12 00:06:07 UTC (rev 482)
+@@ -552,8 +552,6 @@
+ 	if (fEntryRef == NULL || fTarget == NULL)
+ 		return;
+ 
+-
+-
+ 	watch_node(&amp;fNodeRef, B_STOP_WATCHING, fTarget);
+ 
+ 	// if we get late messages, we don't want to deal with them
+@@ -618,13 +616,35 @@
+ 
+ bool CLocalDocIO::MatchesNodeMonitorMsg(BMessage* msg)
+ {
+-	node_ref nref;
+-	if (fEntryRef == NULL
+-	|| msg-&gt;FindInt64(&quot;node&quot;, &amp;nref.node) != B_OK
+-	|| msg-&gt;FindInt32(&quot;device&quot;, &amp;nref.device) != B_OK)
+-		return false;
++	int32 opcode = msg-&gt;FindInt32(&quot;opcode&quot;);
+ 
+-	return nref == fNodeRef;
++	if (opcode == B_ENTRY_REMOVED)
++	{
++		// the message is for us if it refers to our node-ref:
++		node_ref nref;
++		if (msg-&gt;FindInt64(&quot;node&quot;, &amp;nref.node) == B_OK
++			&amp;&amp; msg-&gt;FindInt32(&quot;device&quot;, &amp;nref.device) == B_OK
++			&amp;&amp; nref == fNodeRef)
++			return true;
++	}
++	else if (opcode == B_ENTRY_CREATED || opcode == B_ENTRY_MOVED)
++	{
++		// the message is for us if it refers to our parent folder and carries
++		// our name:
++		node_ref pref;
++		BString name;
++		if (fEntryRef != NULL
++			&amp;&amp; (msg-&gt;FindInt64(&quot;directory&quot;, &amp;pref.node) == B_OK
++				|| msg-&gt;FindInt64(&quot;to directory&quot;, &amp;pref.node) == B_OK)
++			&amp;&amp; msg-&gt;FindInt32(&quot;device&quot;, &amp;pref.device) == B_OK
++			&amp;&amp; msg-&gt;FindString(&quot;name&quot;, &amp;name) == B_OK
++			&amp;&amp; pref.device == fEntryRef-&gt;device
++			&amp;&amp; pref.node == fEntryRef-&gt;directory
++			&amp;&amp; name == fEntryRef-&gt;name)
++			return true;
++	}
++		
++	return false;
+ }
+ 
+ bool CLocalDocIO::VerifyFile()
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2007-11-11 19:17:57 UTC (rev 481)
++++ trunk/Sources/PDoc.cpp	2007-11-12 00:06:07 UTC (rev 482)
+@@ -329,7 +329,11 @@
+ 
+ void PDoc::SetText(const BString&amp; docText)
+ {
+-	fText-&gt;SetText(docText.String(), docText.Length());
++	if (LockLooper())
++	{
++		fText-&gt;SetText(docText.String(), docText.Length());
++		UnlockLooper();
++	}
+ }
+ 
+ void PDoc::ChangeSourceEncoding(int encoding)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000075.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

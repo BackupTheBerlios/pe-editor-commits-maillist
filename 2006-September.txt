@@ -1,0 +1,33 @@
+From zooey at mail.berlios.de  Sun Sep  3 15:14:24 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 3 Sep 2006 15:14:24 +0200
+Subject: [pe-commits] r445 - trunk/Sources
+Message-ID: <200609031314.k83DEOmJ031961@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-09-03 15:14:17 +0200 (Sun, 03 Sep 2006)
+New Revision: 445
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=445&view=rev
+
+Modified:
+   trunk/Sources/CKeyCapturer.cpp
+Log:
+* fixed (size-related) layout problem of key-capture element in prefs dialog
+
+
+Modified: trunk/Sources/CKeyCapturer.cpp
+===================================================================
+--- trunk/Sources/CKeyCapturer.cpp	2006-08-08 13:56:42 UTC (rev 444)
++++ trunk/Sources/CKeyCapturer.cpp	2006-09-03 13:14:17 UTC (rev 445)
+@@ -66,7 +66,7 @@
+ } /* CKeyCapturer::Filter */
+ 
+ CKeyCapturer::CKeyCapturer(BRect frame, const char *name)
+-	: BView(frame, name, B_FOLLOW_ALL_SIDES, B_WILL_DRAW | B_NAVIGABLE)
++	: BView(frame, name, B_FOLLOW_LEFT|B_FOLLOW_TOP, B_WILL_DRAW | B_NAVIGABLE)
+ {
+ 	fFilter = new CCaptureFilter;
+ } /* CKeyCapturer::CKeyCapturer */
+
+
+

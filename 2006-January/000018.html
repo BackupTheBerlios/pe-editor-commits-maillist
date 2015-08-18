@@ -1,0 +1,413 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r427 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr427%20-%20trunk/Sources&In-Reply-To=%3C200601151235.k0FCZlJs022566%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000017.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r427 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr427%20-%20trunk/Sources&In-Reply-To=%3C200601151235.k0FCZlJs022566%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r427 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Sun Jan 15 13:35:47 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000017.html">[pe-commits]r426 - trunk/Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-01-15 13:35:44 +0100 (Sun, 15 Jan 2006)
+New Revision: 427
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=427&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=427&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocWindow.cpp
+   trunk/Sources/CDocWindow.h
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PApp.h
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PGroupWindow.cpp
+   trunk/Sources/PProjectWindow.cpp
+   trunk/Sources/PProjectWindow.h
+Log:
+- applied Marcus Overhagen's patch that:
+  + fixes problems when closing dirty windows
+  + lets group windows always show their  name in title (as opposed to full path)
+
+
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/CDocWindow.cpp	2006-01-15 12:35:44 UTC (rev 427)
+@@ -52,19 +52,22 @@
+ int CDocWindow::sfNewCount = -1;
+ 
+ CDocWindow::CDocWindow(const entry_ref *doc)
+-	: BWindow(BRect(0,0,0,0), doc ? doc-&gt;name : &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 
+-				 B_ASYNCHRONOUS_CONTROLS)
+-	, CDoc(&quot;&quot;, this, doc)
+-	, fWaitForSave(false)
++	: inheritedWindow(BRect(0,0,0,0), doc ? doc-&gt;name : &quot;Untitled&quot;, B_DOCUMENT_WINDOW, 
++				 			B_ASYNCHRONOUS_CONTROLS)
++	, inheritedDoc(&quot;&quot;, this, doc)
++	, fCloseWinAfterSave(false)
++	, fCloseAppAfterSave(false)
+ {
+ 	if (doc)
+ 		StartWatchingFile();
+ }
+ 
+ CDocWindow::CDocWindow(URLData&amp; url)
+-	: BWindow(BRect(0,0,0,0), url.File(), B_DOCUMENT_WINDOW, B_ASYNCHRONOUS_CONTROLS)
+-	, CDoc(url)
+-	, fWaitForSave(false)
++	: inheritedWindow(BRect(0,0,0,0), url.File(), B_DOCUMENT_WINDOW, 
++							B_ASYNCHRONOUS_CONTROLS)
++	, inheritedDoc(url)
++	, fCloseWinAfterSave(false)
++	, fCloseAppAfterSave(false)
+ {
+ }
+ 
+@@ -135,13 +138,15 @@
+ 
+ bool CDocWindow::QuitRequested()
+ {
+-	bool result = inherited::QuitRequested();
+-	fWaitForSave = false;
++	bool result = true;
+ 
++	fCloseWinAfterSave = false;
++	fCloseAppAfterSave = false;
++
+ 	if (IsDirty())
+ 	{
+ 		char title[256];
+-		sprintf(title, &quot;Save changes to '%s' before closing?&quot;, CDoc::Name());
++		sprintf(title, &quot;Save changes to '%s' before closing?&quot;, inheritedDoc::Name());
+ 		
+ 		MInfoAlert alert(title, &quot;Save&quot;, &quot;Cancel&quot;, &quot;Don't save&quot;);
+ 		
+@@ -163,7 +168,8 @@
+ 				else
+ 				{
+ 					result = false;
+-					fWaitForSave = true;
++                                       fCloseWinAfterSave = true;
++                                       fCloseAppAfterSave = gApp-&gt;IsQuitting();
+ 					SaveAs();
+ 				}
+ 				break;
+@@ -185,7 +191,7 @@
+ 		gPrefs-&gt;SetPrefRect(prefsName.String(), Frame());
+ 		sfNewCount = -1;
+ 	}
+-	inherited::Quit();
++	inheritedWindow::Quit();
+ }
+ 
+ void CDocWindow::SetupSizeAndLayout()
+@@ -205,7 +211,7 @@
+ 	newFrame.top = MAX(20.0, MIN(sr.Height()-newFrame.Height()-5, newFrame.top));
+ 	MoveTo(newFrame.LeftTop());
+ 
+-	BWindow::Show();
++	inheritedWindow::Show();
+ 	fInitialFrame = Frame();
+ }
+ 
+@@ -277,7 +283,7 @@
+ 			
+ 			default:
+ 			{
+-				BWindow::MessageReceived(msg);
++				inheritedWindow::MessageReceived(msg);
+ 			}
+ 		}
+ 	}
+@@ -287,6 +293,19 @@
+ 	}
+ }
+ 
++void CDocWindow::SetDirty(bool dirty)
++{
++	inheritedDoc::SetDirty(dirty);
++	
++	if (!dirty &amp;&amp; fCloseWinAfterSave) {
++		if (fCloseAppAfterSave) {
++			gApp-&gt;PostMessage(B_QUIT_REQUESTED);
++		} else {
++			PostMessage(B_QUIT_REQUESTED);
++		}
++	}
++}
++
+ void CDocWindow::NameChanged()
+ {
+ 	if (EntryRef())
+@@ -312,7 +331,7 @@
+ 		SetTitle(title);
+ 	}
+ 	else
+-		SetTitle(CDoc::Name());
++		SetTitle(inheritedDoc::Name());
+ }
+ 
+ BRect CDocWindow::NextPosition(bool inc)
+
+Modified: trunk/Sources/CDocWindow.h
+===================================================================
+--- trunk/Sources/CDocWindow.h	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/CDocWindow.h	2006-01-15 12:35:44 UTC (rev 427)
+@@ -41,6 +41,9 @@
+ 
+ class CDocWindow : public BWindow, public CDoc
+ {
++            typedef BWindow inheritedWindow;
++            typedef CDoc inheritedDoc;
++
+ public:
+ 			CDocWindow(const entry_ref *ref = NULL);
+ 			CDocWindow(URLData&amp; url);
+@@ -66,11 +69,13 @@
+ virtual 	void ApplySettings(const BMessage&amp; settingsMsg);
+ 			status_t WriteState();
+ 
++virtual                void SetDirty(bool dirty);
+ virtual		void NameChanged();
+ 
+ 			vector&lt;HDialog*&gt; fDialogs;
+ 
+-			bool fWaitForSave;
++            bool fCloseWinAfterSave;
++            bool fCloseAppAfterSave;
+ 
+ private:
+ 			HDialog *fWindowModal;
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PApp.cpp	2006-01-15 12:35:44 UTC (rev 427)
+@@ -45,7 +45,6 @@
+ #include &quot;Utils.h&quot;
+ #include &quot;PGroupWindow.h&quot;
+ #include &quot;CGlossary.h&quot;
+-//#include &quot;CKeywords.h&quot;
+ #include &quot;CLangIntf.h&quot;
+ #include &quot;HColorUtils.h&quot;
+ #include &quot;PGlossyWindow.h&quot;
+@@ -280,6 +279,8 @@
+ 		InitSelectedMap();
+ 
+ 		CLangIntf::SetupLanguageInterfaces();
++
++		fIsQuitting = false;
+ 	
+ 		fPrefsDialog = NULL;
+ 		CPrefOpener *prefOpener = new CPrefOpener;
+@@ -328,6 +329,8 @@
+ {
+ 	BWindow *doc;
+ 	
++	fIsQuitting = true;
++
+ 	while ((doc = dynamic_cast&lt;BWindow*&gt;(CDoc::FirstDoc())) != NULL)
+ 	{
+ 		doc-&gt;Lock();
+@@ -336,6 +339,7 @@
+ 		else
+ 		{
+ 			doc-&gt;Unlock();
++			fIsQuitting = false;
+ 			return false;
+ 		}
+ 	}
+
+Modified: trunk/Sources/PApp.h
+===================================================================
+--- trunk/Sources/PApp.h	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PApp.h	2006-01-15 12:35:44 UTC (rev 427)
+@@ -56,7 +56,7 @@
+ 			PDoc* NewWindow(URLData&amp; url);
+ 			CDoc* OpenWindow(const entry_ref&amp; doc, bool show = true);
+ 
+-	virtual	void ReadyToRun();
++virtual	void ReadyToRun();
+ 
+ virtual	void ArgvReceived(int32 argc, const char **argv, const char * cwd);
+ virtual	void RefsReceived(BMessage *msg);
+@@ -73,6 +73,8 @@
+ 	
+ 			HDialog* FindDialog();
+ 			HDialog* PrefsDialog();
++
++			bool IsQuitting();
+ 	
+ private:
+ 
+@@ -80,9 +82,10 @@
+ 						BMessage *specifier, int32 form, const char *property);
+ 
+ 			BFilePanel *fOpenPanel;
+-	thread_id fPrefOpener;
++			thread_id fPrefOpener;
+ 			HDialog *fFindDialog;
+ 			HDialog *fPrefsDialog;
++			bool fIsQuitting;
+ };
+ 
+ extern BDirectory gAppDir, gCWD, gPrefsDir;
+@@ -96,6 +99,10 @@
+ 	return fPrefsDialog;
+ }
+ 
++inline bool PApp::IsQuitting() {
++       return fIsQuitting;
++}
++
+ extern PApp *gApp;
+ 
+ extern bool gAutoIndent, gSyntaxColoring, gBalance, gBlockCursor, gFlashCursor, gSmartBrace;
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PDoc.cpp	2006-01-15 12:35:44 UTC (rev 427)
+@@ -822,7 +822,7 @@
+ 
+ void PDoc::SetDirty(bool dirty)
+ {
+-	CDoc::SetDirty(dirty);
++	inherited::SetDirty(dirty);
+ 	if (!dirty)
+ 		// if the new state is non-dirty, we propagate this info to the 
+ 		// undo-stack, such that the non-dirty state is updated accordingly:
+
+Modified: trunk/Sources/PGroupWindow.cpp
+===================================================================
+--- trunk/Sources/PGroupWindow.cpp	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PGroupWindow.cpp	2006-01-15 12:35:44 UTC (rev 427)
+@@ -199,14 +199,17 @@
+ 
+ bool PGroupWindow::QuitRequested()
+ {
+-	long l;
++	if (!inherited::QuitRequested())
++		return false;
++
+ 	if (fIconFinder)
+ 	{
++		status_t s;
+ 		fIconFinder-&gt;Cancel();
+-		wait_for_thread(fIconFinder-&gt;Thread(), &amp;l);
++		wait_for_thread(fIconFinder-&gt;Thread(), &amp;s);
+ 	}
+ 
+-	return inherited::QuitRequested();	
++	return true;
+ } /* PGroupWindow::QuitRequested */
+ 
+ void PGroupWindow::MessageReceived(BMessage *msg)
+@@ -381,7 +384,6 @@
+ 
+ void PGroupWindow::NameChanged()
+ {
+-	inherited::NameChanged();
+ 	if (EntryRef())
+ 	{
+ 		BEntry e;
+@@ -389,6 +391,7 @@
+ 		FailOSErr(e.SetTo(EntryRef()));
+ 		FailOSErr(e.GetPath(&amp;p));
+ 		fStatus-&gt;SetPath(p.Path());
++		SetTitle(EntryRef()-&gt;name);
+ 	}
+ }
+ 
+
+Modified: trunk/Sources/PProjectWindow.cpp
+===================================================================
+--- trunk/Sources/PProjectWindow.cpp	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PProjectWindow.cpp	2006-01-15 12:35:44 UTC (rev 427)
+@@ -143,22 +143,6 @@
+ 	return &quot;-project-window&quot;;
+ }
+ 
+-bool PProjectWindow::QuitRequested()
+-{
+-	fWaitForSave = false;
+-
+-	if (IsDirty() &amp;&amp; (fSavePanel == NULL || fSavePanel-&gt;IsShowing()))
+-	{
+-		if (!EntryRef())
+-			fWaitForSave = true;
+-		Save();
+-	}
+-	else
+-		WriteState();
+-	
+-	return !fWaitForSave;
+-} /* PProjectWindow::QuitRequested */
+-
+ void PProjectWindow::MessageReceived(BMessage *msg)
+ {
+ 	if (msg-&gt;WasDropped() &amp;&amp; msg-&gt;HasRef(&quot;refs&quot;))
+
+Modified: trunk/Sources/PProjectWindow.h
+===================================================================
+--- trunk/Sources/PProjectWindow.h	2006-01-14 21:08:17 UTC (rev 426)
++++ trunk/Sources/PProjectWindow.h	2006-01-15 12:35:44 UTC (rev 427)
+@@ -64,8 +64,6 @@
+ 	virtual void SetupSizeAndLayout();
+ 	virtual const char* DocWindowType();
+ 
+-	virtual bool QuitRequested();
+-
+ 	virtual void MessageReceived(BMessage *msg);
+ 	virtual void SetDirty(bool dirty);
+ 	virtual void WindowActivated(bool active);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000017.html">[pe-commits]r426 - trunk/Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

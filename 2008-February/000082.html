@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r488 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r488%20-%20trunk/Sources&In-Reply-To=%3C200802201131.m1KBVDPF012338%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000081.html">
+   <LINK REL="Next"  HREF="000083.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r488 - trunk/Sources</H1>
+    <B>axeld at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r488%20-%20trunk/Sources&In-Reply-To=%3C200802201131.m1KBVDPF012338%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r488 - trunk/Sources">axeld at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 20 12:31:13 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000081.html">[pe-commits] r487 - trunk/build
+</A></li>
+        <LI>Next message: <A HREF="000083.html">[pe-commits] r489 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#82">[ date ]</a>
+              <a href="thread.html#82">[ thread ]</a>
+              <a href="subject.html#82">[ subject ]</a>
+              <a href="author.html#82">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: axeld
+Date: 2008-02-20 12:31:04 +0100 (Wed, 20 Feb 2008)
+New Revision: 488
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=488&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=488&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+* Storing the tab stops is no longer part of the &quot;restore font&quot; setting; it's
+  now always stored with the file if it's different from the current setting.
+* Minor cleanup; we're now using the TabStop() method instead of referencing
+  fTabStop everywhere.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2008-02-13 19:07:36 UTC (rev 487)
++++ trunk/Sources/PText.cpp	2008-02-20 11:31:04 UTC (rev 488)
+@@ -248,13 +248,13 @@
+ 	fLineHeight = ceil(fFH.ascent + fFH.descent + fFH.leading);
+ 	fMetrics = CFontStyle::Locate(ff, fs, fFont.Size());
+ 
+-	fTabWidth = fTabStops * StringWidth(&quot; &quot;, 1);
++	fTabWidth = TabStops() * StringWidth(&quot; &quot;, 1);
+ 	fDefaultCharWidth = StringWidth(&quot;m&quot;, 1);
+ 
+ 	if (Window())
+ 	{
+ 		PToolBar *toolBar = Doc()-&gt;ToolBar();
+-		if (toolBar) toolBar-&gt;SetTabWidth(fTabWidth, fTabStops);
++		if (toolBar) toolBar-&gt;SetTabWidth(fTabWidth, TabStops());
+ 	}
+ 
+ 	RecalculateLineBreaks();
+@@ -424,7 +424,7 @@
+ {
+ 	fStatus = status;
+ //	fStatus-&gt;SetHScroll(3);
+-//	fStatus-&gt;SetTabWidth(fTabWidth, fTabStops);
++//	fStatus-&gt;SetTabWidth(fTabWidth, TabStops());
+ } /* PText::SetStatus */
+ 
+ void PText::WindowActivated(bool active)
+@@ -447,10 +447,11 @@
+ 	const char *s1, *s2;
+ 	bool b;
+ 
++	if (msg.FindInt32(&quot;tabstop&quot;, &amp;i) == B_OK)
++		fTabStops = i;
++
+ 	if (gRestoreFont)
+ 	{
+-		if (msg.FindInt32(&quot;tabstop&quot;, &amp;i) == B_OK)
+-			fTabStops = i;
+ 		if (msg.FindBool(&quot;show tabs&quot;, &amp;b) == B_OK)
+ 			ShowTabStops(b);
+ 
+@@ -522,7 +523,8 @@
+ 
+ void PText::CollectSettings(BMessage&amp; msg)
+ {
+-	FailOSErr(msg.AddInt32(&quot;tabstop&quot;, fTabStops));
++	if (TabStops() != gPrefs-&gt;GetPrefInt(prf_I_SpacesPerTab, 4))
++		FailOSErr(msg.AddInt32(&quot;tabstop&quot;, TabStops()));
+ 	FailOSErr(msg.AddBool(&quot;show tabs&quot;, Doc()-&gt;ToolBar()-&gt;ShowsTabs()));
+ 
+ 	FailOSErr(msg.AddInt32(&quot;fontkind&quot;, fFontKind));
+@@ -566,7 +568,7 @@
+ 
+ 	anchor = min(fAnchor, fCaret);
+ 	caret = max(fAnchor, fCaret);
+-	tabs = fTabStops;
++	tabs = TabStops();
+ 	flags = 0x01000000;
+ 	fontsize = (long)fFont.Size();
+ 	fFont.GetFamilyAndStyle(&amp;font, &amp;style);
+@@ -725,7 +727,7 @@
+ 			MoveBy(0, -kTabStopHeight);
+ 		}
+ 
+-		toolBar-&gt;SetTabWidth(fTabWidth, fTabStops);
++		toolBar-&gt;SetTabWidth(fTabWidth, TabStops());
+ 		toolBar-&gt;SetShowsTabs(show);
+ 		toolBar-&gt;Draw(toolBar-&gt;Bounds());
+ 	}
+@@ -794,7 +796,7 @@
+ 				}
+ 				else if (fText[nb] == '\t')
+ 				{
+-					nw = (((w + sw) / fTabStops) + 1) * fTabStops;
++					nw = (((w + sw) / TabStops()) + 1) * TabStops();
+ 					w = nw;
+ 
+ 					if (w &gt; fWrapWidth)
+@@ -1622,7 +1624,7 @@
+ 	else
+ 		fHScrollBar-&gt;SetRange(0, 100000);
+ 
+-	fHScrollBar-&gt;SetSteps(fTabWidth/fTabStops, fBounds.Width() / 2);
++	fHScrollBar-&gt;SetSteps(fTabWidth / TabStops(), fBounds.Width() / 2);
+ } /* PText::AdjustScrollBars */
+ 
+ void PText::ScrollToCaret(bool keepContext)
+@@ -2854,7 +2856,7 @@
+ 	{
+ 		if (fText[i] == '\t')
+ 		{
+-			col = ((col / fTabStops) + 1) * fTabStops;
++			col = ((col / TabStops()) + 1) * TabStops();
+ 			i++;
+ 		}
+ 		else
+@@ -2882,7 +2884,7 @@
+ 		if (fText[result] == '\t')
+ 		{
+ 			result++;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+@@ -3112,7 +3114,7 @@
+ 		if (fText[startOffset] == '\t')
+ 		{
+ 			startOffset += 1;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+@@ -3128,7 +3130,7 @@
+ 		if (fText[endOffset] == '\t')
+ 		{
+ 			endOffset += 1;
+-			c = ((c / fTabStops) + 1) * fTabStops;
++			c = ((c / TabStops()) + 1) * TabStops();
+ 		}
+ 		else
+ 		{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000081.html">[pe-commits] r487 - trunk/build
+</A></li>
+	<LI>Next message: <A HREF="000083.html">[pe-commits] r489 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#82">[ date ]</a>
+              <a href="thread.html#82">[ thread ]</a>
+              <a href="subject.html#82">[ subject ]</a>
+              <a href="author.html#82">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r510 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r510%20-%20trunk&In-Reply-To=%3C200804120910.m3C9Aj1X029183%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000103.html">
+   <LINK REL="Next"  HREF="000105.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r510 - trunk</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r510%20-%20trunk&In-Reply-To=%3C200804120910.m3C9Aj1X029183%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r510 - trunk">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 11:10:45 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000103.html">[pe-commits] r509 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000105.html">[pe-commits] r511 - branches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#104">[ date ]</a>
+              <a href="thread.html#104">[ thread ]</a>
+              <a href="subject.html#104">[ subject ]</a>
+              <a href="author.html#104">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-04-12 11:10:44 +0200 (Sat, 12 Apr 2008)
+New Revision: 510
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=510&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=510&amp;view=rev</A>
+
+Modified:
+   trunk/Jamrules
+Log:
+* added link to documentation on top level of distribution folder
+
+
+Modified: trunk/Jamrules
+===================================================================
+--- trunk/Jamrules	2008-04-10 16:45:15 UTC (rev 509)
++++ trunk/Jamrules	2008-04-12 09:10:44 UTC (rev 510)
+@@ -47,6 +47,7 @@
+ 	cp -a $(TOP)/doc/*.html $(DISTRO_DIR)/Documentation/ ;
+ 	mkdir $(DISTRO_DIR)/Documentation/gifs ;
+ 	cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
++	ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+ 	ln -sf /boot/home/config/bin/ $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
+ 	cp -a /boot/home/config/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000103.html">[pe-commits] r509 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000105.html">[pe-commits] r511 - branches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#104">[ date ]</a>
+              <a href="thread.html#104">[ thread ]</a>
+              <a href="subject.html#104">[ subject ]</a>
+              <a href="author.html#104">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,386 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r502 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r502%20-%20trunk/Extensions&In-Reply-To=%3C200804080228.m382Sdcl000608%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000097.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r502 - trunk/Extensions</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r502%20-%20trunk/Extensions&In-Reply-To=%3C200804080228.m382Sdcl000608%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r502 - trunk/Extensions">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr  8 04:28:39 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000097.html">[pe-commits] r503 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#96">[ date ]</a>
+              <a href="thread.html#96">[ thread ]</a>
+              <a href="subject.html#96">[ subject ]</a>
+              <a href="author.html#96">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-08 04:28:36 +0200 (Tue, 08 Apr 2008)
+New Revision: 502
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=502&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=502&amp;view=rev</A>
+
+Added:
+   trunk/Extensions/WebPaste.cpp
+Modified:
+   trunk/Extensions/Jamfile
+Log:
+New extension that pastes the selection to <A HREF="http://rafb.net/paste/">http://rafb.net/paste/</A> and copies the url to the clipboard (and opens the browser to it).
+Handy to share code with someone else on IRC...
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-03-28 12:06:25 UTC (rev 501)
++++ trunk/Extensions/Jamfile	2008-04-08 02:28:36 UTC (rev 502)
+@@ -118,3 +118,10 @@
+ 	: libhekkel.so be $(STDC++LIB) 
+ 	;
+ # &lt;/pe-src&gt;
++
++# &lt;pe-src&gt;
++PeExtension WebPaste 
++	: WebPaste.cpp 
++	: libhekkel.so be
++	;
++# &lt;/pe-src&gt;
+
+Added: trunk/Extensions/WebPaste.cpp
+===================================================================
+--- trunk/Extensions/WebPaste.cpp	2008-03-28 12:06:25 UTC (rev 501)
++++ trunk/Extensions/WebPaste.cpp	2008-04-08 02:28:36 UTC (rev 502)
+@@ -0,0 +1,291 @@
++//
++// WebPaste Extension for Pe Editor:
++// pastes the selected text online at <A HREF="http://rafb.net/.">http://rafb.net/.</A>
++//
++// written by Fran&#231;ois Revol, 2008.
++//
++
++#include &quot;PeAddOn.h&quot;
++#include &lt;stdio.h&gt;
++
++#define PASTE_URL &quot;<A HREF="http://rafb.net/paste/paste.php">http://rafb.net/paste/paste.php</A>&quot;
++#define OPEN_IN_BROWSER 1
++#define COPY_TO_CLIPBOARD 1
++
++//------------------------------------------------------------------------------
++
++#if 0
++class StdDataIO : public BDataIO {
++public:
++	StdDataIO(FILE *f, bool closeOnDelete=true);
++	virtual ~StdDataIO();
++	virtual ssize_t Read(void *buffer, size_t size);
++	virtual ssize_t Write(const void *buffer, size_t size);
++private:
++	FILE *fFile;
++	bool fCloDelete;
++}
++
++StdDataIO::StdDataIO(FILE *f, bool closeOnDelete)
++{
++	fFile = f;
++	fCloDelete = closeOnDelete;
++}
++
++StdDataIO::~StdDataIO()
++{
++	if (fCloDelete)
++		fclose(fFile);
++}
++
++#endif
++
++class StdIOInString : public BString {
++public:
++	StdIOInString(FILE *f, bool closeOnDelete=true);
++	virtual ~StdIOInString();
++private:
++	FILE *fFile;
++	bool fCloDelete;
++};
++
++StdIOInString::StdIOInString(FILE *f, bool closeOnDelete)
++{
++	fFile = f;
++	fCloDelete = closeOnDelete;
++	ssize_t len = 0;
++	do {
++		len = Length();
++		char *buf = LockBuffer(len + 4096);
++		buf += len;
++		int got = fread(buf, 1, 4096, fFile);
++		//fprintf(stderr, &quot;got %d\n&quot;, got);
++		UnlockBuffer();
++		if (got &lt; 4096) {
++			buf[got] = '\0';
++			return;
++		}
++	} while (true);
++}
++
++StdIOInString::~StdIOInString()
++{
++	if (fCloDelete)
++		fclose(fFile);
++}
++
++
++//------------------------------------------------------------------------------
++
++static const char *PeLangToPasteLang(const char *lang);
++static status_t UrlEscape(BString &amp;str);
++status_t POpenOut(const char *cmd, BString &amp;output);
++static status_t RunWgetPaste(const char *language, const char *nick, const char *desc, const char *text);
++
++//------------------------------------------------------------------------------
++
++const char *
++PeLangToPasteLang(const char *lang)
++{
++	BString l(lang);
++	if (l == &quot;C&quot;)
++		return &quot;C (99)&quot;;
++	if (l == &quot;C++&quot;)
++		return &quot;C++&quot;;
++	if (l == &quot;Java&quot;)
++		return &quot;Java&quot;;
++	//XXX
++	return &quot;Plain Text&quot;;
++	
++}
++
++status_t
++UrlEscape(BString &amp;str)
++{
++	// XXX: assumes UTF-8!
++	for (int32 i = 0; i &lt; str.Length(); i++) {
++		if (str[i] &gt;= '0' &amp;&amp; str[i] &lt; '9')
++			continue;
++		if (str[i] &gt;= 'A' &amp;&amp; str[i] &lt; 'Z')
++			continue;
++		if (str[i] &gt;= 'a' &amp;&amp; str[i] &lt; 'z')
++			continue;
++		uint8 c = (uint8)str[i];
++		// seems those are byte-based, not UTF68 char-based
++		char escape[5];
++		//printf(&quot;%x\n&quot;, c);
++		sprintf(escape, &quot;%%%2.2x&quot;, c);
++		str.Remove(i,1);
++		str.Insert(escape, i);
++		i+=2;
++	}
++	return B_OK;
++}
++
++
++
++status_t 
++POpenOut(const char *cmd, BString &amp;output)
++{
++	FILE *f;
++	f = popen(cmd, &quot;r&quot;);
++	if (!f)
++		return errno;
++	StdIOInString out(f);
++	output = out;
++	return B_OK;
++}
++
++
++// sample post:
++// wget --post-data=&quot;lang=C++&amp;nick=mmu_man&amp;desc=SamplePasting&amp;cvt_tabs=No&amp;text=int%20main()%20{}&quot; <A HREF="http://rafb.net/paste/paste.php">http://rafb.net/paste/paste.php</A>
++// &lt;td&gt;&lt;small&gt;URL: <A HREF="http://rafb.net/p/ngZGZU48.html&lt;/small">http://rafb.net/p/ngZGZU48.html&lt;/small</A>&gt;&lt;/td&gt;
++// <A HREF="http://rafb.net/p/ngZGZU48.html">http://rafb.net/p/ngZGZU48.html</A>
++
++status_t
++RunWgetPaste(const char *language, const char *nick, const char *desc, const char *text)
++{
++	BString langStr(PeLangToPasteLang(language));
++	BString nickStr(nick);
++	BString descStr(desc);
++	BString textStr(text);
++	UrlEscape(langStr);
++	UrlEscape(nickStr);
++	UrlEscape(descStr);
++	UrlEscape(textStr);
++	BString postStr;
++	postStr &lt;&lt; &quot;lang=&quot; &lt;&lt; langStr &lt;&lt; &quot;&amp;&quot;;
++	postStr &lt;&lt; &quot;nick=&quot; &lt;&lt; nickStr &lt;&lt; &quot;&amp;&quot;;
++	postStr &lt;&lt; &quot;desc=&quot; &lt;&lt; descStr &lt;&lt; &quot;&amp;&quot;;
++	postStr &lt;&lt; &quot;cvt_tabs=No&quot; &lt;&lt; &quot;&amp;&quot;;
++	postStr &lt;&lt; &quot;text=&quot; &lt;&lt; textStr;
++	
++	BString command(&quot;wget&quot;);
++	command &lt;&lt; &quot; -O - &quot;; // output to stdout
++	//command &lt;&lt; &quot;--header=\&quot;Content-Type: text/plain; charset=utf-8\&quot; &quot;;
++	command &lt;&lt; &quot;--post-data=\&quot;&quot; &lt;&lt; postStr &lt;&lt; &quot;\&quot;&quot;;
++	command &lt;&lt; &quot; &quot;;
++	command &lt;&lt; PASTE_URL;
++	
++	BString result;
++	status_t err;
++	
++	err = POpenOut(command.String(), result);
++	// TEST
++	/*
++	err = B_OK;
++	FILE *ftmp = fopen(&quot;/work/pe/trunk/xpTxSh16.html&quot;, &quot;r&quot;);
++	printf(&quot;FILE:%p\n&quot;, ftmp);
++	StdIOInString tmp(ftmp);
++	result = tmp;
++	*/
++	
++	//fprintf(stderr, &quot;error 0x%08lx\n&quot;, err);
++	if (err &lt; B_OK)
++		return err;
++	int32 urlIndex = result.FindFirst(&quot;URL: &quot;);
++	if (urlIndex &lt; 0)
++		return EIO;
++	urlIndex += 5;
++	int32 urlEnd = result.FindFirst('&lt;', urlIndex);
++	BString pasteUrl;
++	if (urlEnd &lt;= urlIndex)
++		return EIO;
++	result.CopyInto(pasteUrl, urlIndex, urlEnd - urlIndex);
++
++	//printf(&quot;got %s\n&quot;, result.String());
++
++#ifdef COPY_TO_CLIPBOARD
++	if (be_clipboard-&gt;Lock()) {
++		be_clipboard-&gt;Clear();
++		BMessage *clip;
++		clip = be_clipboard-&gt;Data();
++		if (clip) {
++			clip-&gt;AddData(&quot;text/plain&quot;, B_MIME_TYPE, pasteUrl.String(), pasteUrl.Length());
++			clip-&gt;AddData(&quot;text/url&quot;, B_MIME_TYPE, pasteUrl.String(), pasteUrl.Length());
++			clip-&gt;AddData(&quot;text/x-url&quot;, B_MIME_TYPE, pasteUrl.String(), pasteUrl.Length());
++			be_clipboard-&gt;Commit();
++		}
++		be_clipboard-&gt;Unlock();
++	}
++#endif
++
++#ifdef OPEN_IN_BROWSER
++	char *args[2] = { NULL, NULL };
++	args[0] = (char *)pasteUrl.String();
++	be_roster-&gt;Launch(B_URL_HTTP, 1, args);
++#endif
++
++	
++/*
++	BString message(&quot;Error running wget.\n&quot;);
++	message &lt;&lt; pasteUrl;
++	MInfoAlert(message.String()).Go();
++*/
++	
++	return B_OK;
++}
++
++
++//------------------------------------------------------------------------------
++//	#pragma mark - Addon Entry
++
++#if __INTEL__
++	extern &quot;C&quot; _EXPORT long perform_edit(MTextAddOn* addon);
++#else
++	#pragma export on
++	extern &quot;C&quot; {
++		long perform_edit(MTextAddOn* addon);
++	}
++	#pragma export reset
++#endif
++
++
++long
++perform_edit(MTextAddOn* addon)
++{
++	status_t err;
++	long selStart;
++	long selEnd;
++
++	addon-&gt;GetSelection(&amp;selStart, &amp;selEnd);
++
++	if (selEnd &lt;= selStart)
++		return B_ERROR;
++
++	int length = selEnd - selStart;
++
++	// Do NOT run the query if we have less than 3 chars. It works, but takes
++	// ages and produces an useless giant popup menu.
++	if (length &lt; 3) {
++		MIdeaAlert(&quot;The text selection is too short.\n&quot;
++					&quot;Please select at least three characters.&quot;).Go();
++		return B_ERROR;
++	}
++
++	BString selection;
++	selection.SetTo(addon-&gt;Text() + selStart, length);
++	
++	BString description;
++	if (addon-&gt;Window()) {
++		description = addon-&gt;Window()-&gt;Title();
++	}
++
++	err = RunWgetPaste(&quot;C++&quot;, 
++		&quot;unknown&quot;, 
++		description.String(), 
++		selection.String());
++	if (err &gt;= B_OK)
++		return B_OK;
++
++
++	if (err == B_LAUNCH_FAILED) {
++		MStopAlert(&quot;Can't run Wget!&quot;).Go();
++		return B_OK;
++	}
++	
++	BString message(&quot;Error running wget.&quot;);
++	MInfoAlert(message.String()).Go();
++
++	return B_OK;
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000097.html">[pe-commits] r503 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#96">[ date ]</a>
+              <a href="thread.html#96">[ thread ]</a>
+              <a href="subject.html#96">[ subject ]</a>
+              <a href="author.html#96">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

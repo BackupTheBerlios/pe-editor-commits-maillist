@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r410 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2005-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr410%20-%20trunk/Sources&In-Reply-To=%3C200511290601.jAT61YJR030976%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000003.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r410 - trunk/Sources</H1>
+    <B>oscar at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr410%20-%20trunk/Sources&In-Reply-To=%3C200511290601.jAT61YJR030976%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r410 - trunk/Sources">oscar at berlios.de
+       </A><BR>
+    <I>Tue Nov 29 07:01:34 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000003.html">[pe-commits]r409 - trunk/Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: oscar
+Date: 2005-11-29 07:01:21 +0100 (Tue, 29 Nov 2005)
+New Revision: 410
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=410&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=410&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+* The app signature was invalid (for use with -DSTANDALONE).
+* Guy ? -&gt; Guy Haviv
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2005-11-27 14:02:50 UTC (rev 409)
++++ trunk/Sources/PAbout.cpp	2005-11-29 06:01:21 UTC (rev 410)
+@@ -72,7 +72,7 @@
+ 		&quot;Axel D&#246;rfler\n&quot;
+ 		&quot;Chris Roberts\n&quot;
+ 		&quot;Christian Packmann\n&quot;
+-		&quot;Guy ?\n&quot;			// ToDo: there's something missing here &gt;:oP
++		&quot;Guy Haviv\n&quot;
+ 		&quot;Ingo Weinhold\n&quot;
+ 		&quot;Keith McAfee\n&quot;
+ 		&quot;Oliver Tappe\n&quot;
+@@ -721,9 +721,9 @@
+ #if STANDALONE
+ main()
+ {
+-	new BApplication(&quot;application/x-be-executable&quot;);
++	new BApplication(&quot;application/x-vnd.pe-AboutTest&quot;);
+ 	new PAboutBox;
+-	
++
+ 	be_app-&gt;Run();
+ 	delete be_app;
+ 	return 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000003.html">[pe-commits]r409 - trunk/Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

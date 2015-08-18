@@ -1,0 +1,460 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r564 - trunk/Languages/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r564%20-%20trunk/Languages/Sources&In-Reply-To=%3C200905012307.n41N7QPZ027220%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000159.html">
+   <LINK REL="Next"  HREF="000161.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r564 - trunk/Languages/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r564%20-%20trunk/Languages/Sources&In-Reply-To=%3C200905012307.n41N7QPZ027220%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r564 - trunk/Languages/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sat May  2 01:07:26 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000159.html">[pe-commits] r563 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000161.html">[pe-commits] r565 - trunk/lpe
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#160">[ date ]</a>
+              <a href="thread.html#160">[ thread ]</a>
+              <a href="subject.html#160">[ subject ]</a>
+              <a href="author.html#160">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-02 01:07:24 +0200 (Sat, 02 May 2009)
+New Revision: 564
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=564&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=564&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/Antlr_Popup.cpp
+   trunk/Languages/Sources/Cpp_Popup.cpp
+   trunk/Languages/Sources/D_Popup.cpp
+   trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp
+   trunk/Languages/Sources/HtmlCssJsPhp_Popup.cpp
+   trunk/Languages/Sources/HtmlJs_Popup.cpp
+   trunk/Languages/Sources/Html_Popup.cpp
+   trunk/Languages/Sources/Java_Popup.l
+   trunk/Languages/Sources/Lout_Popup.l
+   trunk/Languages/Sources/Mathematica_Popup.l
+   trunk/Languages/Sources/Oberon_Popup.l
+   trunk/Languages/Sources/Perl_Popup.l
+   trunk/Languages/Sources/Python_Popup.l
+   trunk/Languages/Sources/Rez_Popup.l
+Log:
+gcc 4 fixes.
+
+
+Modified: trunk/Languages/Sources/Antlr_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/Antlr_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Antlr_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -307,7 +307,7 @@
+ 		*name = 0;
+ 		// add it
+ 		char match[256];
+-		long l = min((long)255, text - start);
++		long l = std::min((long)255, text - start);
+ 		
+ 		strncpy(match, start, l);
+ 		match[l] = 0;
+@@ -339,7 +339,7 @@
+ 		*name = 0;
+ 		// add it
+ 		char match[256];
+-		long l = min((long)255, text - start);
++		long l = std::min((long)255, text - start);
+ 		
+ 		strncpy(match, start, l);
+ 		match[l] = 0;
+@@ -385,7 +385,7 @@
+ 			if (*text == '{' &amp;&amp; proxy.Types())
+ 			{
+ 				char match[256];
+-				long l = min((long)255, text - start);
++				long l = std::min((long)255, text - start);
+ 				
+ 				strncpy(match, start, l);
+ 				match[l] = 0;
+@@ -531,7 +531,7 @@
+ 	if (*text == '(')
+ 	{
+ 		char match[256];
+-		long l = min((long)255, text - start);
++		long l = std::min((long)255, text - start);
+ 		
+ 		strncpy(match, start, l);
+ 		match[l] = 0;
+
+Modified: trunk/Languages/Sources/Cpp_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/Cpp_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Cpp_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -294,7 +294,7 @@
+ 		if (*text == '{' &amp;&amp; proxy.Types())
+ 		{
+ 			char match[256];
+-			long l = min((long)255, text - start);
++			long l = std::min((long)255, text - start);
+ 			
+ 			strncpy(match, start, l);
+ 			match[l] = 0;
+@@ -573,7 +573,7 @@
+ 			if (*text == '{')
+ 			{
+ 				char match[256];
+-				long l = min((long)255, text - start);
++				long l = std::min((long)255, text - start);
+ 				
+ 				strncpy(match, start, l);
+ 				match[l] = 0;
+@@ -699,7 +699,7 @@
+ 	if (*text == '(')
+ 	{
+ 		char match[256];
+-		long l = min((long)255, text - start);
++		long l = std::min((long)255, text - start);
+ 		
+ 		strncpy(match, start, l);
+ 		match[l] = 0;
+
+Modified: trunk/Languages/Sources/D_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/D_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/D_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -304,7 +304,7 @@
+ 
+ 		if (*text == '{' &amp;&amp; proxy.Types()) {
+ 			char match[256];
+-			long l = min((long)255, text - start);
++			long l = std::min((long)255, text - start);
+ 			
+ 			strncpy(match, start, l);
+ 			match[l] = 0;
+@@ -555,7 +555,7 @@
+ 
+ 			if (*text == '{') {
+ 				char match[256];
+-				long l = min((long) 255, text - start);
++				long l = std::min((long) 255, text - start);
+ 
+ 				strncpy(match, start, l);
+ 				match[l] = 0;
+@@ -597,7 +597,7 @@
+ 
+ 	if (*text == '(') {
+ 		char match[256];
+-		long l = min((long) 255, text - start);
++		long l = std::min((long) 255, text - start);
+ 
+ 		strncpy(match, start, l);
+ 		match[l] = 0;
+
+Modified: trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/HtmlCssJsPhp_Language.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -1567,7 +1567,7 @@
+ 		const char *et(txt + end);
+ 		const char *st(txt + langStart);
+ 
+-		stack&lt;int&gt; bls, sbls, pls;
++		std::stack&lt;int&gt; bls, sbls, pls;
+ 
+ 		while (*txt &amp;&amp; txt &lt; et)
+ 		{
+@@ -1584,7 +1584,7 @@
+ 		}
+ 
+ 		char ec = 0, oc = 0;
+-		stack&lt;int&gt; *s = 0;
++		std::stack&lt;int&gt; *s = 0;
+ 
+ 		int db, dsb, dp;
+ 
+
+Modified: trunk/Languages/Sources/HtmlCssJsPhp_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlCssJsPhp_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/HtmlCssJsPhp_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -39,6 +39,7 @@
+ */
+ #include &lt;map&gt;
+ #include &lt;string&gt;
++#include &lt;vector&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+ 
+ const long kMaxNameSize = 256;
+@@ -63,7 +64,7 @@
+ 	PopupMenu (BString &amp;lab, BString &amp;txt, const char * pos, bool ita=false)
+ 		: label(lab), text(txt), position(pos), italic(ita) {}
+ };
+-typedef vector&lt;PopupMenu&gt; PopupList;
++typedef std::vector&lt;PopupMenu&gt; PopupList;
+ 
+ void add_to_popup(const char* name, PopupList &amp;pul, CLanguageProxy&amp; proxy);
+ bool isident(char ch);
+@@ -456,7 +457,7 @@
+ 
+ const char *PhpScript(const char *txt, PopupList &amp;lstPhpFunctions, PopupList &amp;lstPhpClasses, bool sorted)
+ {
+-	map &lt;int,int,int&gt; headings;
++	std::map &lt;int,int,int&gt; headings;
+ 	BString class_name;
+ 	while (*txt)
+ 	{
+
+Modified: trunk/Languages/Sources/HtmlJs_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJs_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/HtmlJs_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -111,7 +111,7 @@
+ 			if (*txt == 0)
+ 				break;
+ 			
+-			int l = min((long)PATH_MAX - 1, txt - file - 1);
++			int l = std::min((long)PATH_MAX - 1, txt - file - 1);
+ 			strncpy(name, file, l);
+ 			name[l] = 0;
+ 			
+@@ -138,7 +138,7 @@
+ 				break;
+ 			
+ 			char *p = name + kMaxNameSize;
+-			int l = min(kMaxNameSize - 1, txt - anchor - 1);
++			int l = std::min(kMaxNameSize - 1, txt - anchor - 1);
+ 			strncpy(name, anchor, l);
+ 			name[l] = 0;
+ 			
+@@ -170,7 +170,7 @@
+ 	txt = skip(txt + 1, '&lt;');
+ 	
+ 	char name[kMaxNameSize];
+-	int l = min(txt - hName - 1, kMaxNameSize - 1);
++	int l = std::min(txt - hName - 1, kMaxNameSize - 1);
+ 	int offset = hName - ao.Text();
+ 	
+ 	strncpy(name, hName, l);
+@@ -246,7 +246,7 @@
+ 					
+ 					int offset = txt - ao.Text();
+ 					
+-					string name, label;
++					std::string name, label;
+ 					
+ 					while (isalnum(*txt))
+ 						name += *txt++;
+
+Modified: trunk/Languages/Sources/Html_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/Html_Popup.cpp	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Html_Popup.cpp	2009-05-01 23:07:24 UTC (rev 564)
+@@ -111,7 +111,7 @@
+ 			if (*txt == 0)
+ 				break;
+ 			
+-			int l = min((long)PATH_MAX - 1, txt - file - 1);
++			int l = std::min((long)PATH_MAX - 1, txt - file - 1);
+ 			strncpy(name, file, l);
+ 			name[l] = 0;
+ 			
+@@ -138,7 +138,7 @@
+ 				break;
+ 			
+ 			char *p = name + kMaxNameSize;
+-			int l = min(kMaxNameSize - 1, txt - anchor - 1);
++			int l = std::min(kMaxNameSize - 1, txt - anchor - 1);
+ 			strncpy(name, anchor, l);
+ 			name[l] = 0;
+ 			
+@@ -170,7 +170,7 @@
+ 	txt = skip(txt + 1, '&lt;');
+ 	
+ 	char name[kMaxNameSize];
+-	int l = min(txt - hName - 1, kMaxNameSize - 1);
++	int l = std::min(txt - hName - 1, kMaxNameSize - 1);
+ 	int offset = hName - ao.Text();
+ 	
+ 	strncpy(name, hName, l);
+@@ -246,7 +246,7 @@
+ 					
+ 					int offset = txt - ao.Text();
+ 					
+-					string name, label;
++					std::string name, label;
+ 					
+ 					while (isalnum(*txt))
+ 						name += *txt++;
+
+Modified: trunk/Languages/Sources/Java_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Java_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Java_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -132,7 +132,7 @@
+ 			space++;
+ 		}
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 		gIndx += 2;
+ 
+ 		while (max--)
+@@ -152,7 +152,7 @@
+ 		}
+ 		while (gIndx &lt; gBufSize &amp;&amp; c != '\n');
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 
+ 		while (max--)
+ 			*tok++ = ' ';
+
+Modified: trunk/Languages/Sources/Lout_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Lout_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Lout_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -136,7 +136,7 @@
+ 		}
+ 		while (gIndx &lt; gBufSize &amp;&amp; c != '\n');
+ 
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 
+ 		while (max--)
+ 			*tok++ = ' ';
+
+Modified: trunk/Languages/Sources/Mathematica_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Mathematica_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Mathematica_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -74,7 +74,7 @@
+ &quot;IMPORT&quot;													BEGIN(import);
+ \&quot;																string_caller = INITIAL; BEGIN(string); inString = true;
+ .
+-&lt;block&gt;&quot;END&quot;{ws}{ident}								BEGIN(INITIAL); nesting = max(--nesting, 0);
++&lt;block&gt;&quot;END&quot;{ws}{ident}								BEGIN(INITIAL); nesting = std::max(--nesting, 0);
+ &lt;block&gt;\&quot;													string_caller = block; BEGIN(string);
+ &lt;block&gt;{ident}
+ &lt;block&gt;.
+@@ -122,7 +122,7 @@
+ 			space++;
+ 		}
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 		gIndx += 2;
+ 
+ 		while (max--)
+
+Modified: trunk/Languages/Sources/Oberon_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Oberon_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Oberon_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -74,7 +74,7 @@
+ &quot;IMPORT&quot;													BEGIN(import);
+ \&quot;																string_caller = INITIAL; BEGIN(string); inString = true;
+ .
+-&lt;block&gt;&quot;END&quot;{ws}{ident}								BEGIN(INITIAL); nesting = max(--nesting, 0);
++&lt;block&gt;&quot;END&quot;{ws}{ident}								BEGIN(INITIAL); nesting = std::max(--nesting, 0);
+ &lt;block&gt;\&quot;													string_caller = block; BEGIN(string);
+ &lt;block&gt;{ident}
+ &lt;block&gt;.
+@@ -122,7 +122,7 @@
+ 			space++;
+ 		}
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 		gIndx += 2;
+ 
+ 		while (max--)
+
+Modified: trunk/Languages/Sources/Perl_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Perl_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Perl_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -121,7 +121,7 @@
+ 		}
+ 		while (gIndx &lt; gBufSize &amp;&amp; c != '\n');
+ 
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 
+ 		while (max--)
+ 			*tok++ = ' ';
+
+Modified: trunk/Languages/Sources/Python_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Python_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Python_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -121,7 +121,7 @@
+ 		}
+ 		while (gIndx &lt; gBufSize &amp;&amp; c != '\n');
+ 
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 
+ 		while (max--)
+ 			*tok++ = ' ';
+
+Modified: trunk/Languages/Sources/Rez_Popup.l
+===================================================================
+--- trunk/Languages/Sources/Rez_Popup.l	2009-05-01 23:00:20 UTC (rev 563)
++++ trunk/Languages/Sources/Rez_Popup.l	2009-05-01 23:07:24 UTC (rev 564)
+@@ -126,7 +126,7 @@
+ 			space++;
+ 		}
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 		gIndx += 2;
+ 
+ 		while (max--)
+@@ -146,7 +146,7 @@
+ 		}
+ 		while (gIndx &lt; gBufSize &amp;&amp; c != '\n');
+ 		
+-		result = max = min(max, space);
++		result = max = std::min(max, space);
+ 
+ 		while (max--)
+ 			*tok++ = ' ';
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000159.html">[pe-commits] r563 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000161.html">[pe-commits] r565 - trunk/lpe
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#160">[ date ]</a>
+              <a href="thread.html#160">[ thread ]</a>
+              <a href="subject.html#160">[ subject ]</a>
+              <a href="author.html#160">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r541 - trunk/lpe
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r541%20-%20trunk/lpe&In-Reply-To=%3C200810091419.m99EJVHf002923%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000130.html">
+   <LINK REL="Next"  HREF="000132.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r541 - trunk/lpe</H1>
+    <B>axeld at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r541%20-%20trunk/lpe&In-Reply-To=%3C200810091419.m99EJVHf002923%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r541 - trunk/lpe">axeld at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  9 16:19:31 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000130.html">[pe-commits] r540 - in trunk: . Extensions Sources build
+</A></li>
+        <LI>Next message: <A HREF="000132.html">[pe-commits] r542 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: axeld
+Date: 2008-10-09 16:19:31 +0200 (Thu, 09 Oct 2008)
+New Revision: 541
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=541&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=541&amp;view=rev</A>
+
+Modified:
+   trunk/lpe/lpe.cpp
+Log:
+* Minor cleanup, removed some useless cruft.
+
+
+Modified: trunk/lpe/lpe.cpp
+===================================================================
+--- trunk/lpe/lpe.cpp	2008-10-08 21:41:58 UTC (rev 540)
++++ trunk/lpe/lpe.cpp	2008-10-09 14:19:31 UTC (rev 541)
+@@ -31,15 +31,12 @@
+ 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+ 	
+ 	Created: 02/23/98 20:50:08
+-	
+-cd ~/projects/pe/lpe
+-mwcc -prefix BeHeaders lpe.cpp
+-cp lpe ~/config/bin
+ */
+ 
+ #include &lt;vector&gt;
+ #include &lt;cstdio&gt;
+ #include &lt;cstdarg&gt;
++
+ #include &lt;Message.h&gt;
+ #include &lt;Roster.h&gt;
+ #include &lt;String.h&gt;
+@@ -86,7 +83,7 @@
+ 		DoError(&quot;Could not find Pe!&quot;);
+ 	
+ 	status_t err;
+-	if (! be_roster-&gt;IsRunning(&amp;pe))
++	if (!be_roster-&gt;IsRunning(&amp;pe))
+ 	{
+ 		team_id team;
+ 		err = be_roster-&gt;Launch(&amp;pe, &amp;msg, &amp;team);
+@@ -94,15 +91,15 @@
+ 		// now wait for the requested edit-window to come up (filter out standard
+ 		// windows):
+ 		bool foundThread = false;
+-		while(!foundThread)
++		while (!foundThread)
+ 		{
+ 			int32 cookie = 0;
+ 			thread_info tinfo;
+-			while((err = get_next_thread_info(team, &amp;cookie, &amp;tinfo)) == B_OK)
++			while ((err = get_next_thread_info(team, &amp;cookie, &amp;tinfo)) == B_OK)
+ 			{
+ 				if (!strncmp(&quot;w&gt;&quot;, tinfo.name, 2) 
+-				&amp;&amp; strcmp(&quot;w&gt;pe: Open&quot;, tinfo.name)
+-				&amp;&amp; strcmp(&quot;w&gt;/boot/home/config/settings/pe&quot;, tinfo.name))
++					&amp;&amp; strcmp(&quot;w&gt;pe: Open&quot;, tinfo.name)
++					&amp;&amp; strcmp(&quot;w&gt;/boot/home/config/settings/pe&quot;, tinfo.name))
+ 				{
+ 					threads.push_back(tinfo.thread);
+ 					foundThread = true;
+@@ -150,7 +147,7 @@
+ 		{
+ 			case '+':
+ 				lineNr = strtoul(argv[i] + 1, &amp;p, 10);
+-				if (! p || p == argv[i] + 1) Usage();
++				if (!p || p == argv[i] + 1) Usage();
+ 				break;
+ 			
+ 			default:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000130.html">[pe-commits] r540 - in trunk: . Extensions Sources build
+</A></li>
+	<LI>Next message: <A HREF="000132.html">[pe-commits] r542 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r581 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r581%20-%20trunk/Sources&In-Reply-To=%3C200905052110.n45LAnwn006620%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000180.html">
+   <LINK REL="Next"  HREF="000182.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r581 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r581%20-%20trunk/Sources&In-Reply-To=%3C200905052110.n45LAnwn006620%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r581 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Tue May  5 23:10:49 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000180.html">[pe-commits] r580 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000182.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#181">[ date ]</a>
+              <a href="thread.html#181">[ thread ]</a>
+              <a href="subject.html#181">[ subject ]</a>
+              <a href="author.html#181">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-05 23:10:46 +0200 (Tue, 05 May 2009)
+New Revision: 581
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=581&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=581&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+* Introduced InvalidateLines() methods.
+* Introduced LinesShifted() and PrepareForRedrawDirtyLines() hooks.
+* Also store the line of a brace highlight. When the text changes the offset
+  might no longer translate to the line where the highlight was drawn earlier.
+  In LinesShifted() we adjust the line, since ShiftLines() uses CopyBits() to
+  move lines graphically.
+* Since RedrawDirtyLines() draws synchronously we need to update the brace
+  highlights in PrepareForRedrawDirtyLines() if necessary.
+
+This should (hopefully) solve all highlight related drawing artifacts.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-05-05 20:02:38 UTC (rev 580)
++++ trunk/Sources/PText.cpp	2009-05-05 21:10:46 UTC (rev 581)
+@@ -1334,6 +1334,8 @@
+ 	{
+ 		if (fSplitAt &gt; 0) ShiftLines(line + 1, dy + fShift, 1);
+ 		ShiftLines(line + 1, dy + fShift, 2);
++
++		LinesShifted(line + 1, dy + fShift);
+ 	}
+ 
+ 	if (lc &gt; LineCount() &amp;&amp; fShift == 0)
+@@ -5187,6 +5189,8 @@
+ 
+ void PText::RedrawDirtyLines()
+ {
++	PrepareForRedrawDirtyLines();
++
+ 	BRect b(fBounds);
+ 	int i;
+ 	float y1, y2;
+@@ -5479,9 +5483,10 @@
+ 		Draw(b);
+ } /* PText::ShiftLinesPart2 */
+ 
+-void PText::InvalidateRange(int fromOffset, int toOffset, int part)
++/*!	Invalidates lines \a fromLine to \a toLine inclusively. */
++void PText::InvalidateLines(int fromLine, int toLine, int part)
+ {
+-	if (fromOffset &gt;= toOffset)
++	if (fromLine &gt; toLine)
+ 		return;
+ 
+ 	// get bounds and vertical scroll offset of the part in question
+@@ -5509,10 +5514,6 @@
+ 	if (!bounds.IsValid())
+ 		return;
+ 
+-	// We only invalidate complete lines.
+-	int fromLine = Offset2Line(fromOffset);
+-	int toLine = Offset2Line(toOffset - 1);
+-
+ 	// compute the invalidation rect and invalidate it
+ 	float fromY = bounds.top + ceil(fLineHeight * fromLine - vScrollOffset);
+ 	float toY = fromY + ceil((toLine + 1 - fromLine) * fLineHeight);
+@@ -5522,6 +5523,24 @@
+ 	Invalidate(rect &amp; bounds.OffsetByCopy(hScrollOffset, 0));
+ }
+ 
++void PText::InvalidateLines(int fromLine, int toLine)
++{
++	InvalidateLines(fromLine, toLine, 1);
++	InvalidateLines(fromLine, toLine, 2);
++}
++
++void PText::InvalidateRange(int fromOffset, int toOffset, int part)
++{
++	if (fromOffset &gt;= toOffset)
++		return;
++
++	// We only invalidate complete lines.
++	int fromLine = Offset2Line(fromOffset);
++	int toLine = Offset2Line(toOffset - 1);
++
++	InvalidateLines(fromLine, toLine);
++}
++
+ void PText::InvalidateRange(int fromOffset, int toOffset)
+ {
+ 	InvalidateRange(fromOffset, toOffset, 1);
+@@ -6613,17 +6632,35 @@
+ {
+ }
+ 
++void PText::LinesShifted(int first, int dy)
++{
++	if (fBraceHighlight1.fromOffset &gt;= 0 &amp;&amp; first &lt;= fBraceHighlight1.line)
++		fBraceHighlight1.line += dy;
++	if (fBraceHighlight2.fromOffset &gt;= 0 &amp;&amp; first &lt;= fBraceHighlight2.line)
++		fBraceHighlight2.line += dy;
++}
++
++void PText::PrepareForRedrawDirtyLines()
++{
++	int newCursor = fAnchor == fCaret ? fAnchor : -1;
++	if (newCursor != fHighlightCursor
++		|| fText.ChangeCounter() != fHighlightChangeCounter)
++	{
++		UpdateBraceHighlights();
++	}
++}
++
+ void PText::UpdateBraceHighlights()
+ {
+ 	// invalidate the old highlights
+ 	if (fBraceHighlight1.fromOffset &gt;= 0) {
+-		InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset);
++		InvalidateLines(fBraceHighlight1.line, fBraceHighlight1.line);
+ 		fBraceHighlight1.fromOffset = -1;
+ 		fHighlights.remove(&amp;fBraceHighlight1);
+ 	}
+ 
+ 	if (fBraceHighlight2.fromOffset &gt;= 0) {
+-		InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset);
++		InvalidateLines(fBraceHighlight2.line, fBraceHighlight2.line);
+ 		fBraceHighlight2.fromOffset = -1;
+ 		fHighlights.remove(&amp;fBraceHighlight2);
+ 	}
+@@ -6686,11 +6723,13 @@
+ 	// update the highlights
+ 	fBraceHighlight1.fromOffset = offset;
+ 	fBraceHighlight1.toOffset = fBraceHighlight1.fromOffset + 1;
++	fBraceHighlight1.line = Offset2Line(fBraceHighlight1.fromOffset);
+ 	fHighlights.push_back(&amp;fBraceHighlight1);
+ 	InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset);
+ 
+ 	fBraceHighlight2.fromOffset = otherOffset;
+ 	fBraceHighlight2.toOffset = fBraceHighlight2.fromOffset + 1;
++	fBraceHighlight2.line = Offset2Line(fBraceHighlight2.fromOffset);
+ 	fHighlights.push_back(&amp;fBraceHighlight2);
+ 	InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset);
+ }
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2009-05-05 20:02:38 UTC (rev 580)
++++ trunk/Sources/PText.h	2009-05-05 21:10:46 UTC (rev 581)
+@@ -170,6 +170,8 @@
+ 			void ShowCaret();
+ 			void InvalidateRange(int fromOffset, int toOffset, int part);
+ 			void InvalidateRange(int fromOffset, int toOffset);
++			void InvalidateLines(int fromLine, int toLine, int part);
++			void InvalidateLines(int fromLine, int toLine);
+ 
+ 			status_t PageSetup();
+ 			status_t Print();
+@@ -295,6 +297,8 @@
+ 			void SelectionChanged();
+ 			void TextBufferChanged();
+ 			void ActivePartChanged(int oldActivePart);
++			void LinesShifted(int first, int dy);
++			void PrepareForRedrawDirtyLines();
+ 			void UpdateBraceHighlights();
+ 
+ private:
+@@ -381,11 +385,15 @@
+ 			};
+ 			typedef std::list&lt;HighlightInfo*&gt; HighlightList;
+ 
++			struct BraceHighlightInfo : HighlightInfo {
++				int	line;
++			};
++
+ 			int fHighlightCursor;
+ 			int fHighlightChangeCounter;
+ 			int fHighlightPart;
+-			HighlightInfo fBraceHighlight1;
+-			HighlightInfo fBraceHighlight2;
++			BraceHighlightInfo fBraceHighlight1;
++			BraceHighlightInfo fBraceHighlight2;
+ 			HighlightList fHighlights;
+ 
+ // saveable settings
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000180.html">[pe-commits] r580 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000182.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#181">[ date ]</a>
+              <a href="thread.html#181">[ thread ]</a>
+              <a href="subject.html#181">[ subject ]</a>
+              <a href="author.html#181">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

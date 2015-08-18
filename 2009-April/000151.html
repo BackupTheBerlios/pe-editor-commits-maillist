@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r555 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r555%20-%20trunk/Sources&In-Reply-To=%3C200904131715.n3DHFh9C008380%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000150.html">
+   <LINK REL="Next"  HREF="000152.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r555 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r555%20-%20trunk/Sources&In-Reply-To=%3C200904131715.n3DHFh9C008380%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r555 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 13 19:15:43 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000150.html">[pe-commits] r554 - trunk/build
+</A></li>
+        <LI>Next message: <A HREF="000152.html">[pe-commits] r556 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151">[ date ]</a>
+              <a href="thread.html#151">[ thread ]</a>
+              <a href="subject.html#151">[ subject ]</a>
+              <a href="author.html#151">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2009-04-13 19:15:41 +0200 (Mon, 13 Apr 2009)
+New Revision: 555
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=555&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=555&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/PDoc.cpp
+Log:
+* Applied a patch for haiku-bug#2827 by Maxime Simon that fixes layout problems
+  in the save panel. Only slightly modified by myself, such that it works on R5,
+  too (which actually meant adding a line to initialize the font height variable
+  before it is being used)
+
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-04-13 12:19:19 UTC (rev 554)
++++ trunk/Sources/CDoc.cpp	2009-04-13 17:15:41 UTC (rev 555)
+@@ -261,10 +261,8 @@
+ void CDoc::SaveACopy()
+ {
+ 	if (!fSavePanel)
+-		fSavePanel = new BFilePanel(B_SAVE_PANEL);
++		CreateFilePanel();
+ 
+-	FailNil(fSavePanel);
+-
+ 	BWindow *w = fSavePanel-&gt;Window();
+ 	w-&gt;Lock();
+ 
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-04-13 12:19:19 UTC (rev 554)
++++ trunk/Sources/PDoc.cpp	2009-04-13 17:15:41 UTC (rev 555)
+@@ -866,41 +866,78 @@
+ {
+ 	inherited::CreateFilePanel();
+ 
+-	BWindow *w = fSavePanel-&gt;Window();
+-	BAutolock lock(w);
++	BWindow *savePanel = fSavePanel-&gt;Window();
++	BAutolock lock(savePanel);
+ 
+ 	if (lock.IsLocked())
+ 	{
+-		BView *vw = w-&gt;ChildAt(0);
+-		FailNilMsg(vw, &quot;Error building FilePanel&quot;);
++		BView *background = savePanel-&gt;ChildAt(0);
++		FailNilMsg(background, &quot;Error building FilePanel&quot;);
++		
++		BButton *cancel = dynamic_cast&lt;BButton*&gt;(background-&gt;FindView(&quot;cancel button&quot;));
++		FailNilMsg(cancel, &quot;Error building FilePanel&quot;);
++		
++		BView *textview = background-&gt;FindView(&quot;text view&quot;);
++		FailNilMsg(textview, &quot;Error building FilePanel&quot;);
+ 
+-		BMenu *m = HResources::GetMenu(rid_Menu_FpMimetypes, true);
+-		FailNilMsg(m, &quot;Error building FilePanel&quot;);
+-		m-&gt;SetFont(be_plain_font);
+-		m-&gt;SetRadioMode(true);
++		BMenu *menu = HResources::GetMenu(rid_Menu_FpMimetypes, true);
++		FailNilMsg(menu, &quot;Error building FilePanel&quot;);
++		menu-&gt;SetFont(be_plain_font);
++		menu-&gt;SetRadioMode(true);
+ 
+-		BView *v = vw-&gt;FindView(&quot;text view&quot;);
+-		FailNilMsg(v, &quot;Error building FilePanel&quot;);
+-		BRect r = v-&gt;Frame();
+-		v-&gt;ResizeTo(r.Width() - 50, r.Height());
++		BRect rect = textview-&gt;Frame();
++		rect.top = cancel-&gt;Frame().top;
++		font_height fh;
++		be_plain_font-&gt;GetHeight(&amp;fh);
++		rect.bottom = rect.top + fh.descent + fh.ascent + 5.0;
+ 
+-		r.left = r.right - 45;
+-		r.right = r.left + 100;
+-		r.top += (r.Height() - 20) / 2;
++		BMenuField *menuField = new BMenuField(rect, &quot;mime&quot;, &quot;Type:&quot;,
++			menu, B_FOLLOW_BOTTOM | B_FOLLOW_LEFT);
++		FailNilMsg(menuField, &quot;Error building FilePanel&quot;);
++		menuField-&gt;SetDivider(be_plain_font-&gt;StringWidth(&quot;Type:&quot;) + 7);
++		menuField-&gt;MenuBar()-&gt;ResizeToPreferred();
++		menuField-&gt;ResizeToPreferred();
+ 
+-		BMenuField *mf = new BMenuField(r, &quot;mime&quot;, &quot;Type:&quot;,
+-			m, B_FOLLOW_BOTTOM | B_FOLLOW_LEFT);
+-		FailNilMsg(mf, &quot;Error building FilePanel&quot;);
+-		vw-&gt;AddChild(mf);
+-		mf-&gt;SetDivider(be_plain_font-&gt;StringWidth(&quot;Type:&quot;) + 4);
++		float height = menuField-&gt;Bounds().Height() + 8.0;
+ 
++		// find all the views that are in the way and
++		// move up them up the height of the menu field
++		BView *poseview = background-&gt;FindView(&quot;PoseView&quot;);
++		if (poseview)
++			poseview-&gt;ResizeBy(0, -height);
++
++		BScrollBar *hscrollbar = (BScrollBar *)background-&gt;FindView(&quot;HScrollBar&quot;);
++		if (hscrollbar)
++			hscrollbar-&gt;MoveBy(0, -height);
++
++		BScrollBar *vscrollbar = (BScrollBar *)background-&gt;FindView(&quot;VScrollBar&quot;);
++		if (vscrollbar)
++			vscrollbar-&gt;ResizeBy(0, -height);
++
++		BView *countvw = (BView *)background-&gt;FindView(&quot;CountVw&quot;);
++		if (countvw)
++			countvw-&gt;MoveBy(0, -height);
++
++		textview-&gt;MoveBy(0, -height);
++		textview-&gt;ResizeTo(textview-&gt;Bounds().Width() * 1.5,
++							textview-&gt;Bounds().Height());
++
++		background-&gt;AddChild(menuField);
++
++		// make sure the smallest window won't draw the &quot;Type&quot; menu over anything else
++		// we suppose the &quot;Save&quot; button to have the same width as the &quot;Cancel&quot; button
++		float minWindowWidth = textview-&gt;Bounds().Width()
++								+ cancel-&gt;Bounds().Width() * 2
++								+ 50;
++		savePanel-&gt;SetSizeLimits(minWindowWidth, 10000, 250, 10000);
++
+ 		int i = 0;
+ 		const char *p;
+ 
+ 		while ((p = gPrefs-&gt;GetIxPrefString(prf_X_Mimetype, i++)) != NULL)
+-			m-&gt;AddItem(new BMenuItem(p, NULL));
++			menu-&gt;AddItem(new BMenuItem(p, NULL));
+ 
+-		BMenuItem *item = m-&gt;FindItem(MimeType());
++		BMenuItem *item = menu-&gt;FindItem(MimeType());
+ 		if (item)
+ 			item-&gt;SetMarked(true);
+ 		else
+@@ -908,7 +945,7 @@
+ 			p = MimeType();
+ 			if (!p || !p[0])
+ 				p = &quot;&lt;undefined&gt;&quot;;
+-			m-&gt;AddItem(item = new BMenuItem(p, NULL));
++			menu-&gt;AddItem(item = new BMenuItem(p, NULL));
+ 			item-&gt;SetMarked(true);
+ 		}
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000150.html">[pe-commits] r554 - trunk/build
+</A></li>
+	<LI>Next message: <A HREF="000152.html">[pe-commits] r556 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151">[ date ]</a>
+              <a href="thread.html#151">[ thread ]</a>
+              <a href="subject.html#151">[ subject ]</a>
+              <a href="author.html#151">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

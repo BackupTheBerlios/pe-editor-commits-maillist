@@ -1,0 +1,968 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r472 - in trunk: Languages/Sources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r472%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611261856.kAQIujtN002064%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000064.html">
+   <LINK REL="Next"  HREF="000066.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r472 - in trunk: Languages/Sources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r472%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611261856.kAQIujtN002064%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r472 - in trunk: Languages/Sources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 26 19:56:45 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000064.html">[pe-commits] r471 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000066.html">[pe-commits] r473 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#65">[ date ]</a>
+              <a href="thread.html#65">[ thread ]</a>
+              <a href="subject.html#65">[ subject ]</a>
+              <a href="author.html#65">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-26 19:56:44 +0100 (Sun, 26 Nov 2006)
+New Revision: 472
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=472&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=472&amp;view=rev</A>
+
+Removed:
+   trunk/Sources/CKeywords.cpp
+   trunk/Sources/CKeywords.h
+Modified:
+   trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+   trunk/Sources/CLanguageAddOn.cpp
+   trunk/Sources/CLanguageAddOn.h
+   trunk/Sources/CLanguageInterface.cpp
+   trunk/Sources/CLanguageInterface.h
+   trunk/Sources/Jamfile
+Log:
+* Dusty old DTA-based keyword code removed
+* GenerateKeywordMap() felt quite lonely in CKeyword and therefore moved 
+  to CLanguageInterface, as it had some relatives there
+* Being empty CKeyword felt fairly useless and vanished into thin air
+* fDeprecated_was_Encoding gone with the wind
+* Html-Js-Php finally identifies itself correctly as v2 interface
+
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-26 18:56:44 UTC (rev 472)
+@@ -57,6 +57,7 @@
+ _EXPORT const char kLanguageCommentStart[] = &quot;&lt;!&quot;;
+ _EXPORT const char kLanguageCommentEnd[]   = &quot;&gt;&quot;;
+ _EXPORT const char kLanguageKeywordFile[]  = &quot;keywords.html-js-php&quot;;
++_EXPORT const int16 kInterfaceVersion      = 2;
+ 
+ enum {
+ 	START = 0,
+
+Deleted: trunk/Sources/CKeywords.cpp
+
+Deleted: trunk/Sources/CKeywords.h
+
+Modified: trunk/Sources/CLanguageAddOn.cpp
+===================================================================
+--- trunk/Sources/CLanguageAddOn.cpp	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Sources/CLanguageAddOn.cpp	2006-11-26 18:56:44 UTC (rev 472)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 12/07/97 22:53:14 by Maarten Hekkelman
+ */
+@@ -50,7 +50,6 @@
+ 	int *starts, rgb_color *colors)
+ 	: fText(text)
+ 	, fSize(size)
+-	, fDeprecated_was_Encoding(0)
+ 	, fInterface(intf)
+ 	, fCIndx(0)
+ 	, fStarts(starts)
+@@ -64,7 +63,6 @@
+ 	CFunctionScanHandler* handler)
+ 	: fText(text.Text())
+ 	, fSize(text.Size())
+-	, fDeprecated_was_Encoding(0)
+ 	, fInterface(intf)
+ 	, fCIndx(0)
+ 	, fStarts(NULL)
+@@ -100,20 +98,20 @@
+ 		start = 0;
+ 	if (color &lt; kColorText || color &gt;= kColorEnd)
+ 		color = kColorText;
+-	
++
+ 	if (fStarts &amp;&amp; fCIndx &lt; 99 &amp;&amp;
+ 		(fCIndx == 0 || fColors[fCIndx - 1] != gColor[color]))
+ 	{
+ 		if (fCIndx &amp;&amp; start == fStarts[fCIndx - 1])
+ 			fCIndx--;
+-		
++
+ 		fColors[fCIndx] = gColor[color];
+ 		fStarts[fCIndx] = start;
+ 		fCIndx++;
+ 	}
+ } /* CLanguageProxy::SetColor */
+ 
+-void CLanguageProxy::AddFunction(const char *name, const char *match, 
++void CLanguageProxy::AddFunction(const char *name, const char *match,
+ 	int offset, bool italic, const char *params)
+ {
+ 	FailNilMsg(fFunctionScanHandler, &quot;Not a valid call in this context&quot;);
+
+Modified: trunk/Sources/CLanguageAddOn.h
+===================================================================
+--- trunk/Sources/CLanguageAddOn.h	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Sources/CLanguageAddOn.h	2006-11-26 18:56:44 UTC (rev 472)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 12/07/97 21:46:44 by Maarten Hekkelman
+ */
+@@ -62,23 +62,23 @@
+ public:
+ 		CLanguageProxy(CLanguageInterface&amp; intf, const char *text, int size, int *starts = NULL, rgb_color *colors = NULL);
+ 		CLanguageProxy(CLanguageInterface&amp; intf, PText&amp; text, CFunctionScanHandler* handler = NULL);
+-		
++
+ /*
+ 	Use the next two methods to recognize keywords in the text.
+-	Move is used to walk through a DFA (deterministic finite automaton)
+-	and reports back the state it is currently in. Always start with a state 1 (one).
++	Move is used to walk through a keyword map and reports back the state it is
++	currently in. Always start with a state 1 (one).
+ 	If the result of a Move is 0 (zero), than you haven't fed it a keyword.
+ 	If the state is not zero, you can test if it's a valid keyword by calling IsKeyword.
+ 	IsKeyword returns the set the keyword is in, or zero if it's not a keyword.
+ 	A value of 1 (one) corresponds to a standard keyword, a value of 2 means a
+ 	keyword from user set 1 and so on.
+-	
++
+ 	You can always call these functions but I think they are only useful when doing
+-	syntax colouring.	
++	syntax colouring.
+ */
+ virtual	int Move(int ch, int state);
+ virtual	int IsKeyword(int state, int32 inSets=0);
+-		
++
+ /*
+ 	The next pair of calls return the text to colour or parse and it's size.
+ 	When doing syntax colouring Pe guarantees to return only one line of
+@@ -105,15 +105,15 @@
+ 	Offset should be the nr of characters match can be found from the beginning of the
+ 	text. This value may be incorrect but should be 'near by', preferrably before.
+ 	The open parameter is of course the name of the include file.
+-*/		
+-virtual	void AddFunction(const char *name, const char *match, int offset, 
++*/
++virtual	void AddFunction(const char *name, const char *match, int offset,
+ 	bool italic = false, const char *params = &quot;&quot;);
+ virtual	void AddInclude(const char *name, const char *open, bool italic = false);
+ virtual	void AddSeparator(const char* name = NULL);
+ 
+ /*
+ 	These report the status of the corresponding checkboxes
+-*/		
++*/
+ virtual	bool Includes() const;
+ virtual	bool Prototypes() const;
+ virtual	bool Types() const;
+@@ -130,11 +130,11 @@
+ virtual	void IncNestLevel();
+ virtual	void DecNestLevel();
+ virtual	void SetNestLevel(uint32 nestLevel);
+-		
++
+ private:
+ 		const char *fText;
+ 		int fSize;
+-		int fDeprecated_was_Encoding;		// deprecated, is always set to 0
++//////		int fDeprecated_was_Encoding;		// deprecated, is always set to 0
+ 		CLanguageInterface&amp; fInterface;
+ 		int fCIndx;
+ 		int *fStarts;
+
+Modified: trunk/Sources/CLanguageInterface.cpp
+===================================================================
+--- trunk/Sources/CLanguageInterface.cpp	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Sources/CLanguageInterface.cpp	2006-11-26 18:56:44 UTC (rev 472)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,15 +28,14 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+-	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
+ 	Created: 09/19/97 10:49:36
+ */
+ 
+ #include &quot;pe.h&quot;
+ #include &quot;PText.h&quot;
+ #include &quot;CLanguageInterface.h&quot;
+-#include &quot;CKeywords.h&quot;
+ #include &quot;PApp.h&quot;
+ #include &quot;CLanguageAddOn.h&quot;
+ #include &quot;CAlloca.h&quot;
+@@ -55,13 +54,13 @@
+ public:
+ 	ext();
+ 	ext(const char *e);
+-	
++
+ 	bool operator&lt;(const ext&amp; e) const;
+ 	bool operator==(const ext&amp; e) const;
+-	
++
+ 	char t[12];
+ };
+-		
++
+ static map&lt;ext, CLanguageInterface*&gt; sInterfaces;
+ static CLanguageInterface *sDefault;
+ vector&lt;CLanguageInterface*&gt; CLanguageInterface::fInterfaces;
+@@ -74,7 +73,7 @@
+ ext::ext(const char *e)
+ {
+ 	if (strlen(e) &gt; 11) THROW((&quot;Extension `%s' is too long&quot;, e));
+-	
++
+ 	strcpy(t, e);
+ } /* CLanguageInterface::ext::ext */
+ 
+@@ -98,7 +97,7 @@
+ 		sfWordBreakTable = (unsigned char *)HResources::GetResource(rtyp_Wbrt, rid_Wbrt_WordbreakTable);
+ 		if (sfWordBreakTable == NULL) THROW((&quot;Missing Resource!&quot;));
+ 	}
+-	
++
+ //	fImage = -1;
+ 
+ 	fBalance = NULL;
+@@ -120,7 +119,7 @@
+ 		sfWordBreakTable = (unsigned char *)HResources::GetResource(rtyp_Wbrt, rid_Wbrt_WordbreakTable);
+ 		if (sfWordBreakTable == NULL) THROW((&quot;Missing Resource!&quot;));
+ 	}
+-	
++
+ 	fImage = image;
+ 	if (fImage &lt; 0) THROW((&quot;Error loading language extension: %s&quot;, strerror(fImage)));
+ 
+@@ -140,9 +139,10 @@
+ 	int16* versionPtr = NULL;
+ 	get_image_symbol(fImage, &quot;kInterfaceVersion&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;versionPtr);
+ 	fInterfaceVersion = versionPtr ? *versionPtr : 1;
+-	if (fInterfaceVersion == 1) {
+-		if (strlen(fKeywordFile))
+-			GenerateKWTables(fKeywordFile, path, ec, accept, base, nxt, chk);
++	if (fInterfaceVersion &lt; 2) {
++		BString err(&quot;Unsupported Language:\n&quot;);
++		err &lt;&lt; path;
++		THROW((err.String()));
+ 	}
+ } /* CLanguageInterface::CLanguageInterface */
+ 
+@@ -154,13 +154,13 @@
+ void AddInterface(char *s, T* i)
+ {
+ 	char *e = strtok(s, &quot;;&quot;);
+-	
++
+ 	while (e)
+ 	{
+ 		sInterfaces[e] = i;
+ 		e = strtok(NULL, &quot;;&quot;);
+ 	}
+-	
++
+ 	free(s);
+ } /* AddInterface */
+ 
+@@ -170,7 +170,7 @@
+ 	AddInterface(strdup(&quot;&quot;), sDefault);
+ 
+ 	char path[PATH_MAX];
+-	
++
+ 	BPath p;
+ 	BEntry e;
+ 	gAppDir.GetEntry(&amp;e);
+@@ -178,13 +178,13 @@
+ 	strcpy(path, p.Path());
+ 
+ 	strcat(path, &quot;/Languages/&quot;);
+-	
++
+ 	char plug[PATH_MAX];
+ 	DIR *dir = opendir(path);
+ 
+ 	if (!dir)
+ 		return;
+-	
++
+ 	struct dirent *dent;
+ 	struct stat stbuf;
+ 
+@@ -206,7 +206,7 @@
+ 				if (strlen(l) &gt; 28) THROW((&quot;Language name too long&quot;));
+ 				CLanguageInterface *intf = new CLanguageInterface(plug, next);
+ 				fInterfaces.push_back(intf);
+-				
++
+ 				const char *s = intf-&gt;Extensions();
+ 				AddInterface(strdup(s), intf);
+ 			}
+@@ -219,14 +219,14 @@
+ CLanguageInterface* CLanguageInterface::FindByExtension(const char *filename)
+ {
+ 	char *e;
+-	
++
+ 	if (filename)
+ 	{
+ 		try
+ 		{
+ 			if ((e = strrchr(filename, '.')) != NULL &amp;&amp; sInterfaces.count(e + 1))
+ 				return sInterfaces[e + 1];
+-			
++
+ 			if (strlen(filename) &lt; 11 &amp;&amp; sInterfaces.count(filename))
+ 				return sInterfaces[filename];
+ 		}
+@@ -251,7 +251,7 @@
+ 						txt++;
+ 				}
+ 				break;
+-			
++
+ 			case '&quot;':
+ 				while (*++txt)
+ 				{
+@@ -261,7 +261,7 @@
+ 						txt++;
+ 				}
+ 				break;
+-				
++
+ 			case '/':
+ 				if (txt[1] == '*')
+ 				{
+@@ -276,7 +276,7 @@
+ 						txt++;
+ 				}
+ 				break;
+-			
++
+ 			case '{':
+ 			case '[':
+ 			case '(':
+@@ -287,7 +287,7 @@
+ 		}
+ 		txt++;
+ 	}
+-	
++
+ 	return txt;
+ } // skip
+ 
+@@ -295,14 +295,14 @@
+ {
+ 	const char *txt = proxy.Text(), *et;
+ 	int size = proxy.Size();
+-	
++
+ 	if (start &lt; 0 || start &gt; end || end &gt; size)
+ 		return false;
+-	
++
+ 	et = txt + end;
+-	
++
+ 	stack&lt;int&gt; bls, sbls, pls;
+-	
++
+ 	while (*txt &amp;&amp; txt &lt; et)
+ 	{
+ 		switch (*txt)
+@@ -316,44 +316,44 @@
+ 		}
+ 		txt = skip(txt + 1);
+ 	}
+-	
++
+ 	char ec = 0, oc = 0;
+ 	stack&lt;int&gt; *s = NULL;
+-	
++
+ 	int db, dsb, dp;
+-	
++
+ 	db = bls.empty() ? -1 : start - bls.top();
+ 	dsb = sbls.empty() ? -1 : start - sbls.top();
+ 	dp = pls.empty() ? -1 : start - pls.top();
+-	
++
+ 	if (db &lt; 0 &amp;&amp; dsb &lt; 0 &amp;&amp; dp &lt; 0)
+ 		return false;
+-	
++
+ 	if (db &gt;= 0 &amp;&amp; (dsb &lt; 0 || db &lt; dsb) &amp;&amp; (dp &lt; 0 || db &lt; dp))
+ 	{
+ 		oc = '{';
+ 		ec = '}';
+ 		s = &bls;
+ 	}
+-	
++
+ 	if (dsb &gt;= 0 &amp;&amp; (db &lt; 0 || dsb &lt; db) &amp;&amp; (dp &lt; 0 || dsb &lt; dp))
+ 	{
+ 		oc= '[';
+ 		ec = ']';
+ 		s = &sbls;
+ 	}
+-	
++
+ 	if (dp &gt;= 0 &amp;&amp; (dsb &lt; 0 || dp &lt; dsb) &amp;&amp; (db &lt; 0 || dp &lt; db))
+ 	{
+ 		oc = '(';
+ 		ec = ')';
+ 		s = &pls;
+ 	}
+-	
++
+ 	if (ec)
+ 	{
+ 		int l = 1;
+-		
++
+ 		while (*txt)
+ 		{
+ 			if (*txt == ec)
+@@ -375,7 +375,7 @@
+ 			txt = skip(txt + 1);
+ 		}
+ 	}
+-	
++
+ 	return false;
+ } /* InternalBalance */
+ 
+@@ -384,7 +384,7 @@
+ 	try
+ 	{
+ 		CLanguageProxy proxy(*this, text);
+-		
++
+ 		if (fBalance)
+ 			return fBalance(proxy, start, end);
+ 		else
+@@ -402,7 +402,7 @@
+ 	{
+ 		int start = min(text.Anchor(), text.Caret());
+ 		int end = max(text.Anchor(), text.Caret());
+-		
++
+ 		if (! Balance(text, start, end))
+ 			THROW((0));
+ 
+@@ -467,39 +467,39 @@
+ 		{
+ 			int line = text.Offset2Line(offset);
+ 			int size;
+-			
++
+ 			if (line &gt;= text.LineCount() - 1)
+ 				size = min(text.Size() - offset, 1024);
+ 			else
+ 				size = min(text.LineStart(line + 1) - offset, 1024);
+-			
++
+ 			CAlloca txt(size + 1);
+ 			text.TextBuffer().Copy(txt, offset, size);
+ 			txt[size] = 0;
+-			
++
+ 			CLanguageProxy proxy(*this, txt, size);
+ 			int result = fFindNextWord(proxy);
+ 
+ 			txt[result + 1] = 0;
+ 			mlen = mstrlen(txt);
+-			
++
+ 			return offset + result;
+ 		}
+ 		else
+ 		{
+ 			int mark = offset, i = offset;
+ 			int unicode, state, len, iLen;
+-			
++
+ 			state = 1;
+ 			mlen = 0;
+ 			iLen = 0;
+-			
++
+ 			while (state &gt; 0 &amp;&amp; i &lt; text.Size())
+ 			{
+ 				text.TextBuffer().CharInfo(i, unicode, len);
+-				
++
+ 				int cl = 0;
+-				
++
+ 				if (unicode == '\n')
+ 					cl = 3;
+ 				else if (isspace_uc(unicode))
+@@ -530,7 +530,7 @@
+ 						default:
+ 							cl = 4;
+ 					}
+-				
++
+ 				unsigned char t = sfWordBreakTable[(state - 1) * 6 + cl];
+ 
+ 				state = t &amp; 0x7f;
+@@ -568,21 +568,21 @@
+ const char *CLanguageInterface::Extensions() const
+ {
+ 	char extPref[64];
+-	
++
+ 	if (strlen(fLanguage) &gt; 32) THROW((&quot;Language name too long: %s&quot;, fLanguage));
+ 	strcpy(extPref, fLanguage);
+ 	strcat(extPref, &quot;.ext&quot;);
+-	
++
+ 	return gPrefs-&gt;GetPrefString(extPref, fExtensions);
+ } /* CLanguageInterface::Extensions */
+ 
+ void CLanguageInterface::SetExtensions(const char *ext)
+ {
+ 	char extPref[32];
+-	
++
+ 	strcpy(extPref, fLanguage);
+ 	strcat(extPref, &quot;.ext&quot;);
+-	
++
+ 	gPrefs-&gt;SetPrefString(extPref, ext);
+ } /* CLanguageInterface::SetExtensions */
+ 
+@@ -590,7 +590,7 @@
+ {
+ 	const char *d = gPrefs-&gt;GetPrefString(prf_S_DefLang, &quot;None&quot;);
+ 	vector&lt;CLanguageInterface*&gt;::iterator i;
+-	
++
+ 	for (i = fInterfaces.begin(); i != fInterfaces.end(); i++)
+ 	{
+ 		if (strcmp(d, (*i)-&gt;Name()) == 0)
+@@ -613,13 +613,13 @@
+ CLanguageInterface* CLanguageInterface::FindByName(const char *language)
+ {
+ 	vector&lt;CLanguageInterface*&gt;::iterator i;
+-	
++
+ 	for (i = fInterfaces.begin(); i != fInterfaces.end(); i++)
+ 	{
+ 		if (strcmp(language, (*i)-&gt;Name()) == 0)
+ 			return *i;
+ 	}
+-	
++
+ 	return sDefault;
+ } // CLanguageInterface::FindByName
+ 
+@@ -647,7 +647,7 @@
+ 		// do lazy loading of keywords-info:
+ 		image_info imageInfo;
+ 		if (get_image_info(fImage, &amp;imageInfo) == B_OK &amp;&amp; strlen(fKeywordFile))
+-			GenerateKWMap(fKeywordFile, imageInfo.name, fKeywordMap);
++			GenerateKeywordMap(imageInfo.name);
+ 		fHaveParsedKeywords = true;
+ 	}
+ 	// Lets search
+@@ -678,7 +678,128 @@
+ 	return 0;
+ }
+ 
++/*
++ * Implementation of keyword lookup, a straightforward, map-based lookup:
++ * [zooey]:
++ *     I know that using a hashmap should be faster, but since we do not know
++ *     the amount of words contained in the map beforehand, the memory footprint
++ *     of the hashmap would be (much) worse than that of a map.
++ *     Benchmarks have indicated that lookup speed is good enough with maps
++ *		 anyway, so I have decided to use a map for now.
++ */
++void CLanguageInterface::GenerateKeywordMap(const char *ext) const
++{
++	try
++	{
++		BPath settings;
++		bool isNew = false;
+ 
++		FailOSErr(find_directory(B_USER_SETTINGS_DIRECTORY, &amp;settings, true));
++
++		BString p;
++		p &lt;&lt; settings.Path() &lt;&lt; &quot;/pe/&quot; &lt;&lt; fKeywordFile;
++
++		BEntry e;
++		FailOSErrMsg(e.SetTo(p.String(), B_FILE_NODE),
++						 &quot;Settings directory was not found?&quot;);
++
++		BString keywords;
++		if (!e.Exists())
++		{
++			// copy resources into separate file in settings-folder, such that
++			// the user can edit that in order to modify the keywords for that
++			// specific language:
++			isNew = true;
++
++			BFile rf;
++			FailOSErr(rf.SetTo(ext, B_READ_ONLY));
++			BResources res;
++			FailOSErr(res.SetTo(&amp;rf));
++
++			size_t s;
++			const char *r = (const char*)res.LoadResource('KeyW', fKeywordFile, &amp;s);
++
++			if (!r) THROW((&quot;Missing resource&quot;));
++
++			BFile txtfile(p.String(), B_CREATE_FILE | B_READ_WRITE);
++			CheckedWrite(txtfile, r, s);
++			keywords.SetTo(r, s);
++		} else {
++			BFile txtfile(p.String(), B_READ_ONLY);
++			off_t size;
++			FailOSErr(txtfile.GetSize(&amp;size));
++			char* kw = keywords.LockBuffer(size+1);
++			if (kw) {
++				CheckedRead(txtfile, kw, size);
++				keywords.UnlockBuffer(size);
++			}
++		}
++
++		const char* kw = keywords.String();
++		const char* white = &quot; \n\r\t&quot;;
++		const char* start = kw + strspn(kw, white);
++		const char* end = start + strcspn(start, white);
++		BString word;
++		char* buf;
++		int currType = kKeywordLanguage;
++		while (start &lt; end) {
++			// ideally, we'd like to use this:
++			//			word.SetTo(start, end-start);
++			// but the implementation of SetTo() seems to do a strlen() without
++			// clamping it to the given length, which (as we give it a pretty
++			// long string) results in pathetic performance.
++			// So we roll our own SetTo():
++			FailNil(buf = word.LockBuffer(end-start+1));
++			memcpy(buf, start, end-start);
++			buf[end-start] = '\0';
++			word.UnlockBuffer(end-start);
++			if (!word.Compare(&quot;//&quot;, 2)) {
++				// a comment, so we skip to end of line:
++				start += strcspn(start, &quot;\n&quot;);
++				start += strspn(start, white);
++				end = start + strcspn(start, white);
++			} else {
++				if (word[0] == '-') {
++					// it's a keyword-class specifier, we check which one:
++					if (!word.ICompare(&quot;-Pe-Keywords-Language-&quot;))
++						currType = kKeywordLanguage;
++					else if (!word.ICompare(&quot;-Pe-Keywords-User1-&quot;))
++						currType = kKeywordUser1;
++					else if (!word.ICompare(&quot;-Pe-Keywords-User2-&quot;))
++						currType = kKeywordUser2;
++					else if (!word.ICompare(&quot;-Pe-Keywords-User3-&quot;))
++						currType = kKeywordUser3;
++					else if (!word.ICompare(&quot;-Pe-Keywords-User4-&quot;))
++						currType = kKeywordUser4;
++					else {
++						// be compatible with old style, meaning that an unknown
++						// '-' entry bumps the type... Ignore a leading '-' entry
++						if (!fKeywordMap.empty())
++							currType++;
++						// ...and skips to end of line:
++						end = start + strcspn(start, &quot;\n&quot;);
++					}
++				} else {
++					fKeywordMap.insert(pair&lt;BString, int&gt;(word, currType));
++				}
++				start = end + strspn(end, white);
++				end = start + strcspn(start, white);
++			}
++		}
++		// DEBUG-OUTPUT:
++		//cout &lt;&lt; &quot;Elements in MAP:&quot; &lt;&lt; endl;
++		//int i = 0;
++		//for (multimap&lt;BString, int&gt;::iterator it = fKeywordMap.begin(); it != fKeywordMap.end(); it++) {
++		//	cout &lt;&lt; ++i &lt;&lt; &quot;:  [&quot; &lt;&lt; (*it).second &lt;&lt; &quot;: &quot; &lt;&lt; (*it).first.String() &lt;&lt; &quot;]&quot; &lt;&lt; endl;
++		//}
++	}
++	catch (HErr&amp; err)
++	{
++		err.DoError();
++	}
++} /* GenerateKeywordMap */
++
++
+ // #pragma mark -
+ 
+ 
+
+Modified: trunk/Sources/CLanguageInterface.h
+===================================================================
+--- trunk/Sources/CLanguageInterface.h	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Sources/CLanguageInterface.h	2006-11-26 18:56:44 UTC (rev 472)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 09/19/97 10:49:36
+ */
+@@ -56,13 +56,13 @@
+ 
+ 		const char *Text() const;
+ 		int Size() const;
+-		
++
+ 		const char *Name() const;
+ 		const char *Extensions() const;
+ 		void SetExtensions(const char *ext);
+-		
++
+ static	void ChooseDefault();
+-		
++
+ 		int *Starts() const;
+ 		rgb_color *Colors() const;
+ 
+@@ -73,26 +73,21 @@
+ 
+ static CLanguageInterface* NextIntf(int&amp; cookie);
+ static int GetIndex(const CLanguageInterface* intf);
+-			
++
+ 		const char* LineCommentStart() const;
+ 		const char* LineCommentEnd() const;
+-		
++
+ protected:
+ 		CLanguageInterface();
+ 		CLanguageInterface(const char *path, image_id image);
+ 
+ 		void InitTables(const char *kwFile);
+ 		void RegisterExtension(const char *ext);
++		void GenerateKeywordMap(const char *ext) const;
+ 
+ static	unsigned char *sfWordBreakTable;
+ 
+-		// data members for old (DFA-based) keyword implementation, needed to 
+-		// support binary-only language-addons that use this implementation
+-		// (like phpext):
+-		unsigned char ec[128];
+-		unsigned short *accept, *base, *nxt, *chk;
+-
+-		const char *fLanguage, *fExtensions, *fKeywordFile;		
++		const char *fLanguage, *fExtensions, *fKeywordFile;
+ 		const char *fLineCommentStart, *fLineCommentEnd;
+ 		bool (*fBalance)(CLanguageProxy&amp; proxy, int&amp; start, int&amp; end);
+ 		void (*fScanForFunctions)(CLanguageProxy&amp; proxy);
+@@ -103,7 +98,7 @@
+ 		// member introduced for proper interface version detection:
+ 		int16 fInterfaceVersion;
+ 
+-		// members for new (map-based) keyword implementation:
++		// members for map-based keyword implementation:
+ public:
+ 		int AddToCurrentKeyword(int ch, int state);
+ 		int LookupCurrentKeyword(int state, int32 inSets=0) const;
+@@ -140,7 +135,7 @@
+ 		CFunctionScanHandler();
+ virtual	~CFunctionScanHandler();
+ 
+-virtual	void AddFunction(const char *name, const char *match, int offset, 
++virtual	void AddFunction(const char *name, const char *match, int offset,
+ 	bool italic, uint32 nestLevel, const char *params);
+ virtual	void AddInclude(const char *name, const char *open, bool italic);
+ virtual	void AddSeparator(const char* name);
+
+Modified: trunk/Sources/Jamfile
+===================================================================
+--- trunk/Sources/Jamfile	2006-11-26 17:20:06 UTC (rev 471)
++++ trunk/Sources/Jamfile	2006-11-26 18:56:44 UTC (rev 472)
+@@ -64,7 +64,6 @@
+ 	CInfoDialog.cpp
+ 	CKeyCapturer.cpp
+ 	CKeyMapper.cpp
+-	CKeywords.cpp
+ 	CLanguageInterface.cpp
+ 	CLanguageAddOn.cpp
+ 	CLineObject.cpp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000064.html">[pe-commits] r471 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000066.html">[pe-commits] r473 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#65">[ date ]</a>
+              <a href="thread.html#65">[ thread ]</a>
+              <a href="subject.html#65">[ subject ]</a>
+              <a href="author.html#65">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

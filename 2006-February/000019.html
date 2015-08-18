@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r428 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr428%20-%20trunk/Sources&In-Reply-To=%3C200602221942.k1MJgvj9020760%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r428 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr428%20-%20trunk/Sources&In-Reply-To=%3C200602221942.k1MJgvj9020760%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r428 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Wed Feb 22 20:42:57 CET 2006</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#19">[ date ]</a>
+              <a href="thread.html#19">[ thread ]</a>
+              <a href="subject.html#19">[ subject ]</a>
+              <a href="author.html#19">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-02-22 20:42:48 +0100 (Wed, 22 Feb 2006)
+New Revision: 428
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=428&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=428&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PCmd.cpp
+Log:
+- fixed bug that  caused data loss when invoking extensions that are shell scripts.
+  The piping code didn't pay attention to the fact that the pipe might get full,
+  such that several write attempts may be needed to pass the complete buffer to 
+  the consuming process.
+
+
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2006-01-15 12:35:44 UTC (rev 427)
++++ trunk/Sources/PCmd.cpp	2006-02-22 19:42:48 UTC (rev 428)
+@@ -422,6 +422,8 @@
+ 	}
+ } /* PDropCmd::Undo */
+ 
++#pragma mark --- ExtAction
++
+ ExtAction::ExtAction()
+ {
+ 	aText = NULL;
+@@ -438,6 +440,8 @@
+ {
+ } /* ExtAction::~ExtAction */
+ 
++#pragma mark --- PExtCmd
++
+ PExtCmd::PExtCmd(PText *txt, const char *ext)
+ 	: PCmd(ext, txt)
+ {
+@@ -511,6 +515,8 @@
+ } /* PExtCmd::Redo */
+ 
+ 
++#pragma mark --- PReplaceCmd
++
+ PReplaceCmd::PReplaceCmd(PText *txt, int offset, int size, bool findNext, bool backward)
+ 	: PCmd(&quot;Replace&quot;, txt)
+ {
+@@ -584,6 +590,8 @@
+ 	fText-&gt;Select(fOffset, fOffset + strlen(fWhat), true, false);
+ } /* PReplaceCmd::Undo */
+ 
++#pragma mark --- PReplaceAllCmd
++
+ PReplaceAllCmd::PReplaceAllCmd(PText *txt)
+ 	: PCmd(&quot;Replace All&quot;, txt)
+ {
+@@ -690,6 +698,8 @@
+ 	Undo();
+ } /* PReplaceAllCmd::Redo */
+ 
++#pragma mark --- PScriptCmd
++
+ const int
+ 	kBufferSize = 1024;
+ 
+@@ -886,15 +896,23 @@
+ long PScriptCmd::Piper(void *data)
+ {
+ 	PScriptCmd *cmd = static_cast&lt;PScriptCmd*&gt;(data);
++	long status = 0;
+ 	
+-	write(cmd-&gt;fFD, cmd-&gt;fOldText, cmd-&gt;fOldTextSize);
++	long written = 0;
++	do {
++		long ww = write(cmd-&gt;fFD, cmd-&gt;fOldText+written, cmd-&gt;fOldTextSize-written);
++		if (ww &lt; 0) {
++			status = ww;
++			break;
++		}
++		written += ww;
++	} while(written &lt; cmd-&gt;fOldTextSize);
+ 	close(cmd-&gt;fFD);
+ 
+-	return 0;
++	return status;
+ } /* PScriptCmd::Piper */
+ 
+-#pragma mark -
+-#pragma mark --- Shift Command ---
++#pragma mark --- Shift Command
+ 
+ PShiftCmd::PShiftCmd(const char *name, PText *txt)
+ 	: PCmd(name, txt)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#19">[ date ]</a>
+              <a href="thread.html#19">[ thread ]</a>
+              <a href="subject.html#19">[ subject ]</a>
+              <a href="author.html#19">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r572 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r572%20-%20trunk/Sources&In-Reply-To=%3C200905041248.n44CmJwV009993%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000168.html">
+   <LINK REL="Next"  HREF="000170.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r572 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r572%20-%20trunk/Sources&In-Reply-To=%3C200905041248.n44CmJwV009993%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r572 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Mon May  4 14:48:19 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000168.html">[pe-commits] r571 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000170.html">[pe-commits] r573 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#169">[ date ]</a>
+              <a href="thread.html#169">[ thread ]</a>
+              <a href="subject.html#169">[ subject ]</a>
+              <a href="author.html#169">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-04 14:48:19 +0200 (Mon, 04 May 2009)
+New Revision: 572
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=572&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=572&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+* Scroll wheel + Command/Control/Option does now scroll page-wise.
+* Automatic white space cleanup.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-05-04 12:47:10 UTC (rev 571)
++++ trunk/Sources/PText.cpp	2009-05-04 12:48:19 UTC (rev 572)
+@@ -754,7 +754,7 @@
+ {
+ 	if (fErrorWindowMessenger.IsValid())
+ 		fErrorWindowMessenger.SendMessage(B_QUIT_REQUESTED);
+-	
++
+ 	fErrorWindowMessenger = BMessenger(window, window);
+ } /* PText::SetErrorWindow */
+ 
+@@ -2203,7 +2203,7 @@
+ 				popup.AddItem(new BMenuItem(&quot;Move&quot;, NULL));
+ 				popup.AddItem(new BMenuItem(&quot;Copy&quot;, NULL));
+ 				BMenuItem *item = popup.Go(msg-&gt;DropPoint(), false, true);
+-	
++
+ 				if (!item)
+ 				{
+ 					HideCaret();
+@@ -2211,7 +2211,7 @@
+ 					fCaret = fSavedCaret;
+ 					return;
+ 				}
+-	
++
+ 				if (popup.IndexOf(item) == 0)
+ 					offset = fDragStart;
+ 				else
+@@ -2219,13 +2219,13 @@
+ 			}
+ 			else
+ 				offset = fDragStart;
+-	
++
+ 			if (offset == -1 || fCaret &lt; offset || fCaret &gt; offset + sl)
+ 			{
+ 				if (sfDragSource == this)
+ 				{
+ 					int a, c;
+-	
++
+ 					a = Offset2Line(fSavedAnchor);
+ 					c = Offset2Line(fSavedCaret);
+ 					TouchLines(min(a, c), max(a, c));
+@@ -2342,7 +2342,7 @@
+ 		, closestItem(NULL)
+ 	{
+ 	}
+-	
++
+ 	~MenuFunctionScanHandler()
+ 	{
+ 		if (closestItem)
+@@ -5539,8 +5539,8 @@
+ 	}
+ 
+ 	BPrintJob printJob(Window()-&gt;Title());
+-	
+-	// 
++
++	//
+ 	//fPrintSettings-&gt;PrintToStream();
+ 
+ 	printJob.SetSettings(new BMessage(*fPrintSettings));
+@@ -5556,17 +5556,17 @@
+ 	{
+ 		struct PrintFunctionRef *ref;
+ 		ref = (struct PrintFunctionRef *)bookmarkHandler.functions.ItemAt(i);
+-		fprintf(stderr, &quot;ref[%ld]: {%d, %d, %d, %d, %d, %d, '%s'}\n&quot;, i, 
++		fprintf(stderr, &quot;ref[%ld]: {%d, %d, %d, %d, %d, %d, '%s'}\n&quot;, i,
+ 			ref-&gt;offset, ref-&gt;line, ref-&gt;page, ref-&gt;level, ref-&gt;italic, ref-&gt;separator, ref-&gt;name.String());
+ 
+ 	}
+ 	*/
+ 
+ 	// information from printJob
+-	BRect printableRect = printJob.PrintableRect();	
++	BRect printableRect = printJob.PrintableRect();
+ 	int32 firstPage = printJob.FirstPage();
+ 	int32 lastPage = printJob.LastPage();
+-   
++
+ 	// lines eventually to be used to compute pages to print
+ 	int32 firstLine = 0;
+ 	int32 lastLine = LineCount();
+@@ -5614,13 +5614,13 @@
+ 		lastLine = currentLine - 1;
+ 	}
+ 
+-	
++
+ 	fprintf(stderr, &quot;pagesInDocument = %ld\n&quot;, pagesInDocument);
+ 	fprintf(stderr, &quot;linesInDocument = %ld\n&quot;, linesInDocument);
+ 
+ 	// let's do it!
+ 	printJob.BeginJob();
+-	
++
+ 	if (LineCount() &gt; 0 &amp;&amp; Size() &gt; 0)
+ 	{
+ 		int32 printLine = firstLine;
+@@ -5645,8 +5645,8 @@
+ 			printJob.SpoolPage();
+ 		}
+ 	}
+-	
+ 
++
+ 	printJob.CommitJob();
+ 
+ 	//FailOSErr(B_UNSUPPORTED);
+@@ -6177,15 +6177,30 @@
+ 					BPoint pos;
+ 					uint32 buttons;
+ 					GetMouse(&amp;pos, &amp;buttons, false);
+-//					pos = ConvertFromScreen(pos);
++
+ 					int toBeScrolledPart = (pos.y &lt; fSplitAt &amp;&amp; fSplitAt &gt; 0) ? 1 : 2;
+ 					int savedActivePart = fActivePart;
+ 					if (toBeScrolledPart != savedActivePart)
+ 						fActivePart = toBeScrolledPart;
+-					BMessage msg(y &lt; 0 ? kmsg_ScrollOneLineUp : kmsg_ScrollOneLineDown);
+-					int numLines = gPrefs-&gt;GetPrefInt(prf_I_ScrollwheelLines, 3);
+-					for( int i=0; i&lt;numLines; ++i)
++
++					bool pageWise = (modifiers()
++						&amp; (B_OPTION_KEY | B_COMMAND_KEY | B_CONTROL_KEY)) != 0;
++					if (pageWise)
++					{
++						BMessage msg(y &lt; 0
++							? kmsg_ScrollPageUp : kmsg_ScrollPageDown);
+ 						DoKeyCommand(&amp;msg);
++					}
++					else
++					{
++						BMessage msg(y &lt; 0
++							? kmsg_ScrollOneLineUp : kmsg_ScrollOneLineDown);
++						int numLines = gPrefs-&gt;GetPrefInt(
++							prf_I_ScrollwheelLines, 3);
++						for (int i = 0; i &lt; numLines; ++i)
++							DoKeyCommand(&amp;msg);
++					}
++
+ 					if (toBeScrolledPart != savedActivePart)
+ 						fActivePart = savedActivePart;
+ 				}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000168.html">[pe-commits] r571 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000170.html">[pe-commits] r573 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#169">[ date ]</a>
+              <a href="thread.html#169">[ thread ]</a>
+              <a href="subject.html#169">[ subject ]</a>
+              <a href="author.html#169">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r515 - in branches/model-based-editing:	Languages/Sources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r515%20-%20in%20branches/model-based-editing%3A%0A%09Languages/Sources%20Sources&In-Reply-To=%3C200804121233.m3CCXQiY015130%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000111.html">
+   <LINK REL="Next"  HREF="000110.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r515 - in branches/model-based-editing:	Languages/Sources Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r515%20-%20in%20branches/model-based-editing%3A%0A%09Languages/Sources%20Sources&In-Reply-To=%3C200804121233.m3CCXQiY015130%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r515 - in branches/model-based-editing:	Languages/Sources Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 14:33:26 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000111.html">[pe-commits] r514 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000110.html">[pe-commits] r516 - branches/model-based-editing/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-04-12 14:33:24 +0200 (Sat, 12 Apr 2008)
+New Revision: 515
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=515&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=515&amp;view=rev</A>
+
+Added:
+   branches/model-based-editing/Sources/CTextBuffer.cpp
+   branches/model-based-editing/Sources/CTextBuffer.h
+   branches/model-based-editing/Sources/CTextEditor.cpp
+   branches/model-based-editing/Sources/CTextEditor.h
+Removed:
+   branches/model-based-editing/Sources/PTextBuffer.cpp
+   branches/model-based-editing/Sources/PTextBuffer.h
+Modified:
+   branches/model-based-editing/Languages/Sources/HtmlCssJsPhp_Popup.cpp
+   branches/model-based-editing/Sources/CLanguageInterface.cpp
+   branches/model-based-editing/Sources/CLanguageInterface.h
+   branches/model-based-editing/Sources/Jamfile
+   branches/model-based-editing/Sources/MTextAddOnImpl.cpp
+   branches/model-based-editing/Sources/PAbout.cpp
+   branches/model-based-editing/Sources/PAddOn.cpp
+   branches/model-based-editing/Sources/PCmd.cpp
+   branches/model-based-editing/Sources/PCmd.h
+   branches/model-based-editing/Sources/PDoc.cpp
+   branches/model-based-editing/Sources/PDoc.h
+   branches/model-based-editing/Sources/PText.cpp
+   branches/model-based-editing/Sources/PText.h
+Log:
+Started to work on model-based editing:
+* added CTextEditor and temporarily made it a base class of PText (since PText
+  is being used by addons and we want to migrate a lot of methods from PText
+  to CTextEditor)
+* added empty stubs for CTextStructure, CTextSelection and CTextSearch
+* renamed PTextBuffer to CTextBuffer and removed all external references to it 
+  (only CTextEditor + its implementation classes will access the buffer from now on)
+* wrapped the CTextBuffer interface in CTextEditor (which simply double dispatches
+  to CTextBuffer)
+Seems to work the same as before.
+
+
+
+Modified: branches/model-based-editing/Languages/Sources/HtmlCssJsPhp_Popup.cpp
+===================================================================
+--- branches/model-based-editing/Languages/Sources/HtmlCssJsPhp_Popup.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Languages/Sources/HtmlCssJsPhp_Popup.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -56,6 +56,10 @@
+ 	const char * position;
+ 	bool italic;
+ 	
++#ifdef __MWERKS__
++	PopupMenu () {};
++#endif
++
+ //	PopupMenu (const char *lab, const char *txt, const char * pos)
+ //		: label(lab), text(txt), position(pos) {}
+ 	
+@@ -455,7 +459,7 @@
+ 
+ const char *PhpScript(const char *txt, PopupList &amp;lstPhpFunctions, PopupList &amp;lstPhpClasses, bool sorted)
+ {
+-	map &lt;int,int,int&gt; headings;
++	map &lt;int,int&gt; headings;
+ 	BString class_name;
+ 	while (*txt)
+ 	{
+
+Modified: branches/model-based-editing/Sources/CLanguageInterface.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CLanguageInterface.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/CLanguageInterface.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -46,6 +46,7 @@
+ #include &quot;HColorUtils.h&quot;
+ #include &quot;ResourcesMisc.h&quot;
+ #include &quot;Prefs.h&quot;
++#include &quot;utf-support.h&quot;
+ #include &lt;algorithm&gt;
+ 
+ unsigned char *CLanguageInterface::sfWordBreakTable = NULL;
+@@ -474,7 +475,7 @@
+ 				size = min(text.LineStart(line + 1) - offset, 1024);
+ 
+ 			CAlloca txt(size + 1);
+-			text.TextBuffer().Copy(txt, offset, size);
++			text.CopyText(txt, offset, size);
+ 			txt[size] = 0;
+ 
+ 			CLanguageProxy proxy(*this, txt, size);
+@@ -496,7 +497,7 @@
+ 
+ 			while (state &gt; 0 &amp;&amp; i &lt; text.Size())
+ 			{
+-				text.TextBuffer().CharInfo(i, unicode, len);
++				text.CharInfo(i, unicode, len);
+ 
+ 				int cl = 0;
+ 
+@@ -780,7 +781,7 @@
+ 						end = start + strcspn(start, &quot;\n&quot;);
+ 					}
+ 				} else {
+-					fKeywordMap.insert(pair&lt;BString, int&gt;(word, currType));
++					fKeywordMap.insert(pair&lt;const BString, int&gt;(word, currType));
+ 				}
+ 				start = end + strspn(end, white);
+ 				end = start + strcspn(start, white);
+
+Modified: branches/model-based-editing/Sources/CLanguageInterface.h
+===================================================================
+--- branches/model-based-editing/Sources/CLanguageInterface.h	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/CLanguageInterface.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -69,10 +69,10 @@
+ static	void SetupLanguageInterfaces();
+ static	CLanguageInterface* FindIntf(int index)	{ return fInterfaces[index]; }
+ static	CLanguageInterface* FindByExtension(const char *filename);
+-static CLanguageInterface* FindByName(const char *language);
++static  CLanguageInterface* FindByName(const char *language);
+ 
+-static CLanguageInterface* NextIntf(int&amp; cookie);
+-static int GetIndex(const CLanguageInterface* intf);
++static  CLanguageInterface* NextIntf(int&amp; cookie);
++static  int GetIndex(const CLanguageInterface* intf);
+ 
+ 		const char* LineCommentStart() const;
+ 		const char* LineCommentEnd() const;
+
+Copied: branches/model-based-editing/Sources/CTextBuffer.cpp (from rev 511, branches/model-based-editing/Sources/PTextBuffer.cpp)
+===================================================================
+--- branches/model-based-editing/Sources/PTextBuffer.cpp	2008-04-12 09:18:14 UTC (rev 511)
++++ branches/model-based-editing/Sources/CTextBuffer.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -0,0 +1,294 @@
++/*	$Id$
++	
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++*/
++
++#include &quot;pe.h&quot;
++
++#include &quot;CTextBuffer.h&quot;
++
++#include &quot;HError.h&quot;
++
++const int
++	kBlockSize = 2048;
++
++CTextBuffer::CTextBuffer()
++	: fText(strdup(&quot;&quot;))
++	, fLogicalSize(0)
++	, fPhysicalSize(0)
++	, fGap(0)
++	, fGapSize(0)
++{
++	FailNil(fText);
++} /* CTextBuffer::CTextBuffer */
++
++CTextBuffer::~CTextBuffer()
++{
++	free(fText);
++} /* CTextBuffer::~CTextBuffer */
++
++void CTextBuffer::Insert(const char *bytes, int numBytes, int index)
++{
++	ASSERT(numBytes &gt;= 0);
++	ASSERT(index &gt;= 0 &amp;&amp; index &lt;= fLogicalSize);
++
++	if (numBytes &lt; 0 || index &lt; 0 || index &gt; fLogicalSize) return;
++	
++	index = max(min(fLogicalSize, index), 0);
++	
++	if (index != fGap)
++		_MoveGap(index);
++	
++	if (fGapSize &lt; numBytes)
++		_ResizeGap(numBytes + kBlockSize);
++
++	ASSERT(numBytes &lt;= fGapSize);
++	memcpy(fText + fGap, bytes, numBytes);
++	
++	fGapSize -= numBytes;
++	fGap += numBytes;
++	fLogicalSize += numBytes;
++} /* CTextBuffer::Insert */
++
++void CTextBuffer::Delete(int from, int to)
++{
++	int index = from;
++	int cnt = to - from;
++	
++	ASSERT(cnt != 0);
++	ASSERT(from &lt; to);
++	ASSERT(index &gt;= 0);
++	ASSERT(index &lt; fLogicalSize);
++	if (cnt &lt;= 0 || from &lt; 0 || index &gt;= fLogicalSize)
++		return;
++	
++	index = max(min(fLogicalSize - 1, index), 0);
++	_MoveGap(index);
++	
++	fGapSize += cnt;
++	fLogicalSize -= cnt;
++	
++	if (fGapSize &gt; kBlockSize)
++		_ResizeGap(kBlockSize);
++} /* CTextBuffer::Delete */
++
++void CTextBuffer::Overwrite(int offset, const char *txt)
++{
++	int len = strlen(txt);
++
++	ASSERT(offset &gt;= 0);
++	ASSERT(offset + len &lt;= fLogicalSize);
++	ASSERT(len &gt;= 0);
++
++	if (offset &lt; 0) offset = 0;
++	if (offset + len &gt; fLogicalSize) len = fLogicalSize - offset;
++	if (len &lt;= 0) return;
++
++	if (offset + len &lt;= fGap)
++	{
++		memcpy(fText + offset, txt, len);
++	}
++	else if (offset &gt;= fGap)
++	{
++		memcpy(fText + fGapSize + offset, txt, len);
++	}
++	else
++	{
++		int p1, p2;
++		p1 = fGap - offset;
++		p2 = len - p1;
++		
++		memcpy(fText + offset, txt, p1);
++		memcpy(fText + fGap + fGapSize, txt + p1, p2);
++	}
++} /* CTextBuffer::Replace */
++
++const char* CTextBuffer::Buffer()
++{
++	_MoveGap(fLogicalSize);
++	if (fGapSize &lt; 1)
++		_ResizeGap(kBlockSize);
++	fText[fLogicalSize] = 0;
++
++	return fText;
++}
++
++void CTextBuffer::CopyText(char *buf, int index, int len) const
++{
++	ASSERT(index &gt;= 0);
++	ASSERT(index + len &lt;= fLogicalSize);
++	ASSERT(len &gt;= 0);
++
++	if (index &lt; 0) index = 0;
++	if (index + len &gt; fLogicalSize) len = fLogicalSize - index;
++	if (len &lt;= 0) return;
++
++	if (index + len &lt;= fGap)
++	{
++		memcpy(buf, fText + index, len);
++	}
++	else if (index &gt;= fGap)
++	{
++		memcpy(buf, fText + fGapSize + index, len);
++	}
++	else
++	{
++		int p1, p2;
++		p1 = fGap - index;
++		p2 = len - p1;
++		
++		memcpy(buf, fText + index, p1);
++		memcpy(buf + p1, fText + fGap + fGapSize, p2);
++	}
++} /* CTextBuffer::Copy */
++
++int CTextBuffer::CharLen(int index) const
++{
++	ASSERT(index &gt;= 0);
++	ASSERT(index &lt;= fLogicalSize);
++
++	if (index &lt; fLogicalSize &amp;&amp; index &gt;= 0)
++	{
++		char b[8];
++		CopyText(b, index, min(7, fLogicalSize - index));
++		b[7] = 0;
++	
++		return mcharlen(b);
++	}
++	else
++		return 1;
++} /* CTextBuffer::CharLen */
++
++int CTextBuffer::PrevCharLen(int index) const
++{
++	ASSERT(index &lt;= fLogicalSize);
++	ASSERT(index &gt;= 0);
++
++	if (index &gt; 0 &amp;&amp; index &lt;= fLogicalSize)
++	{
++		char b[8];
++		int cnt = max(0, min(7, index));
++		CopyText(b, index - cnt, cnt);
++		b[cnt] = 0;
++	
++		return mprevcharlen(b + cnt);
++	}
++	else
++		return 1;
++} /* CTextBuffer::PrevCharLen */
++
++void CTextBuffer::CharInfo(int offset, int&amp; unicode, int&amp; len) const
++{
++	ASSERT(offset &gt;= 0);
++//	ASSERT(index &lt;= fLogicalSize);
++
++	if (offset &gt;= fLogicalSize || offset &lt; 0)
++	{
++		unicode = 0;
++		len = 1;
++	}
++	else
++	{
++		char b[8];
++		CopyText(b, offset, min(7, fLogicalSize - offset));
++		b[7] = 0;
++	
++		len = mcharlen(b);
++		unicode = municode(b);
++	}
++} /* CTextBuffer::CharInfo */
++
++void CTextBuffer::_MoveGap(int offset)
++{
++	if (fGap == offset) return;
++	
++	ASSERT(offset &gt;= 0);
++	ASSERT(offset &lt;= fLogicalSize);
++	
++	int gapEnd = fGap + fGapSize;
++	int src, dst, cnt = 0;
++	
++	if (offset &gt; fGap)
++	{
++		int trail = fPhysicalSize - gapEnd;
++		src = gapEnd;
++		dst = fGap;
++		cnt = min(trail, fGapSize + offset - src);
++	}
++	else
++	{
++		src = offset;
++		dst = offset + fGapSize;
++		cnt = gapEnd - dst;
++	}
++	
++	if (cnt &gt; 0)
++	{
++		ASSERT(dst + cnt &lt;= fPhysicalSize);
++		memmove(fText + dst, fText + src, cnt);
++	}
++	
++	fGap = offset;
++} /* CTextBuffer::_MoveGap */
++
++void CTextBuffer::_ResizeGap(int gapSize)
++{
++	if (fGapSize == gapSize) return;
++	
++	char *t = fText;
++	
++	try
++	{
++		if (gapSize &gt; fGapSize)
++		{
++			fText = (char *)realloc(fText, fLogicalSize + gapSize);
++			FailNil(fText);
++		}
++
++		memmove(fText + fGap + gapSize, fText + fGap + fGapSize,
++			fPhysicalSize - (fGap + fGapSize));
++		
++		if (gapSize &lt; fGapSize)
++		{
++			fText = (char *)realloc(fText, fLogicalSize + gapSize);
++			FailNil(fText);
++		}
++
++		fGapSize = gapSize;
++		fPhysicalSize = fLogicalSize + gapSize;
++	}
++	catch (HErr&amp; e)
++	{
++		fText = t;
++		throw;
++	}
++} /* CTextBuffer::_ResizeGap */
++
+
+Copied: branches/model-based-editing/Sources/CTextBuffer.h (from rev 511, branches/model-based-editing/Sources/PTextBuffer.h)
+===================================================================
+--- branches/model-based-editing/Sources/PTextBuffer.h	2008-04-12 09:18:14 UTC (rev 511)
++++ branches/model-based-editing/Sources/CTextBuffer.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -0,0 +1,87 @@
++/*	$Id$
++	
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++*/
++
++#ifndef CTEXTBUFFER_H
++#define CTEXTBUFFER_H
++
++#include &lt;Debug.h&gt;
++#include &quot;utf-support.h&quot;
++
++class CTextBuffer {
++public:
++		CTextBuffer();
++virtual	~CTextBuffer();
++
++		void Insert(const char *bytes, int numBytes, int index);
++		void Delete(int from, int to);
++		void Overwrite(int offset, const char *txt);
++
++		char operator[] (int indx) const;
++		
++		int Size() const;
++		const char* Buffer();
++		
++		int CharLen(int offset) const;
++		int PrevCharLen(int offset) const;
++		void CharInfo(int offset, int&amp; unicode, int&amp; len) const;
++		
++		void CopyText(char *buf, int indx, int len) const;
++		
++		void PrintToStream();
++		
++private:
++		void _MoveGap(int offset);
++		void _ResizeGap(int size);
++		
++		char *fText;
++		int fLogicalSize;
++		int fPhysicalSize;
++		int fGap;
++		int fGapSize;
++};
++
++inline char CTextBuffer::operator[] (int indx) const
++{
++	ASSERT(indx &gt;= 0);
++	ASSERT(indx &lt; fLogicalSize);
++	if (indx &lt; 0 || indx &gt;= fLogicalSize)
++		return 0;
++	else
++		return fText[indx &lt; fGap ? indx : indx + fGapSize];
++}
++
++inline int CTextBuffer::Size() const {
++	return fLogicalSize;
++}
++
++#endif // CTEXTBUFFER_H
+
+Added: branches/model-based-editing/Sources/CTextEditor.cpp
+===================================================================
+--- branches/model-based-editing/Sources/CTextEditor.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/CTextEditor.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -0,0 +1,78 @@
++/*	$Id: $
++
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#include &quot;pe.h&quot;
++
++#include &quot;CTextEditor.h&quot;
++
++#include &quot;CTextBuffer.h&quot;
++#include &quot;CTextStructure.h&quot;
++#include &quot;CTextSelection.h&quot;
++#include &quot;CTextSearch.h&quot;
++
++CTextEditor::CTextEditor()
++	: fTextBuffer(new CTextBuffer)
++	, fTextStructure(new CTextStructure(fTextBuffer))
++	, fTextSelection(new CTextSelection(fTextBuffer, fTextStructure))
++	, fTextSearch(new CTextSearch(fTextBuffer))
++{
++}
++
++CTextEditor::~CTextEditor()
++{
++	delete fTextBuffer;
++}
++
++void CTextEditor::Insert(const char *bytes, int numBytes, int index)
++{
++	fTextBuffer-&gt;Insert(bytes, numBytes, index);
++}
++
++void CTextEditor::Delete(int from, int to)
++{
++	fTextBuffer-&gt;Delete(from, to);
++}
++
++void CTextEditor::Overwrite(int offset, const char *txt)
++{
++	fTextBuffer-&gt;Overwrite(offset, txt);
++}
++
++int CTextEditor::Size() const
++{
++	return fTextBuffer-&gt;Size();
++}
++
++const char* CTextEditor::Buffer()
++{
++	return fTextBuffer-&gt;Buffer();
++}
++
++char CTextEditor::operator[] (int indx) const
++{
++	return fTextBuffer-&gt;operator[](indx);
++}
++
++void CTextEditor::CopyText(char *buf, int index, int len) const
++{
++	fTextBuffer-&gt;CopyText(buf, index, len);
++}
++
++int CTextEditor::CharLen(int index) const
++{
++	return fTextBuffer-&gt;CharLen(index);
++}
++
++int CTextEditor::PrevCharLen(int index) const
++{
++	return fTextBuffer-&gt;PrevCharLen(index);
++}
++
++void CTextEditor::CharInfo(int offset, int&amp; unicode, int&amp; len) const
++{
++	fTextBuffer-&gt;CharInfo(offset, unicode, len);
++}
+
+Added: branches/model-based-editing/Sources/CTextEditor.h
+===================================================================
+--- branches/model-based-editing/Sources/CTextEditor.h	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/CTextEditor.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -0,0 +1,43 @@
++/*	$Id: $
++	
++	Copyright 2008 Oliver Tappe &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">zooey at hirschkaefer.de</A>&gt;
++	
++	Distributed under the MIT License
++*/
++
++#ifndef CTEXTEDITOR_H
++#define CTEXTEDITOR_H
++
++class CTextBuffer;
++class CTextStructure;
++class CTextSelection;
++class CTextSearch;
++
++class CTextEditor {
++public:
++		CTextEditor();
++		~CTextEditor();
++
++		void Insert(const char *bytes, int numBytes, int index);
++		void Delete(int from, int to);
++		void Overwrite(int offset, const char *txt);
++
++		char operator[] (int indx) const;
++		
++		int Size() const;
++		const char* Buffer();	// TODO: wrap auto-locker around this!
++		
++		int CharLen(int offset) const;
++		int PrevCharLen(int offset) const;
++		void CharInfo(int offset, int&amp; unicode, int&amp; len) const;
++		
++		void CopyText(char *buf, int indx, int len) const;
++		
++private:
++		CTextBuffer* fTextBuffer;
++		CTextStructure* fTextStructure;
++		CTextSelection* fTextSelection;
++		CTextSearch* fTextSearch;
++};
++
++#endif // CTEXTEDITOR_H
+
+Modified: branches/model-based-editing/Sources/Jamfile
+===================================================================
+--- branches/model-based-editing/Sources/Jamfile	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/Jamfile	2008-04-12 12:33:24 UTC (rev 515)
+@@ -54,6 +54,7 @@
+ 	CDocWindow.cpp
+ 	CFilterChoiceDialog.cpp
+ 	CFindDialog.cpp
++	CFontStyle.cpp
+ 	CFtpDialog.cpp
+ 	CFtpListItem.cpp
+ 	CFtpStream.cpp
+@@ -83,7 +84,11 @@
+ 	CStdErrBox.cpp
+ 	CStdErrParser.cpp
+ 	CUrlOpener.cpp
+-	CFontStyle.cpp
++	CTextBuffer.cpp
++	CTextEditor.cpp
++	CTextStructure.cpp
++	CTextSelection.cpp
++	CTextSearch.cpp
+ 	MTextAddOnImpl.cpp
+ 	PAbout.cpp
+ 	PAddOn.cpp
+@@ -103,7 +108,6 @@
+ 	PSplitter.cpp
+ 	PStatus.cpp
+ 	PText.cpp
+-	PTextBuffer.cpp
+ 	PToolBar.cpp
+ 	PTypeAHeadList.cpp
+ 	Sstdio.cpp
+
+Modified: branches/model-based-editing/Sources/MTextAddOnImpl.cpp
+===================================================================
+--- branches/model-based-editing/Sources/MTextAddOnImpl.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/MTextAddOnImpl.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -112,7 +112,7 @@
+ 		action.aOffset = start;
+ 		action.aText = (char *)malloc(end - start + 1);
+ 		FailNil(action.aText);
+-		fText.TextBuffer().Copy(action.aText, start, end - start);
++		fText.CopyText(action.aText, start, end - start);
+ 		action.aText[end - start] = 0;
+ 		fCmd-&gt;Actions().push_back(action);
+ 		
+
+Modified: branches/model-based-editing/Sources/PAbout.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PAbout.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PAbout.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -46,9 +46,9 @@
+ const char
+ 	kAboutText[] =
+ #if __INTEL__
+-		&quot;Pe 2.4.1 (x86) Open Source Version\n\n&quot;
++		&quot;Pe devel (x86) Open Source Version\n\n&quot;
+ #else
+-		&quot;Pe 2.4.1 (PPC) Open Source Version\n\n&quot;
++		&quot;Pe devel (PPC) Open Source Version\n\n&quot;
+ #endif
+ 		&quot;a high performance editor\n&quot;
+ 		&quot;created by Maarten Hekkelman.\n&quot;
+
+Modified: branches/model-based-editing/Sources/PAddOn.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PAddOn.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PAddOn.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -29,7 +29,6 @@
+ 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+ */
+ 
+-
+ #include &quot;PAddOn.h&quot;
+ 
+ #include &quot;HError.h&quot;
+@@ -213,7 +212,7 @@
+ 	action.aOffset = start;
+ 	action.aText = (char *)malloc(end - start + 1);
+ 	FailNil(action.aText);
+-	fText.TextBuffer().Copy(action.aText, start, end - start);
++	fText.CopyText(action.aText, start, end - start);
+ 	action.aText[end - start] = 0;
+ 	fCommand-&gt;Actions().push_back(action);
+ 	
+
+Modified: branches/model-based-editing/Sources/PCmd.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PCmd.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PCmd.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -42,6 +42,7 @@
+ #include &quot;PLongAction.h&quot;
+ #include &quot;PApp.h&quot;
+ #include &quot;PErrorWindow.h&quot;
++#include &quot;utf-support.h&quot;
+ 
+ PCmd::PCmd(const char *str, PText *txt)
+ {
+@@ -174,7 +175,7 @@
+ 	int cnt = fTo - fWhere;
+ 	fPasted = (char *)malloc(cnt + 1);
+ 	FailNil(fPasted);
+-	fText-&gt;TextBuffer().Copy(fPasted, fWhere, cnt);
++	fText-&gt;CopyText(fPasted, fWhere, cnt);
+ 	fPasted[cnt] = 0;
+ 	
+ 	Update();
+@@ -228,13 +229,13 @@
+ 	fDeletedIndx = min(fText-&gt;Caret(), fText-&gt;Anchor());
+ 	fDeletedLen = abs(fText-&gt;Caret() - fText-&gt;Anchor());
+ 		
+-	if (fDeletedIndx + fDeletedLen &gt;= fText-&gt;TextBuffer().Size())
+-		fDeletedLen = max(fText-&gt;TextBuffer().Size() - fDeletedIndx, 0);
++	if (fDeletedIndx + fDeletedLen &gt;= fText-&gt;Size())
++		fDeletedLen = max(fText-&gt;Size() - fDeletedIndx, 0);
+ 		
+ 	fDeleted = (char *)malloc(fDeletedLen);
+ 		
+ 	if (fDeletedLen)
+-		fText-&gt;TextBuffer().Copy(fDeleted, fDeletedIndx, fDeletedLen);
++		fText-&gt;CopyText(fDeleted, fDeletedIndx, fDeletedLen);
+ 		
+ 	fInsertedLen = 0;
+ } /* PTypingCmd::Do */
+@@ -256,7 +257,7 @@
+ 	{
+ 		pt = (char *)malloc(fInsertedLen + 1);
+ 		FailNil(pt);
+-		fText-&gt;TextBuffer().Copy(pt, fDeletedIndx, fInsertedLen);
++		fText-&gt;CopyText(pt, fDeletedIndx, fInsertedLen);
+ 	}
+ 	
+ 	if (fInsertedLen)
+@@ -526,7 +527,7 @@
+ 
+ 	fWhat = (char *)malloc(size + 1);
+ 	FailNil(fWhat);
+-	txt-&gt;TextBuffer().Copy(fWhat, offset, size);
++	txt-&gt;CopyText(fWhat, offset, size);
+ 	fWhat[size] = 0;
+ 
+ 	fWrap = gFindDialog-&gt;Wrap();
+@@ -737,7 +738,7 @@
+ 		fAnchor = fCaret = min(fText-&gt;Anchor(), fText-&gt;Caret());
+ 		fOldText = (char *)malloc(fOldTextSize);
+ 		FailNil(fOldText);
+-		fText-&gt;TextBuffer().Copy(fOldText, fAnchor, fOldTextSize);
++		fText-&gt;CopyText(fOldText, fAnchor, fOldTextSize);
+ 	}
+ 	else
+ 		fCaret = fAnchor = fText-&gt;Caret();
+@@ -874,7 +875,7 @@
+ 	{
+ 		t = (char *)malloc(size);
+ 		FailNil(t);
+-		fText-&gt;TextBuffer().Copy(t, fAnchor, size);
++		fText-&gt;CopyText(t, fAnchor, size);
+ 		fText-&gt;Delete(fAnchor, fCaret);
+ 	}
+ 	
+@@ -977,7 +978,7 @@
+ 	for (int i = firstLine; i &lt; lastLine; i++)
+ 	{
+ 		if (!fText-&gt;SoftStart(i)) {
+-			char c = fText-&gt;TextBuffer()[fText-&gt;LineStart(i)];
++			char c = (*fText)[fText-&gt;LineStart(i)];
+ 			if (c == '\t' || c == ' ')
+ 			{
+ 				fFirstChars[hardIndex] = c;
+@@ -1123,23 +1124,22 @@
+ 		
+ 		if (fFrom == fText-&gt;LineStart(line))
+ 		{
+-			fTo += txt-&gt;TextBuffer().CharLen(fTo);
+-			fTo += txt-&gt;TextBuffer().CharLen(fTo);
++			fTo += txt-&gt;CharLen(fTo);
++			fTo += txt-&gt;CharLen(fTo);
+ 		}
+ 		else if (fFrom == fText-&gt;Size() || fFrom == fText-&gt;LineStart(line + 1) - 1)
+ 		{
+-			fFrom -= txt-&gt;TextBuffer().PrevCharLen(fFrom);
+-			fFrom -= txt-&gt;TextBuffer().PrevCharLen(fFrom);
++			fFrom -= txt-&gt;PrevCharLen(fFrom);
++			fFrom -= txt-&gt;PrevCharLen(fFrom);
+ 		}
+ 		else
+ 		{
+-			fTo += txt-&gt;TextBuffer().CharLen(fTo);
+-			fFrom -= txt-&gt;TextBuffer().PrevCharLen(fFrom);
++			fTo += txt-&gt;CharLen(fTo);
++			fFrom -= txt-&gt;PrevCharLen(fFrom);
+ 		}
+ 	}
+ 	
+-	if (fText-&gt;TextBuffer()[fFrom] == '\n' ||
+-		fText-&gt;TextBuffer()[fTo - 1] == '\n' ||
++	if ((*fText)[fFrom] == '\n' || (*fText)[fTo - 1] == '\n' ||
+ 		fTo &gt; fText-&gt;Size() || fFrom &lt; 0)
+ 	{
+ 		THROW((0));
+@@ -1285,7 +1285,7 @@
+ 	
+ 	b[j] = 0;
+ 	while (j--)
+-		b[j] = fText-&gt;TextBuffer()[ix + j];
++		b[j] = (*fText)[ix + j];
+ 
+ 	if (strcmp(b, fBefore) == 0)
+ 	{
+@@ -1299,7 +1299,7 @@
+ 			
+ 			b[j] = 0;
+ 			while (j--)
+-				b[j] = fText-&gt;TextBuffer()[ix + j];
++				b[j] = (*fText)[ix + j];
+ 	
+ 			if (strcmp(b, fAfter) == 0)
+ 				fText-&gt;Delete(ix, ix + strlen(fAfter));
+@@ -1620,7 +1620,7 @@
+ 	fSrcLen = fCaret - fAnchor;
+ 	
+ 	FailNil(fSaved);
+-	txt-&gt;TextBuffer().Copy(fSaved, fAnchor, fSrcLen);
++	txt-&gt;CopyText(fSaved, fAnchor, fSrcLen);
+ 	
+ 	fPrevEncoding = txt-&gt;Doc()-&gt;Encoding();
+ } /* PEncodingCmd::PEncodingCmd */
+
+Modified: branches/model-based-editing/Sources/PCmd.h
+===================================================================
+--- branches/model-based-editing/Sources/PCmd.h	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PCmd.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -42,7 +42,6 @@
+ 
+ 
+ class PText;
+-class PTextBuffer;
+ 
+ class PCmd {
+ public:
+
+Modified: branches/model-based-editing/Sources/PDoc.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PDoc.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PDoc.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -250,7 +250,7 @@
+ 	r.right -= B_V_SCROLL_BAR_WIDTH;
+ 	r.bottom -= B_H_SCROLL_BAR_HEIGHT;
+ 
+-	fText = new PText(r, fTextBuffer, bars, name);
++	fText = new PText(r, bars, name);
+ 	AddChild(fText);
+ 	fText-&gt;MakeFocus(true);
+ 
+
+Modified: branches/model-based-editing/Sources/PDoc.h
+===================================================================
+--- branches/model-based-editing/Sources/PDoc.h	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PDoc.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -41,8 +41,6 @@
+ 
+ #include &quot;CDocWindow.h&quot;
+ 
+-#include &quot;PTextBuffer.h&quot;
+-
+ class PText;
+ class PStatus;
+ class HDialog;
+@@ -169,7 +167,6 @@
+ 
+ 			HButtonBar *fButtonBar;
+ 			PText *fText;
+-			PTextBuffer fTextBuffer;
+ 			PToolBar *fToolBar;
+ 			BMenu *fMBar;
+ 			BMenu *fRecent;
+
+Modified: branches/model-based-editing/Sources/PText.cpp
+===================================================================
+--- branches/model-based-editing/Sources/PText.cpp	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PText.cpp	2008-04-12 12:33:24 UTC (rev 515)
+@@ -66,9 +66,10 @@
+ #include &quot;HColorUtils.h&quot;
+ #include &quot;ResourcesMenus.h&quot;
+ #include &quot;Prefs.h&quot;
++#include &quot;utf-support.h&quot;
+ 
+ #if defined(__BEOS__) &amp;&amp; defined(__INTEL__)
+-	// [zooey]: BeOS' glib is messing up iscntrl, as it reports all values&gt;127 as
++	// [zooey]: BeOS' glibc is messing up iscntrl, as it reports all values&gt;127 as
+ 	// being control-chars, too (but they are *not*). We fix that:
+ 	#undef iscntrl
+ 	#define iscntrl(c)	((((unsigned char)(c))&lt;128) &amp;&amp; __isctype((c), _IScntrl))
+@@ -171,10 +172,10 @@
+ //	#pragma mark - class PText
+ 
+ 
+-PText::PText(BRect frame, PTextBuffer&amp; txt, BScrollBar *bars[], const char *ext)
++PText::PText(BRect frame, BScrollBar *bars[], const char *ext)
+ 	: BView(frame, &quot;text view&quot;, B_FOLLOW_ALL_SIDES, B_ASYNCHRONOUS_CONTROLS |
+ 		B_WILL_DRAW | B_NAVIGABLE | B_PULSE_NEEDED | B_FRAME_EVENTS)
+-	, fText(txt)
++	, fText(*static_cast&lt;CTextEditor*&gt;(this))
+ 	, fSplitCursorShown(false)
+ 	, fFontKind(kNormalFont)
+ {
+@@ -399,7 +400,7 @@
+ 			int size = abs(fCaret - fAnchor);
+ 			s = (char *)malloc(size + 1);
+ 			FailNil(s);
+-			fText.Copy(s, min(fCaret, fAnchor), size);
++			fText.CopyText(s, min(fCaret, fAnchor), size);
+ 			s[size] = 0;
+ 		}
+ 	}
+@@ -1127,7 +1128,7 @@
+ 		l = o2 - o1;
+ 
+ 		CAlloca txt(o2 - o1 + 2);
+-		fText.Copy(txt, o1, l);
++		fText.CopyText(txt, o1, l);
+ 		txt[l] = '\n';
+ 		txt[l + 1] = 0;
+ 
+@@ -2632,7 +2633,7 @@
+ 		if (! fLineInfo[line].nl)
+ 		{
+ 			if (fText[i - 1] == ' ')
+-				fText.Replace(i - 1, &quot;\n&quot;);
++				fText.Overwrite(i - 1, &quot;\n&quot;);
+ 			else
+ 			{
+ 				fText.Insert(&quot;\n&quot;, 1, i);
+@@ -2928,7 +2929,7 @@
+ 	if (len &gt; 0)
+ 	{
+ 		CAlloca txt(len + 1);
+-		fText.Copy(txt, offset, len);
++		fText.CopyText(txt, offset, len);
+ 		txt[len] = 0;
+ 
+ 		w = StringWidth(txt, len);
+@@ -3039,7 +3040,7 @@
+ 				int len = fLineInfo[i].start - fLineInfo[i - 1].start;
+ 
+ 				CAlloca txt(len + 1);
+-				fText.Copy(txt, fLineInfo[i - 1].start, len);
++				fText.CopyText(txt, fLineInfo[i - 1].start, len);
+ 				txt[len] = 0;
+ 
+ 				fLangIntf-&gt;ColorLine(txt, len, state, NULL, NULL);
+@@ -4643,7 +4644,7 @@
+ 		s = (char *)malloc(to - from + 1);
+ 		s[to - from] = 0;
+ 		FailNil(s);
+-		fText.Copy(s, from, to - from);
++		fText.CopyText(s, from, to - from);
+ 	}
+ 
+ 	fExec = new PExec(this, s, fCWD);
+@@ -4822,7 +4823,7 @@
+ 
+ 	if (l)
+ 	{
+-		fText.Copy(b, s, l);
++		fText.CopyText(b, s, l);
+ 		b[l] = 0;
+ 
+ 		int state = LineState(lineNr);
+@@ -6238,7 +6239,7 @@
+ 			s = (char *)malloc(size);
+ 			FailNil(s);
+ 
+-			fText.Copy(s, min(fCaret, fAnchor), size);
++			fText.CopyText(s, min(fCaret, fAnchor), size);
+ 
+ 			be_clipboard-&gt;Lock();
+ 			if (append &amp;&amp; be_clipboard-&gt;Data()-&gt;HasData(&quot;text/plain&quot;, B_MIME_DATA))
+
+Modified: branches/model-based-editing/Sources/PText.h
+===================================================================
+--- branches/model-based-editing/Sources/PText.h	2008-04-12 11:53:47 UTC (rev 514)
++++ branches/model-based-editing/Sources/PText.h	2008-04-12 12:33:24 UTC (rev 515)
+@@ -36,10 +36,11 @@
+ 
+ typedef float g_unit_t;
+ 
++#include &lt;Debug.h&gt;
+ #include &lt;Messenger.h&gt;
+
+[... truncated: 62 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000111.html">[pe-commits] r514 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000110.html">[pe-commits] r516 - branches/model-based-editing/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

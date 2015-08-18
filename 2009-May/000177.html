@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r576 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r576%20-%20trunk/Sources&In-Reply-To=%3C20090505164458.428.1%40knochen-vm.localdomain%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000176.html">
+   <LINK REL="Next"  HREF="000178.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r576 - trunk/Sources</H1>
+    <B>Ingo Weinhold</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r576%20-%20trunk/Sources&In-Reply-To=%3C20090505164458.428.1%40knochen-vm.localdomain%3E"
+       TITLE="[pe-commits] r576 - trunk/Sources">ingo_weinhold at gmx.de
+       </A><BR>
+    <I>Tue May  5 16:44:58 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000176.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000178.html">[pe-commits] r578 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#177">[ date ]</a>
+              <a href="thread.html#177">[ thread ]</a>
+              <a href="subject.html#177">[ subject ]</a>
+              <a href="author.html#177">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+On 2009-05-05 at 14:51:24 [+0200], Stephan A&#223;mus &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">superstippi at gmx.de</A>&gt; wrote:
+&gt;<i> Ingo Weinhold schrieb:
+</I>&gt;<i> &gt; On 2009-05-05 at 14:15:14 [+0200], Stephan A&#223;mus &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">superstippi at gmx.de</A>&gt; 
+</I>&gt;<i> &gt; wrote:
+</I>&gt;<i> &gt;&gt; Ingo Weinhold schrieb:
+</I>&gt;<i> &gt;&gt;&gt; On 2009-05-05 at 10:11:41 [+0200], stippi at BerliOS
+</I>&gt;<i> &gt;&gt;&gt; &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">stippi at mail.berlios.de</A>&gt;
+</I>&gt;<i> &gt;&gt;&gt; wrote:
+</I>&gt;<i> &gt;&gt;&gt;&gt; Author: stippi
+</I>&gt;<i> &gt;&gt;&gt;&gt; Date: 2009-05-05 10:11:41 +0200 (Tue, 05 May 2009)
+</I>&gt;<i> &gt;&gt;&gt;&gt; New Revision: 576
+</I>&gt;<i> &gt;&gt;&gt;&gt; ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=576&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=576&amp;view=rev</A>
+</I>&gt;<i> &gt;&gt;&gt;&gt;
+</I>&gt;<i> &gt;&gt;&gt;&gt; Modified:
+</I>&gt;<i> &gt;&gt;&gt;&gt;    trunk/Sources/PText.cpp
+</I>&gt;<i> &gt;&gt;&gt;&gt; Log:
+</I>&gt;<i> &gt;&gt;&gt;&gt; Use B_OP_OVER for text rendering within a line that has highlights. 
+</I>&gt;<i> &gt;&gt;&gt;&gt; This
+</I>&gt;<i> &gt;&gt;&gt;&gt; avoids
+</I>&gt;<i> &gt;&gt;&gt;&gt; having to track the low color for the highlights as well, as is already
+</I>&gt;<i> &gt;&gt;&gt;&gt; done
+</I>&gt;<i> &gt;&gt;&gt;&gt; for the selection.
+</I>&gt;<i> &gt;&gt;&gt; Cool, thanks! I wondered how to best solve this, but I was too tired to
+</I>&gt;<i> &gt;&gt;&gt; look
+</I>&gt;<i> &gt;&gt;&gt; into it last night. :-)
+</I>&gt;<i> &gt;&gt; In theory, we could skip a lot of SetLowColor() later on if we already
+</I>&gt;<i> &gt;&gt; changed the drawing mode to B_OP_OVER, but I was/am too lazy to look
+</I>&gt;<i> &gt;&gt; into it. Much potential for screw up...
+</I>&gt;<i> &gt; 
+</I>&gt;<i> &gt; I wondered about that too, but I guess B_OP_OVER wasn't used in the first
+</I>&gt;<i> &gt; place for performance reasons. Though I guess on today's computers it
+</I>&gt;<i> &gt; wouldn't make much of a difference anyway, particularly under Haiku.
+</I>&gt;<i> 
+</I>&gt;<i> On BeOS B_OP_COPY is like seven or eight times faster than B_OP_OVER. On
+</I>&gt;<i> Haiku, it's about 6% faster. Maybe after more optimizations in the
+</I>&gt;<i> app_server our B_OP_COPY gains some speed over B_OP_OVER...
+</I>&gt;<i> 
+</I>&gt;<i> I figured my solution is ok for BeOS, since B_OP_OVER is only turned on
+</I>&gt;<i> for one line and the check is cheap.
+</I>
+Sure, I wasn't complaining, just noticing. :-)
+
+&gt;<i> However, I would rather have brackets highlighted via the text than via
+</I>&gt;<i> the background color. Somehow I find there is a bit too much &quot;visual
+</I>&gt;<i> disturbance&quot; going on when moving the cursor in the text now. It could
+</I>&gt;<i> possibly be fixed with a tiny delay so brackets don't flash when just
+</I>&gt;<i> moving the cursor and passing by. But maybe it would be more
+</I>&gt;<i> esthetically pleasing anyways to use the text color. I realize however,
+</I>&gt;<i> after having looked at the code, that that would be much more involved.
+</I>
+Personally I'm fine with how it works ATM. Adding a short delay before 
+highlighting might make it even nicer -- would have to see how that works in 
+practice -- but since the highlight color doesn't contrast too much with the 
+background color I don't really find the &quot;visual noise&quot; irritating.
+
+Regarding using the text color for highlighting, I'm not sure whether that 
+would be constrasty enough. Particularly when looking for matching braces of 
+C if/for/... blocks, having the whole cell highlighted probably makes it 
+easier to spot.
+
+Anyway, I don't think I'll touch the code for the time being, so feel free to 
+play with it. Neither of your suggestions should be complicated to implement. 
+Using the text color is merely about manipulating the syntax coloring arrays 
+one gets from the language add-on. The delay can be done with a message 
+runner and an additional flag indicating whether the highlights are already 
+active.
+
+CU, Ingo
+
+PS: BTW, your replies went off-list so far. The list server doesn't do 
+Reply-To munging.
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000176.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000178.html">[pe-commits] r578 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#177">[ date ]</a>
+              <a href="thread.html#177">[ thread ]</a>
+              <a href="subject.html#177">[ subject ]</a>
+              <a href="author.html#177">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,80 @@
+From stippi at mail.berlios.de  Sun Dec  9 12:54:12 2007
+From: stippi at mail.berlios.de (stippi at BerliOS)
+Date: Sun, 9 Dec 2007 12:54:12 +0100
+Subject: [pe-commits] r483 - trunk/Sources
+Message-ID: <200712091154.lB9BsCsb000771@sheep.berlios.de>
+
+Author: stippi
+Date: 2007-12-09 12:54:11 +0100 (Sun, 09 Dec 2007)
+New Revision: 483
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=483&view=rev
+
+Modified:
+   trunk/Sources/Utils.cpp
+Log:
+* use a more robust method to send messages to Tracker (I have a really weird
+  setup where the old method fails (using OpenTracker on ZETA, but without
+  replacing the original ZETA libtracker.so...)) -> this fixes the "deadlock"
+  (more likely an uncaught exception) when I use the PStatus view to open the
+  parent folder of a source file
+
+
+Modified: trunk/Sources/Utils.cpp
+===================================================================
+--- trunk/Sources/Utils.cpp	2007-11-12 00:06:07 UTC (rev 482)
++++ trunk/Sources/Utils.cpp	2007-12-09 11:54:11 UTC (rev 483)
+@@ -140,17 +140,19 @@
+ 	BMessage msg(B_REFS_RECEIVED);
+ 	msg.AddRef("refs", &ref);
+ 
+-	entry_ref app;
+-	if (be_roster->FindApp("application/x-vnd.Be-TRAK", &app))
+-		THROW((0));
+-
+-	if (be_roster->IsRunning(&app))
++	const char* trackerSignature = "application/x-vnd.Be-TRAK";
++	team_id trackerTeam = be_roster->TeamFor(trackerSignature);
++	if (trackerTeam < 0)
+ 	{
+-		BMessenger msr(NULL, be_roster->TeamFor(&app));
+-		msr.SendMessage(&msg);
++		// tracker is not running and we pass the message trough launching it
++		if (be_roster->Launch(trackerSignature, &msg) < B_OK)
++			THROW(("Tracker not running???"));
+ 	}
+-	else if (be_roster->Launch(&app, &msg))
+-		THROW(("Tracker not running???"));
++	else
++	{
++		BMessenger messenger(NULL, trackerTeam);
++		messenger.SendMessage(&msg);
++	}
+ } /* OpenInTracker */
+ 
+ void SendToIDE(const BMessage& msg, BMessage *reply)
+
+
+
+From stippi at mail.berlios.de  Sun Dec  9 13:02:23 2007
+From: stippi at mail.berlios.de (stippi at BerliOS)
+Date: Sun, 9 Dec 2007 13:02:23 +0100
+Subject: [pe-commits] r484 - trunk/Resources
+Message-ID: <200712091202.lB9C2NWY010089@sheep.berlios.de>
+
+Author: stippi
+Date: 2007-12-09 13:02:23 +0100 (Sun, 09 Dec 2007)
+New Revision: 484
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=484&view=rev
+
+Modified:
+   trunk/Resources/pe.types.rsrc
+Log:
+* include the Haiku vector icon
+
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+
+

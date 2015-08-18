@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r579 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r579%20-%20trunk/Sources&In-Reply-To=%3C200905051824.n45IOLIk010922%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000178.html">
+   <LINK REL="Next"  HREF="000180.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r579 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r579%20-%20trunk/Sources&In-Reply-To=%3C200905051824.n45IOLIk010922%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r579 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Tue May  5 20:24:21 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000178.html">[pe-commits] r578 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000180.html">[pe-commits] r580 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-05 20:24:21 +0200 (Tue, 05 May 2009)
+New Revision: 579
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=579&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=579&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+* PText::InvalidateRange(): Fixed the computation of the invalidation rect.
+* Added PText::InvalidateRange() version without the part parameter.
+* Remove PText::SelectionChanged() parameters. They aren't always that easy to
+  come by and aren't needed anyway.
+* Changed the parenthesis/bracket/brace highlighting to happen in both editing
+  parts. That did already happen by accident (respectively ignorance) in
+  PText::DrawLines(), but invalidation happened only in the active part. I
+  intended to restrict brace highlighting to the active part, but the &quot;magic&quot;
+  PText::RedrawDirtyLines() uses would make that pretty hairy.
+* Trigger the brace highlighting on window creation. The highlights would be
+  missing before.
+* Actively call PText::SelectionChanged() in PText::MouseDown() when doing the
+  GetMouse() loop. Otherwise the highlights wouldn't be invalidated until
+  releasing the mouse.
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-05-05 17:03:37 UTC (rev 578)
++++ trunk/Sources/PDoc.cpp	2009-05-05 18:24:21 UTC (rev 579)
+@@ -110,6 +110,7 @@
+ 			AddRecent(path.Path());
+ 
+ 		NameChanged();
++		fText-&gt;TextBufferChanged();
+ 	}
+ 
+ 	fButtonBar-&gt;SetEnabled(msg_Save, false);
+@@ -1241,7 +1242,7 @@
+ 	inherited::DispatchMessage(message, handler);
+ 
+ 	if (fText-&gt;Anchor() != anchor || fText-&gt;Caret() != caret)
+-		fText-&gt;SelectionChanged(anchor, caret);
++		fText-&gt;SelectionChanged();
+ 
+ 	if (fText-&gt;TextBuffer().ChangeCounter() != changeCounter)
+ 		fText-&gt;TextBufferChanged();
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-05-05 17:03:37 UTC (rev 578)
++++ trunk/Sources/PText.cpp	2009-05-05 18:24:21 UTC (rev 579)
+@@ -242,7 +242,6 @@
+ 
+ 	fHighlightCursor = -1;
+ 	fHighlightChangeCounter = -1;
+-	fHighlightPart = -1;
+ 
+ 	ReInit();
+ } /* PText::PText */
+@@ -2046,6 +2045,8 @@
+ 
+ 		fStatus-&gt;SetOffset(fCaret);
+ 
++		SelectionChanged();
++
+ 		g_unit_t v = -1;
+ 		BPoint cur;
+ 
+@@ -2065,6 +2066,7 @@
+ 						curOffset = LineStart(Offset2Line(curOffset));
+ 
+ 					ChangeSelection(max(anchor2, curOffset), min(anchor1, curOffset), modifiers &amp; B_OPTION_KEY);
++					SelectionChanged();
+ 				}
+ 				else if (curOffset &gt; anchor2)
+ 				{
+@@ -2078,6 +2080,7 @@
+ 					}
+ 
+ 					ChangeSelection(min(anchor1, curOffset), max(anchor2, curOffset), modifiers &amp; B_OPTION_KEY);
++					SelectionChanged();
+ 				}
+ 
+ 				v = fActivePart == 1 ? fVScrollBar1-&gt;Value() : fVScrollBar2-&gt;Value();
+@@ -5511,7 +5514,7 @@
+ 	int toLine = Offset2Line(toOffset - 1);
+ 
+ 	// compute the invalidation rect and invalidate it
+-	float fromY = ceil(fLineHeight * fromLine - vScrollOffset);
++	float fromY = bounds.top + ceil(fLineHeight * fromLine - vScrollOffset);
+ 	float toY = fromY + ceil((toLine + 1 - fromLine) * fLineHeight);
+ 	float hScrollOffset = fHScrollBar-&gt;Value();
+ 	BRect rect(hScrollOffset, fromY + 1, hScrollOffset + fBounds.Width(),
+@@ -5519,7 +5522,13 @@
+ 	Invalidate(rect &amp; bounds.OffsetByCopy(hScrollOffset, 0));
+ }
+ 
++void PText::InvalidateRange(int fromOffset, int toOffset)
++{
++	InvalidateRange(fromOffset, toOffset, 1);
++	InvalidateRange(fromOffset, toOffset, 2);
++}
+ 
++
+ // #pragma mark - Printing
+ 
+ struct PrintFunctionRef {
+@@ -6587,7 +6596,7 @@
+ 
+ // #pragma mark - Highlighting
+ 
+-void PText::SelectionChanged(int oldAnchor, int oldCaret)
++void PText::SelectionChanged()
+ {
+ 	int newCursor = fAnchor == fCaret ? fAnchor : -1;
+ 	if (newCursor != fHighlightCursor)
+@@ -6602,30 +6611,25 @@
+ 
+ void PText::ActivePartChanged(int oldActivePart)
+ {
+-	if (fActivePart != fHighlightPart)
+-		UpdateBraceHighlights();
+ }
+ 
+ void PText::UpdateBraceHighlights()
+ {
+ 	// invalidate the old highlights
+ 	if (fBraceHighlight1.fromOffset &gt;= 0) {
+-		InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset,
+-			fHighlightPart);
++		InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset);
+ 		fBraceHighlight1.fromOffset = -1;
+ 		fHighlights.remove(&amp;fBraceHighlight1);
+ 	}
+ 
+ 	if (fBraceHighlight2.fromOffset &gt;= 0) {
+-		InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset,
+-			fHighlightPart);
++		InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset);
+ 		fBraceHighlight2.fromOffset = -1;
+ 		fHighlights.remove(&amp;fBraceHighlight2);
+ 	}
+ 
+ 	fHighlightCursor = fAnchor == fCaret ? fAnchor : -1;
+ 	fHighlightChangeCounter = fText.ChangeCounter();
+-	fHighlightPart = fActivePart;
+ 
+ 	if (!gBalance)
+ 		return;
+@@ -6683,12 +6687,10 @@
+ 	fBraceHighlight1.fromOffset = offset;
+ 	fBraceHighlight1.toOffset = fBraceHighlight1.fromOffset + 1;
+ 	fHighlights.push_back(&amp;fBraceHighlight1);
+-	InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset,
+-		fHighlightPart);
++	InvalidateRange(fBraceHighlight1.fromOffset, fBraceHighlight1.toOffset);
+ 
+ 	fBraceHighlight2.fromOffset = otherOffset;
+ 	fBraceHighlight2.toOffset = fBraceHighlight2.fromOffset + 1;
+ 	fHighlights.push_back(&amp;fBraceHighlight2);
+-	InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset,
+-		fHighlightPart);
++	InvalidateRange(fBraceHighlight2.fromOffset, fBraceHighlight2.toOffset);
+ }
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2009-05-05 17:03:37 UTC (rev 578)
++++ trunk/Sources/PText.h	2009-05-05 18:24:21 UTC (rev 579)
+@@ -169,6 +169,7 @@
+ 			void HideCaret();
+ 			void ShowCaret();
+ 			void InvalidateRange(int fromOffset, int toOffset, int part);
++			void InvalidateRange(int fromOffset, int toOffset);
+ 
+ 			status_t PageSetup();
+ 			status_t Print();
+@@ -291,7 +292,7 @@
+ 			int WrapWidth() const;
+ 			PDoc* Doc() const;
+ 
+-			void SelectionChanged(int oldAnchor, int oldCaret);
++			void SelectionChanged();
+ 			void TextBufferChanged();
+ 			void ActivePartChanged(int oldActivePart);
+ 			void UpdateBraceHighlights();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000178.html">[pe-commits] r578 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000180.html">[pe-commits] r580 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r409 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2005-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr409%20-%20trunk/Sources&In-Reply-To=%3C200511271402.jARE2u7I013466%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000002.html">
+   <LINK REL="Next"  HREF="000004.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r409 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr409%20-%20trunk/Sources&In-Reply-To=%3C200511271402.jARE2u7I013466%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r409 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Sun Nov 27 15:02:56 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000002.html">[pe-commits]r408 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000004.html">[pe-commits]r410 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2005-11-27 15:02:50 +0100 (Sun, 27 Nov 2005)
+New Revision: 409
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=409&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=409&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+- changed info text to current state of things (BerliOS and all)
+  and added list of contributors.
+
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2005-11-22 12:52:47 UTC (rev 408)
++++ trunk/Sources/PAbout.cpp	2005-11-27 14:02:50 UTC (rev 409)
+@@ -53,23 +53,35 @@
+ 		&quot;a high performance editor\n&quot;
+ 		&quot;created by Maarten Hekkelman.\n&quot;
+ 		&quot;Hekkelman Programmatuur B.V.\n&quot;
+-		&quot;Copyright &#169; 1997, 1998, 2002.\n&quot;
+-		&quot;<A HREF="http://www.hekkelman.com/\n\n-\n\n">http://www.hekkelman.com/\n\n-\n\n</A>&quot;
+-		&quot;Thanks to all those\nwho sent in feedback.\n&quot;
+-		&quot;Your help is invaluable.\n\n&quot;
+-		&quot;Special thanks to\nTom Hays\nfor improving the TeX addon\n\n&quot;
+-		&quot;and Be of course\nfor making this wonderful OS.\n\n&quot;
++		&quot;Copyright &#169; 1997, 1998, 2002.\n\n&quot;
+ 		&quot;-\n\n&quot;
+ 		&quot;This is the Open Source version of Pe,\n&quot;
++		&quot;copyright &#169; 2003-2005, Team Pe at BeUnited,\n&quot;
+ 		&quot;compiled on:\n%s\n\n&quot;
+-		&quot;Pe now lives at <A HREF="http://www.beunited.org\n\n">http://www.beunited.org\n\n</A>&quot;
+-		&quot;You can reach the current developers\n&quot;
+-		&quot;via Pe's mailing-list,\n&quot;
++		&quot;Pe is now hosted at BerliOS:\n&quot;
++		&quot;<A HREF="http://developer.berlios.de/projects/pe-editor\n\n">http://developer.berlios.de/projects/pe-editor\n\n</A>&quot;
++		&quot;You can reach Team Pe\n&quot;
++		&quot;via Pe's mailing-list:\n&quot;
+ 		&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">pedevel at freelists.org</A>\n\n&quot;
+ 		&quot;-\n\n&quot;
+ 		&quot;Please send suggestions and/or bugreports\n&quot;
+-		&quot;to <A HREF="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">pedevel at hirschkaefer.org</A>\n\n&quot;
+-		&quot;Thanks to all contributors.\n\n&quot;,
++		&quot;to the list or use the bug-tracker at BerliOS.\n\n&quot;
++		&quot;-\n\n&quot;
++		&quot;Thanks to all contributors (in alphabetical order):\n\n&quot;
++		&quot;Andrew Bachmann\n&quot;
++		&quot;Axel D&#246;rfler\n&quot;
++		&quot;Chris Roberts\n&quot;
++		&quot;Christian Packmann\n&quot;
++		&quot;Guy ?\n&quot;			// ToDo: there's something missing here &gt;:oP
++		&quot;Ingo Weinhold\n&quot;
++		&quot;Keith McAfee\n&quot;
++		&quot;Oliver Tappe\n&quot;
++		&quot;Oscar Lesta\n&quot;
++		&quot;Rainer Riedl\n&quot;
++		&quot;Stephan A&#223;mus\n\n\n&quot;
++		&quot;...and thanks to everyone we forgot, too!\n\n&quot;;
++
++const char
+ 	kAboutText2[] = &quot;BeOS Rules!&quot;;
+ 
+ #if STANDALONE
+@@ -87,7 +99,7 @@
+ 	kAboutTextHeight = 100;
+ 
+ const bigtime_t
+-	kDelay = 30000;
++	kDelay = 60000;
+ 
+ const unsigned long msg_Animate = 'anim';
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000002.html">[pe-commits]r408 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000004.html">[pe-commits]r410 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

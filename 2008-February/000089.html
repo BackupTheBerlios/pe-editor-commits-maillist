@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r495 - trunk/build
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r495%20-%20trunk/build&In-Reply-To=%3C200802280950.m1S9oWjT008902%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000088.html">
+   <LINK REL="Next"  HREF="000090.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r495 - trunk/build</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r495%20-%20trunk/build&In-Reply-To=%3C200802280950.m1S9oWjT008902%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r495 - trunk/build">stippi at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb 28 10:50:32 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000088.html">[pe-commits] r494 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000090.html">[pe-commits] r496 - trunk/Resources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#89">[ date ]</a>
+              <a href="thread.html#89">[ thread ]</a>
+              <a href="subject.html#89">[ subject ]</a>
+              <a href="author.html#89">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2008-02-28 10:50:32 +0100 (Thu, 28 Feb 2008)
+New Revision: 495
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=495&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=495&amp;view=rev</A>
+
+Modified:
+   trunk/build/BuildSettings
+Log:
+Don't check for libzeta.so in the system, but check for it in the dev env
+lib folder. This is needed to make an R5 build using the R5 dev tools on
+ZETA.
+
+
+Modified: trunk/build/BuildSettings
+===================================================================
+--- trunk/build/BuildSettings	2008-02-28 09:40:04 UTC (rev 494)
++++ trunk/build/BuildSettings	2008-02-28 09:50:32 UTC (rev 495)
+@@ -25,7 +25,7 @@
+ 		LINKLIBS += -lnet ;
+ 	}
+ 	# check for Zeta...
+-	local haveZeta = [ GLOB /boot/beos/system/lib : libzeta.so ] ;
++	local haveZeta = [ GLOB /boot/develop/lib/x86 : libzeta.so ] ;
+ 	if $(haveZeta)	{
+ 		LINKLIBS += -lzeta ;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000088.html">[pe-commits] r494 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000090.html">[pe-commits] r496 - trunk/Resources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#89">[ date ]</a>
+              <a href="thread.html#89">[ thread ]</a>
+              <a href="subject.html#89">[ subject ]</a>
+              <a href="author.html#89">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

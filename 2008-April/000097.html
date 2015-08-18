@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r503 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r503%20-%20trunk/Extensions&In-Reply-To=%3C200804081454.m38Es51Z014049%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000096.html">
+   <LINK REL="Next"  HREF="000098.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r503 - trunk/Extensions</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r503%20-%20trunk/Extensions&In-Reply-To=%3C200804081454.m38Es51Z014049%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r503 - trunk/Extensions">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr  8 16:54:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000096.html">[pe-commits] r502 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000098.html">[pe-commits] r504 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#97">[ date ]</a>
+              <a href="thread.html#97">[ thread ]</a>
+              <a href="subject.html#97">[ subject ]</a>
+              <a href="author.html#97">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-08 16:54:05 +0200 (Tue, 08 Apr 2008)
+New Revision: 503
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=503&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=503&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/WebPaste.cpp
+Log:
+Cleanup
+
+
+Modified: trunk/Extensions/WebPaste.cpp
+===================================================================
+--- trunk/Extensions/WebPaste.cpp	2008-04-08 02:28:36 UTC (rev 502)
++++ trunk/Extensions/WebPaste.cpp	2008-04-08 14:54:05 UTC (rev 503)
+@@ -5,6 +5,10 @@
+ // written by Fran&#231;ois Revol, 2008.
+ //
+ 
++// TODO:
++// Someone said <A HREF="http://pastebin.ca/">http://pastebin.ca/</A> handles UTF-8 correctly (unline rafb.net)
++// maybe later add configurable multiple handlers ?
++
+ #include &quot;PeAddOn.h&quot;
+ #include &lt;stdio.h&gt;
+ 
+@@ -13,33 +17,8 @@
+ #define COPY_TO_CLIPBOARD 1
+ 
+ //------------------------------------------------------------------------------
++//	#pragma mark - class StdIOInString
+ 
+-#if 0
+-class StdDataIO : public BDataIO {
+-public:
+-	StdDataIO(FILE *f, bool closeOnDelete=true);
+-	virtual ~StdDataIO();
+-	virtual ssize_t Read(void *buffer, size_t size);
+-	virtual ssize_t Write(const void *buffer, size_t size);
+-private:
+-	FILE *fFile;
+-	bool fCloDelete;
+-}
+-
+-StdDataIO::StdDataIO(FILE *f, bool closeOnDelete)
+-{
+-	fFile = f;
+-	fCloDelete = closeOnDelete;
+-}
+-
+-StdDataIO::~StdDataIO()
+-{
+-	if (fCloDelete)
+-		fclose(fFile);
+-}
+-
+-#endif
+-
+ class StdIOInString : public BString {
+ public:
+ 	StdIOInString(FILE *f, bool closeOnDelete=true);
+@@ -76,6 +55,7 @@
+ 
+ 
+ //------------------------------------------------------------------------------
++//	#pragma mark - Helper functions
+ 
+ static const char *PeLangToPasteLang(const char *lang);
+ static status_t UrlEscape(BString &amp;str);
+@@ -216,13 +196,6 @@
+ 	be_roster-&gt;Launch(B_URL_HTTP, 1, args);
+ #endif
+ 
+-	
+-/*
+-	BString message(&quot;Error running wget.\n&quot;);
+-	message &lt;&lt; pasteUrl;
+-	MInfoAlert(message.String()).Go();
+-*/
+-	
+ 	return B_OK;
+ }
+ 
+@@ -255,11 +228,11 @@
+ 
+ 	int length = selEnd - selStart;
+ 
+-	// Do NOT run the query if we have less than 3 chars. It works, but takes
+-	// ages and produces an useless giant popup menu.
+-	if (length &lt; 3) {
++	// Do NOT paste anything if we have less than 5 chars.
++	// It's probably unwanted action.
++	if (length &lt; 5) {
+ 		MIdeaAlert(&quot;The text selection is too short.\n&quot;
+-					&quot;Please select at least three characters.&quot;).Go();
++					&quot;Please select at least five characters.&quot;).Go();
+ 		return B_ERROR;
+ 	}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000096.html">[pe-commits] r502 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000098.html">[pe-commits] r504 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#97">[ date ]</a>
+              <a href="thread.html#97">[ thread ]</a>
+              <a href="subject.html#97">[ subject ]</a>
+              <a href="author.html#97">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

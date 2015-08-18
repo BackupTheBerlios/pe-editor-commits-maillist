@@ -1,0 +1,361 @@
+From axeld at pinc-software.de  Sat Nov 19 02:07:23 2005
+From: axeld at pinc-software.de (Axel =?iso-8859-15?q?D=F6rfler?=)
+Date: Sat, 19 Nov 2005 02:07:23 +0100 CET
+Subject: [pe-commits]Test
+Message-ID: <57251987045-BeMail@zon>
+
+Hi there.
+
+
+
+From zooey at berlios.de  Sat Nov 19 02:22:47 2005
+From: zooey at berlios.de (zooey at berlios.de)
+Date: Sat, 19 Nov 2005 02:22:47 +0100
+Subject: [pe-commits]r402 - trunk/Languages/Sources
+Message-ID: <200511190122.jAJ1MlHe013427@sheep.berlios.de>
+
+Author: zooey
+Date: 2005-11-18 20:47:07 +0100 (Fri, 18 Nov 2005)
+New Revision: 402
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=402&view=rev
+
+Modified:
+   trunk/Languages/Sources/CLang_cpp.cpp
+Log:
+- copied Axel's last fix over from CVS-repository into Pe's new home.
+
+
+
+Modified: trunk/Languages/Sources/CLang_cpp.cpp
+===================================================================
+--- trunk/Languages/Sources/CLang_cpp.cpp	2005-11-18 16:55:25 UTC (rev 401)
++++ trunk/Languages/Sources/CLang_cpp.cpp	2005-11-18 19:47:07 UTC (rev 402)
+@@ -411,28 +411,23 @@
+ 				break;
+ 			
+ 			case CHAR_CONST:
+-				if (c == '\t' || c == '\n' || c == 0)	// don't like this
++				if (c == '\t' || c == '\n' || c == 0
++					|| (c == '\'' && !esc && (cc_cnt == 0 || cc_cnt > 5)))
+ 				{
++					// invalid char constant - either invalid char or too short/long
+ 					proxy.SetColor(s, kLTextColor);
+ 					state = START;
+ 				}
+ 				else if (c == '\'' && !esc)
+ 				{
+-					if (cc_cnt != 1 && cc_cnt != 3 && cc_cnt != 5)
+-					{
+-						proxy.SetColor(s, kLTextColor);
+-						i--;
+-						state = START;
+-					}
+-					else
+-					{
+-						proxy.SetColor(s, kLCharConstColor);
+-						state = START;
+-					}
++					proxy.SetColor(s, kLCharConstColor);
++					state = START;
+ 				}
+ 				else
+ 				{
+-					if (!esc) cc_cnt++;
++					if (!esc)
++						cc_cnt++;
++
+ 					esc = !esc && (c == '\\');
+ 				}
+ 				break;
+
+
+
+From axeld at berlios.de  Tue Nov 22 13:52:54 2005
+From: axeld at berlios.de (axeld at BerliOS)
+Date: Tue, 22 Nov 2005 13:52:54 +0100
+Subject: [pe-commits]r408 - trunk/Sources
+Message-ID: <200511221252.jAMCqslD005083@sheep.berlios.de>
+
+Author: axeld
+Date: 2005-11-22 13:52:47 +0100 (Tue, 22 Nov 2005)
+New Revision: 408
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=408&view=rev
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Changed SmartBrace() so that it handles the following case correctly:
+	if (....
+		&& ...) {
+	*}*
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2005-11-18 22:00:42 UTC (rev 407)
++++ trunk/Sources/PText.cpp	2005-11-22 12:52:47 UTC (rev 408)
+@@ -1208,7 +1208,7 @@
+ 	fCaret = fAnchor = from + numBytes;
+ 
+ 	tc->fInsertedLen += numBytes;
+-	
++
+ 	if (numBytes == 1)
+ 	{
+ 		switch (bytes[0])
+@@ -3195,62 +3195,83 @@
+ 
+ void PText::SmartBrace()
+ {
++	// auto-indent the brace to match its counterpart
+ 	int open, close;
+ 	
+ 	close = fCaret - 1;
+ 	open = FindTheOther(close, '}');
+ 	
+-	if (open >= 0)
++	if (open < 0)
++		return;
++
++	int openLine, closeLine;
++	
++	openLine = Offset2Line(open);
++	closeLine = Offset2Line(close);
++
++	if (openLine == closeLine)
++		return;
++
++	// special treatmeant for longer if/for/while-clauses in C/C++/Java/...
++	// TODO: maybe this could be solved better over the language
++	//	interface
++	// find the line where the clause starts
++
++	int i = open - 2;
++	while (i > 0 && fText[i] != '\n' && isspace(fText[i]))
++		i--;
++
++	if (fText[i] == ')')
+ 	{
+-		int openLine, closeLine;
+-		
++		// we found a closing ')', so we balance the '{' for the line
++		// where the '(' was opened
++		open = FindTheOther(i, ')');
+ 		openLine = Offset2Line(open);
+-		closeLine = Offset2Line(close);
++	}
+ 
+-		if (openLine == closeLine)
+-			return;
+-		
+-		char buf[128];
+-		int oWhite = 0, i = LineStart(openLine);
+-		
+-		while (isspace(fText[i]) && oWhite < 127)
+-			buf[oWhite++] = fText[i++];
+-		
+-		i = LineStart(closeLine);
+-		while (isspace(fText[i]))
+-			i++;
+-		
+-		if (i < close)
++	// duplicate indent
++
++	char buf[128];
++	int openWhite = 0;
++	i = LineStart(openLine);
++
++	while (isspace(fText[i]) && openWhite < 127)
++		buf[openWhite++] = fText[i++];
++
++	i = LineStart(closeLine);
++	while (isspace(fText[i]))
++		i++;
++
++	if (i < close)
++	{
++		if (openWhite == 0)
+ 		{
+-			if (oWhite == 0)
+-			{
+-				BackspaceKeyDown();
+-				TypeString("\n}");
+-			}
+-			else
+-			{
+-				memmove(buf + 1, buf, oWhite);
+-				buf[0] = '\n';
+-				fAnchor = --fCaret;
+-				CharKeyDown(buf, oWhite + 1);
+-				fAnchor = ++fCaret;
+-			}
++			BackspaceKeyDown();
++			TypeString("\n}");
+ 		}
+ 		else
+ 		{
+-			fLastCommand = NULL;
+-	
+-			fAnchor = LineStart(closeLine);
+-			fCaret = close;
+-			
+-			if (oWhite || fCaret != close)
+-				CharKeyDown(buf, oWhite);
+-			else if (fAnchor < fCaret)
+-				BackspaceKeyDown();
+-			
++			memmove(buf + 1, buf, openWhite);
++			buf[0] = '\n';
++			fAnchor = --fCaret;
++			CharKeyDown(buf, openWhite + 1);
+ 			fAnchor = ++fCaret;
+ 		}
+ 	}
++	else
++	{
++		fLastCommand = NULL;
++
++		fAnchor = LineStart(closeLine);
++		fCaret = close;
++
++		if (openWhite || fCaret != close)
++			CharKeyDown(buf, openWhite);
++		else if (fAnchor < fCaret)
++			BackspaceKeyDown();
++
++		fAnchor = ++fCaret;
++	}
+ } /* PText::SmartBrace */
+ 
+ void PText::ScanForFunctions(CFunctionScanHandler& handler)
+
+
+
+From zooey at berlios.de  Sun Nov 27 15:02:56 2005
+From: zooey at berlios.de (zooey at BerliOS)
+Date: Sun, 27 Nov 2005 15:02:56 +0100
+Subject: [pe-commits]r409 - trunk/Sources
+Message-ID: <200511271402.jARE2u7I013466@sheep.berlios.de>
+
+Author: zooey
+Date: 2005-11-27 15:02:50 +0100 (Sun, 27 Nov 2005)
+New Revision: 409
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=409&view=rev
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+- changed info text to current state of things (BerliOS and all)
+  and added list of contributors.
+
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2005-11-22 12:52:47 UTC (rev 408)
++++ trunk/Sources/PAbout.cpp	2005-11-27 14:02:50 UTC (rev 409)
+@@ -53,23 +53,35 @@
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+ 		"Hekkelman Programmatuur B.V.\n"
+-		"Copyright ? 1997, 1998, 2002.\n"
+-		"http://www.hekkelman.com/\n\n-\n\n"
+-		"Thanks to all those\nwho sent in feedback.\n"
+-		"Your help is invaluable.\n\n"
+-		"Special thanks to\nTom Hays\nfor improving the TeX addon\n\n"
+-		"and Be of course\nfor making this wonderful OS.\n\n"
++		"Copyright ? 1997, 1998, 2002.\n\n"
+ 		"-\n\n"
+ 		"This is the Open Source version of Pe,\n"
++		"copyright ? 2003-2005, Team Pe at BeUnited,\n"
+ 		"compiled on:\n%s\n\n"
+-		"Pe now lives at http://www.beunited.org\n\n"
+-		"You can reach the current developers\n"
+-		"via Pe's mailing-list,\n"
++		"Pe is now hosted at BerliOS:\n"
++		"http://developer.berlios.de/projects/pe-editor\n\n"
++		"You can reach Team Pe\n"
++		"via Pe's mailing-list:\n"
+ 		"pedevel at freelists.org\n\n"
+ 		"-\n\n"
+ 		"Please send suggestions and/or bugreports\n"
+-		"to pedevel at hirschkaefer.org\n\n"
+-		"Thanks to all contributors.\n\n",
++		"to the list or use the bug-tracker at BerliOS.\n\n"
++		"-\n\n"
++		"Thanks to all contributors (in alphabetical order):\n\n"
++		"Andrew Bachmann\n"
++		"Axel D?rfler\n"
++		"Chris Roberts\n"
++		"Christian Packmann\n"
++		"Guy ?\n"			// ToDo: there's something missing here >:oP
++		"Ingo Weinhold\n"
++		"Keith McAfee\n"
++		"Oliver Tappe\n"
++		"Oscar Lesta\n"
++		"Rainer Riedl\n"
++		"Stephan A?mus\n\n\n"
++		"...and thanks to everyone we forgot, too!\n\n";
++
++const char
+ 	kAboutText2[] = "BeOS Rules!";
+ 
+ #if STANDALONE
+@@ -87,7 +99,7 @@
+ 	kAboutTextHeight = 100;
+ 
+ const bigtime_t
+-	kDelay = 30000;
++	kDelay = 60000;
+ 
+ const unsigned long msg_Animate = 'anim';
+ 
+
+
+
+From oscar at berlios.de  Tue Nov 29 07:01:34 2005
+From: oscar at berlios.de (oscar at BerliOS)
+Date: Tue, 29 Nov 2005 07:01:34 +0100
+Subject: [pe-commits]r410 - trunk/Sources
+Message-ID: <200511290601.jAT61YJR030976@sheep.berlios.de>
+
+Author: oscar
+Date: 2005-11-29 07:01:21 +0100 (Tue, 29 Nov 2005)
+New Revision: 410
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=410&view=rev
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+* The app signature was invalid (for use with -DSTANDALONE).
+* Guy ? -> Guy Haviv
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2005-11-27 14:02:50 UTC (rev 409)
++++ trunk/Sources/PAbout.cpp	2005-11-29 06:01:21 UTC (rev 410)
+@@ -72,7 +72,7 @@
+ 		"Axel D?rfler\n"
+ 		"Chris Roberts\n"
+ 		"Christian Packmann\n"
+-		"Guy ?\n"			// ToDo: there's something missing here >:oP
++		"Guy Haviv\n"
+ 		"Ingo Weinhold\n"
+ 		"Keith McAfee\n"
+ 		"Oliver Tappe\n"
+@@ -721,9 +721,9 @@
+ #if STANDALONE
+ main()
+ {
+-	new BApplication("application/x-be-executable");
++	new BApplication("application/x-vnd.pe-AboutTest");
+ 	new PAboutBox;
+-	
++
+ 	be_app->Run();
+ 	delete be_app;
+ 	return 0;
+
+
+

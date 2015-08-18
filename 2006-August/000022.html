@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r431 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r431%20-%20trunk/Sources&In-Reply-To=%3C200608070912.k779CMrF026207%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000021.html">
+   <LINK REL="Next"  HREF="000023.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r431 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r431%20-%20trunk/Sources&In-Reply-To=%3C200608070912.k779CMrF026207%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r431 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 11:12:22 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000021.html">[pe-commits] r430 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000023.html">[pe-commits] r432 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#22">[ date ]</a>
+              <a href="thread.html#22">[ thread ]</a>
+              <a href="subject.html#22">[ subject ]</a>
+              <a href="author.html#22">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 11:12:22 +0200 (Mon, 07 Aug 2006)
+New Revision: 431
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=431&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=431&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+   trunk/Sources/PApp.cpp
+Log:
+* changed node-monitoring code to improve behaviour in case of node recycling
+  during the creation of backup files. Pe used to have problems with renaming
+  documents to backup names (ending with a tilde) when you saved several files
+  at once.
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDoc.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -536,6 +536,8 @@
+ 	
+ 	doclist lst = sfDocList;
+ 	
++	BLooper *me = BLooper::LooperForThread(find_thread(NULL));
++
+ 	for (di = lst.begin(); di != lst.end(); di++)
+ 	{
+ 		BWindow *w = dynamic_cast&lt;BWindow*&gt;(*di);
+@@ -543,8 +545,6 @@
+ 		{
+ 			BMessage reply;
+ 			
+-			BLooper *me = BLooper::LooperForThread(find_thread(NULL));
+-
+ 			if (async || w == dynamic_cast&lt;BWindow*&gt;(me))
+ 				w-&gt;PostMessage(msg);
+ 			else
+@@ -555,3 +555,17 @@
+ 		}
+ 	}
+ }
++
++void CDoc::HandleFolderNodeMonitorMsg(BMessage* msg)
++{
++	doclist::iterator di;
++	
++	doclist lst = sfDocList;
++	
++	for (di = lst.begin(); di != lst.end(); di++)
++	{
++		if ((*di)-&gt;fDocIO &amp;&amp; (*di)-&gt;fDocIO-&gt;MatchesNodeMonitorMsg(msg))
++			(*di)-&gt;fDocIO-&gt;HandleNodeMonitorMsg(msg);
++	}
++}
++
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDoc.h	2006-08-07 09:12:22 UTC (rev 431)
+@@ -94,6 +94,7 @@
+ 	static	const doclist&amp; DocList();
+ 	static	void InvalidateAll();
+ 	static	void PostToAll(unsigned long msg, bool async);
++	static  void HandleFolderNodeMonitorMsg(BMessage* msg);
+ 
+ 	static	void AddRecent(const char *path);
+ 	static	bool GetNextRecent(char *path, int&amp; indx);
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDocIO.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -121,8 +121,17 @@
+ 	}
+ }
+ 
+-#pragma mark -
++bool operator&lt; (const node_ref&amp; left, const node_ref&amp; right)
++{
++	if (left.node &lt; right.node)
++		return true;
++	else
++		return left.device &lt; right.device;
++}
+ 
++
++// #pragma mark - CDocIO
++
+ CDocIO::CDocIO(CDoc* doc)
+ 	: fDoc(doc)
+ 	, fLastSaved(0)
+@@ -169,6 +178,11 @@
+ {
+ }
+ 
++bool CDocIO::MatchesNodeMonitorMsg(BMessage* msg)
++{
++	return false;
++}
++
+ bool CDocIO::DoPreEditTextConversions(BString&amp; docText)
+ {
+ 	// convert from document's native encoding to internal type (UTF-8):
+@@ -229,8 +243,10 @@
+ 	return true;
+ }
+ 
+-#pragma mark -
++// #pragma mark - CLocalDocIO
+ 
++BLocker CLocalDocIO::sfDocListLock(&quot;DocListLock&quot;);
++
+ CLocalDocIO::CLocalDocIO(CDoc* doc, const entry_ref* eref, BLooper* target)
+ 	: CDocIO(doc)
+ 	, fEntryRef(NULL)
+@@ -411,6 +427,40 @@
+ 	return fTarget;
+ }
+ 
++void CLocalDocIO::StartWatchingFolder()
++{
++	node_ref directoryNodeRef;
++	BEntry entry(fEntryRef);
++	BNode node;
++	if (entry.GetParent(&amp;entry) == B_OK
++		&amp;&amp; node.SetTo(&amp;entry) == B_OK
++		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
++	{
++		if (sfDocListLock.Lock()) {
++			if (sfWatchedFolderMap[directoryNodeRef]++ == 0)
++				watch_node(&amp;directoryNodeRef, B_WATCH_DIRECTORY, be_app);
++			sfDocListLock.Unlock();
++		}
++	}
++}
++
++void CLocalDocIO::StopWatchingFolder()
++{
++	node_ref directoryNodeRef;
++	BEntry entry(fEntryRef);
++	BNode node;
++	if (entry.GetParent(&amp;entry) == B_OK
++		&amp;&amp; node.SetTo(&amp;entry) == B_OK
++		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
++	{
++		if (sfDocListLock.Lock()) {
++			if (sfWatchedFolderMap[directoryNodeRef]-- == 1)
++				watch_node(&amp;directoryNodeRef, B_STOP_WATCHING, be_app);
++			sfDocListLock.Unlock();
++		}
++	}
++}
++
+ void CLocalDocIO::StartWatchingFile()
+ {
+ 	if (fEntryRef == NULL || fTarget == NULL)
+@@ -421,12 +471,8 @@
+ 	if (node.GetNodeRef(&amp;fNodeRef) == B_OK)
+ 		watch_node(&amp;fNodeRef, B_WATCH_NAME | B_WATCH_STAT, fTarget);
+ 
+-	node_ref directoryNodeRef;
+-	BEntry entry(fEntryRef);
+-	if (entry.GetParent(&amp;entry) == B_OK
+-		&amp;&amp; node.SetTo(&amp;entry) == B_OK
+-		&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+-		watch_node(&amp;directoryNodeRef, B_WATCH_DIRECTORY, fTarget);
++
++	StartWatchingFolder();
+ }
+ 
+ void CLocalDocIO::StopWatchingFile(bool stopDirectory)
+@@ -434,21 +480,16 @@
+ 	if (fEntryRef == NULL || fTarget == NULL)
+ 		return;
+ 
++
++
+ 	watch_node(&amp;fNodeRef, B_STOP_WATCHING, fTarget);
+ 
+ 	// if we get late messages, we don't want to deal with them
+ 	fNodeRef.device = -1;
+ 	fNodeRef.node = -1;
+ 
+-	if (stopDirectory) {
+-		node_ref directoryNodeRef;
+-		BEntry entry(fEntryRef);
+-		BNode node;
+-		if (entry.GetParent(&amp;entry) == B_OK
+-			&amp;&amp; node.SetTo(&amp;entry) == B_OK
+-			&amp;&amp; node.GetNodeRef(&amp;directoryNodeRef) == B_OK)
+-			watch_node(&amp;directoryNodeRef, B_STOP_WATCHING, fTarget);
+-	}
++	if (stopDirectory)
++		StopWatchingFolder();
+ }
+ 
+ void CLocalDocIO::HandleNodeMonitorMsg(BMessage* msg)
+@@ -484,11 +525,14 @@
+ 			if (msg-&gt;FindString(&quot;name&quot;, &amp;name) == B_OK)
+ 				fEntryRef-&gt;set_name(name);
+ 
++printf(&quot;detected changed name of &lt;%s:%Ld&gt;\n&quot;, name, fNodeRef.node);
++
+ 			fDoc-&gt;NameChanged();
+ 			break;
+ 		}
+ 		case B_ENTRY_REMOVED:
+ 		{
++printf(&quot;detected removal of &lt;%s:%Ld&gt;\n&quot;, fEntryRef-&gt;name, fNodeRef.node);
+ 			StopWatchingFile(false);
+ 				// We don't want to stop monitoring the directory; BTW, it
+ 				// will get automatically updated on next save, the monitoring
+@@ -503,6 +547,17 @@
+ 	}
+ }
+ 
++bool CLocalDocIO::MatchesNodeMonitorMsg(BMessage* msg)
++{
++	node_ref nref;
++	if (fEntryRef == NULL 
++	|| msg-&gt;FindInt64(&quot;node&quot;, &amp;nref.node) != B_OK
++	|| msg-&gt;FindInt32(&quot;device&quot;, &amp;nref.device) != B_OK)
++		return false;
++
++	return nref == fNodeRef;
++}
++
+ bool CLocalDocIO::VerifyFile()
+ {
+ 	bool result = true;
+@@ -546,7 +601,7 @@
+ 	return result;
+ }
+ 
+-#pragma mark -
++// #pragma mark - CFtpDocIO
+ 
+ CFtpDocIO::CFtpDocIO(CDoc* doc, const URLData&amp; url)
+ 	: CDocIO(doc)
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDocIO.h	2006-08-07 09:12:22 UTC (rev 431)
+@@ -7,6 +7,10 @@
+ #ifndef CDOC_IO_H
+ #define CDOC_IO_H
+ 
++#include &lt;map&gt;
++
++#include &lt;Locker.h&gt;
++
+ #include &quot;CFtpStream.h&quot;
+ #include &quot;utf-support.h&quot;
+ 
+@@ -30,6 +34,7 @@
+ 	virtual	void StartWatchingFile(void);
+ 	virtual	void StopWatchingFile(bool stopDirectory = true);
+ 	virtual void HandleNodeMonitorMsg(BMessage* msg);
++	virtual bool MatchesNodeMonitorMsg(BMessage* msg);
+ 	virtual bool VerifyFile();
+ 	virtual void SetEntryRef(const entry_ref* ref);
+ 	virtual BLooper* Target();
+@@ -64,14 +69,22 @@
+ 
+ 	virtual	void StartWatchingFile(void);
+ 	virtual	void StopWatchingFile(bool stopDirectory = true);
++	virtual bool MatchesNodeMonitorMsg(BMessage* msg);
+ 	virtual void HandleNodeMonitorMsg(BMessage* msg);
+ 	virtual bool VerifyFile();
+ 	virtual void SetEntryRef(const entry_ref* ref);
+ 	virtual BLooper* Target();
+ private:
++	virtual	void StartWatchingFolder(void);
++	virtual	void StopWatchingFolder(void);
++
+ 			entry_ref *fEntryRef;
+ 			node_ref fNodeRef;
+ 			BLooper* fTarget;
++
++	typedef map&lt;node_ref, int32&gt; WatchedFolderMap;
++	WatchedFolderMap sfWatchedFolderMap;
++	static	BLocker sfDocListLock;
+ };
+ 
+ class CFtpDocIO : public CDocIO
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/PApp.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -747,6 +747,11 @@
+ 				break;
+ 			}
+ 	
++			case B_NODE_MONITOR: {
++				CDoc::HandleFolderNodeMonitorMsg(msg);
++				break;
++			}
++
+ 			case msg_OpenSelected:
+ 				DialogCreator&lt;COpenSelection&gt;::CreateDialog(NULL);
+ 				break;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000021.html">[pe-commits] r430 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000023.html">[pe-commits] r432 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#22">[ date ]</a>
+              <a href="thread.html#22">[ thread ]</a>
+              <a href="subject.html#22">[ subject ]</a>
+              <a href="author.html#22">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

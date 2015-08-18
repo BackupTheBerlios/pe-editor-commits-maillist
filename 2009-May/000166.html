@@ -1,0 +1,419 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r570 - in trunk: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r570%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200905031507.n43F7kvQ013555%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000165.html">
+   <LINK REL="Next"  HREF="000167.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r570 - in trunk: Resources Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r570%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200905031507.n43F7kvQ013555%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r570 - in trunk: Resources Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sun May  3 17:07:46 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000165.html">[pe-commits] r569 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000167.html">[pe-commits] r570 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-03 17:07:44 +0200 (Sun, 03 May 2009)
+New Revision: 570
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=570&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=570&amp;view=rev</A>
+
+Modified:
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/PCmd.cpp
+   trunk/Sources/PCmd.h
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PDoc.h
+   trunk/Sources/PrefControls.h
+   trunk/Sources/Prefs.h
+Log:
+* Introduced hook CDoc::DoSavePreparations() which is invoked by the CDocIOs
+  before getting the text for saving it.
+* Introduced PCmd class PDiscardTrailingSpaceCmd which removes trailing white
+  space (currently only spaces and tabs) from lines.
+* Added a prefs option to remove trailing white space when saving a file.
+* This is implemented in PDoc::DoSavePreparations() by executing a
+  PDiscardTrailingSpaceCmd. The disadvantage of this solution is, that it
+  clears the redo stack. I couldn't think of any other solution that wouldn't
+  have any disadvantages, though.
+
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Resources/Dialog-Preferences.r	2009-05-03 15:07:44 UTC (rev 570)
+@@ -165,8 +165,9 @@
+ 			TabSheet			{ &quot;Files&quot;, &quot;Options for files on disk&quot;														},
+ 				Caption			{{   0,   0, 120,  16 }, &quot;sv&quot;,							&quot;When saving a file&quot;				},
+ 
+-				CheckBox		{{ 140,  20, 290,  36 }, pnm_Fil_X_MakeBackup,			&quot;Make backup (filename~)&quot;			},
+-				CheckBox		{{ 140,  40, 290,  56 }, pnm_Fil_X_EndWithNewline,		&quot;End with newline&quot;					},
++				CheckBox		{{ 140,   0, 290,  16 }, pnm_Fil_X_MakeBackup,			&quot;Make backup (filename~)&quot;			},
++				CheckBox		{{ 140,  20, 290,  36 }, pnm_Fil_X_EndWithNewline,		&quot;End with newline&quot;					},
++				CheckBox		{{ 140,  40, 290,  56 }, pnm_Fil_X_DiscardTrailingSpace,&quot;Discard trailing space&quot;			},
+ 
+ 				Line			{{   0,  63, 290,  64 }},
+ 
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/CDoc.cpp	2009-05-03 15:07:44 UTC (rev 570)
+@@ -417,6 +417,10 @@
+ {
+ }
+ 
++void CDoc::DoSavePreparations()
++{
++}
++
+ void CDoc::HighlightErrorPos(int errorPos)
+ {
+ }
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/CDoc.h	2009-05-03 15:07:44 UTC (rev 570)
+@@ -126,6 +126,7 @@
+ 	// hook methods
+ 	virtual void NameChanged();
+ 	virtual void HasBeenSaved();
++	virtual	void DoSavePreparations();
+ 
+ protected:
+ 
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/CDocIO.cpp	2009-05-03 15:07:44 UTC (rev 570)
+@@ -433,6 +433,7 @@
+ 
+ 	try
+ 	{
++		fDoc-&gt;DoSavePreparations();
+ 		BMessage settingsMsg;
+ 		fDoc-&gt;CollectSettings(settingsMsg);
+ 		BString docText;
+@@ -768,6 +769,7 @@
+ {
+ 	try
+ 	{
++		fDoc-&gt;DoSavePreparations();
+ 		BMessage settingsMsg;
+ 		fDoc-&gt;CollectSettings(settingsMsg);
+ 		BString docText;
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/CPrefsDialog.cpp	2009-05-03 15:07:44 UTC (rev 570)
+@@ -353,6 +353,7 @@
+ 	CntrlGetChkbx(pnm_Inc_X_BeIncludes,				prf_I_BeIncludes,		 		dummy);
+ 	CntrlGetChkbx(pnm_Fil_X_MakeBackup,				prf_I_MakeBackup, 				dummy);
+ 	CntrlGetChkbx(pnm_Fil_X_EndWithNewline,			prf_I_EndWithNewline, 			dummy);
++	CntrlGetChkbx(pnm_Fil_X_DiscardTrailingSpace,	prf_I_DiscardTrailingSpace, 	dummy);
+ 	CntrlGetChkbx(pnm_Fil_X_VerifyOpenFiles,		prf_I_VerifyOpenFiles, 			dummy);
+ 	CntrlGetChkbx(pnm_Con_X_ShowBeIdeMenu,			prf_I_ShowBeIdeMenu,			dummy);
+ 	CntrlGetChkbx(pnm_Con_X_LoadBeIdeExt,			prf_I_LoadBeIdeExt,				dummy);
+@@ -547,6 +548,7 @@
+ 	CntrlSetChkbx(pnm_Inc_X_BeIncludes,				prf_I_BeIncludes,			true);
+ 	CntrlSetChkbx(pnm_Fil_X_MakeBackup,				prf_I_MakeBackup,			false);
+ 	CntrlSetChkbx(pnm_Fil_X_EndWithNewline,			prf_I_EndWithNewline,		true);
++	CntrlSetChkbx(pnm_Fil_X_DiscardTrailingSpace,	prf_I_DiscardTrailingSpace, false);
+ 	CntrlSetChkbx(pnm_Fil_X_VerifyOpenFiles,		prf_I_VerifyOpenFiles,		true);
+ 	CntrlSetChkbx(pnm_Con_X_ShowBeIdeMenu,			prf_I_ShowBeIdeMenu,		true);
+ 	CntrlSetChkbx(pnm_Con_X_LoadBeIdeExt,			prf_I_LoadBeIdeExt,			true);
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/PCmd.cpp	2009-05-03 15:07:44 UTC (rev 570)
+@@ -1641,3 +1641,133 @@
+ 	fText-&gt;Doc()-&gt;SetEncoding(fSourceEncoding);
+ } /* PEncodingCmd::Undo */
+ 
++
++#pragma mark --- Discard Trailing Space Command ---
++
++PDiscardTrailingSpaceCmd::PDiscardTrailingSpaceCmd(PText *txt)
++	: PCmd(&quot;Discard Trailing Space&quot;, txt)
++{
++	fAnchor = txt-&gt;Anchor();
++	fCaret = txt-&gt;Caret();
++
++	std::vector&lt;int&gt; spaceOffsets;
++
++	// analyze the lines
++	int spacesToRemove = 0;
++	const char* text = txt-&gt;Text();
++	int textSize = txt-&gt;Size();
++	int offset = 0;
++	while (offset &lt; textSize)
++	{
++		const char* foundNL = strchr(text + offset, '\n');
++		offset = foundNL != NULL ? foundNL - text : textSize;
++		int spaceStart = offset;
++		while (spaceStart &gt; 0
++			&amp;&amp; (text[spaceStart - 1] == ' ' || text[spaceStart - 1] == '\t'))
++		{
++			spaceStart--;
++		}
++
++		if (spaceStart &lt; offset)
++		{
++			int spaceCount = offset - spaceStart;
++			spaceOffsets.push_back(spaceStart);
++			spaceOffsets.push_back(spaceCount);
++
++			spacesToRemove += spaceCount;
++		}
++
++		offset++;
++	}
++
++	fLineCount = spaceOffsets.size() / 2;
++	fTotalSpaceCount = spacesToRemove;
++	if (fLineCount == 0)
++	{
++		fSpaceOffsets = NULL;
++		fSpaces = NULL;
++		return;
++	}
++
++	fSpaceOffsets = (int*)malloc(2 * fLineCount * sizeof(int));
++	fSpaces = (char*)malloc(spacesToRemove);
++
++	try
++	{
++		FailNil(fSpaceOffsets);
++		FailNil(fSpaces);
++	}
++	catch (...)
++	{
++		free(fSpaceOffsets);
++		free(fSpaces);
++		throw;
++	}
++
++	fSpaceCounts = fSpaceOffsets + fLineCount;
++
++	// copy space offsets, counts, and the spaces themselves into the
++	// allocated structures
++	int spaceArrayOffset = 0;
++	for (int i = 0; i &lt; fLineCount; i++) {
++		fSpaceOffsets[i] = spaceOffsets[2 * i];
++		fSpaceCounts[i] = spaceOffsets[2 * i + 1];
++		memcpy(fSpaces + spaceArrayOffset, text + fSpaceOffsets[i],
++			fSpaceCounts[i]);
++		spaceArrayOffset += fSpaceCounts[i];
++	}
++}
++
++PDiscardTrailingSpaceCmd::~PDiscardTrailingSpaceCmd()
++{
++	free(fSpaceOffsets);
++	free(fSpaces);
++}
++
++bool PDiscardTrailingSpaceCmd::IsNoOp() const
++{
++	return fLineCount == 0;
++}
++
++void PDiscardTrailingSpaceCmd::Do()
++{
++	if (IsNoOp())
++		return;
++
++	// remove the spaces -- do that backwards, so we don't need to bother with
++	// adjusting our offsets
++	int anchor = fAnchor;
++	int caret = fCaret;
++	for (int i = fLineCount - 1; i &gt;= 0; i--)
++	{
++		fText-&gt;Delete(fSpaceOffsets[i], fSpaceOffsets[i] + fSpaceCounts[i]);
++
++		// update anchor and caret
++		if (anchor &gt; fSpaceOffsets[i])
++			anchor -= std::min(anchor - fSpaceOffsets[i], fSpaceCounts[i]);
++		if (caret &gt; fSpaceOffsets[i])
++			caret -= std::min(caret - fSpaceOffsets[i], fSpaceCounts[i]);
++	}
++
++	fText-&gt;Select(anchor, caret, true, false);
++
++	Update();
++}
++
++void PDiscardTrailingSpaceCmd::Undo()
++{
++	if (IsNoOp())
++		return;
++
++	// re-insert the spaces
++	int spaceIndex = 0;
++	for (int i = 0; i &lt; fLineCount; i++)
++	{
++		fText-&gt;Insert(fSpaces + spaceIndex, fSpaceCounts[i], fSpaceOffsets[i]);
++		spaceIndex += fSpaceCounts[i];
++	}
++
++	fText-&gt;Select(fAnchor, fCaret, true, false);
++
++	Update();
++}
+
+Modified: trunk/Sources/PCmd.h
+===================================================================
+--- trunk/Sources/PCmd.h	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/PCmd.h	2009-05-03 15:07:44 UTC (rev 570)
+@@ -398,7 +398,24 @@
+ 		long fAnchor, fCaret, fSrcLen, fDstLen;
+ };
+ 
++class PDiscardTrailingSpaceCmd : public PCmd {
++public:
++		PDiscardTrailingSpaceCmd(PText *txt);
++		~PDiscardTrailingSpaceCmd();
+ 
++		bool IsNoOp() const;
+ 
++virtual	void Do();
++virtual	void Undo();
+ 
++private:
++		int fAnchor, fCaret;
++		int fLineCount;
++		int	fTotalSpaceCount;
++		int *fSpaceOffsets;
++		int *fSpaceCounts;
++		char *fSpaces;
++};
++
++
+ #endif // PCMD_H
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/PDoc.cpp	2009-05-03 15:07:44 UTC (rev 570)
+@@ -457,6 +457,27 @@
+ 	fText-&gt;ResetUndo();
+ }
+ 
++void PDoc::DoSavePreparations()
++{
++	// If enabled we remove trailing white space.
++	if (gPrefs-&gt;GetPrefInt(prf_I_DiscardTrailingSpace, 0) == 0)
++		return;
++
++	try
++	{
++		PDiscardTrailingSpaceCmd *cmd = new PDiscardTrailingSpaceCmd(fText);
++		if (!cmd-&gt;IsNoOp())
++			fText-&gt;RegisterCommand(cmd);
++	}
++	catch (HErr&amp; e)
++	{
++		e.DoError();
++	}
++	catch (...)
++	{
++	}
++}
++
+ void PDoc::WindowActivated(bool active)
+ {
+ 	inherited::WindowActivated(active);
+
+Modified: trunk/Sources/PDoc.h
+===================================================================
+--- trunk/Sources/PDoc.h	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/PDoc.h	2009-05-03 15:07:44 UTC (rev 570)
+@@ -142,6 +142,7 @@
+ 
+ virtual 	void NameChanged();
+ virtual 	void HasBeenSaved();
++virtual		void DoSavePreparations();
+ virtual		void HighlightErrorPos(int errorPos);
+ 
+ private:
+
+Modified: trunk/Sources/PrefControls.h
+===================================================================
+--- trunk/Sources/PrefControls.h	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/PrefControls.h	2009-05-03 15:07:44 UTC (rev 570)
+@@ -70,6 +70,7 @@
+ // Files
+ #define pnm_Fil_X_MakeBackup			&quot;maba&quot;
+ #define pnm_Fil_X_EndWithNewline		&quot;fonl&quot;
++#define pnm_Fil_X_DiscardTrailingSpace	&quot;dtsp&quot;
+ #define pnm_Fil_X_VerifyOpenFiles		&quot;vofm&quot;
+ #define pnm_Fil_T_NrOfRecentDocs		&quot;resi&quot;
+ #define pnm_Fil_X_SkipTmpFiles			&quot;sktm&quot;
+
+Modified: trunk/Sources/Prefs.h
+===================================================================
+--- trunk/Sources/Prefs.h	2009-05-02 21:08:40 UTC (rev 569)
++++ trunk/Sources/Prefs.h	2009-05-03 15:07:44 UTC (rev 570)
+@@ -66,6 +66,7 @@
+ const char* const prf_I_ContextLines			= &quot;contextlines&quot;;
+ const char* const prf_I_DiffCaseInsensitive		= &quot;diffcase&quot;;
+ const char* const prf_I_DiffIgnoreWhiteSpace	= &quot;diffwhite&quot;;
++const char* const prf_I_DiscardTrailingSpace	= &quot;discard trailing space&quot;;
+ const char* const prf_I_EndWithNewline			= &quot;nl at eof&quot;;
+ const char* const prf_I_FlashCursor				= &quot;flash cursor&quot;;
+ const char* const prf_I_FontSize				= &quot;font size&quot;;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000165.html">[pe-commits] r569 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000167.html">[pe-commits] r570 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

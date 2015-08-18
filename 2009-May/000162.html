@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r566 - trunk/lpe
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r566%20-%20trunk/lpe&In-Reply-To=%3C200905012325.n41NP4ub015436%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000161.html">
+   <LINK REL="Next"  HREF="000163.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r566 - trunk/lpe</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r566%20-%20trunk/lpe&In-Reply-To=%3C200905012325.n41NP4ub015436%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r566 - trunk/lpe">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sat May  2 01:25:04 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000161.html">[pe-commits] r565 - trunk/lpe
+</A></li>
+        <LI>Next message: <A HREF="000163.html">[pe-commits] r567 - trunk/build
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#162">[ date ]</a>
+              <a href="thread.html#162">[ thread ]</a>
+              <a href="subject.html#162">[ subject ]</a>
+              <a href="author.html#162">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-02 01:25:03 +0200 (Sat, 02 May 2009)
+New Revision: 566
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=566&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=566&amp;view=rev</A>
+
+Modified:
+   trunk/lpe/lpe.cpp
+Log:
+Fixed the case that Pe isn't running yet. If one opened another window and
+closed the first one, lpe wouldn't recognize that:
+* The name of the open dialog thread slightly differed.
+* Also skip the find window.
+
+
+Modified: trunk/lpe/lpe.cpp
+===================================================================
+--- trunk/lpe/lpe.cpp	2009-05-01 23:22:01 UTC (rev 565)
++++ trunk/lpe/lpe.cpp	2009-05-01 23:25:03 UTC (rev 566)
+@@ -100,7 +100,8 @@
+ 			while ((err = get_next_thread_info(team, &amp;cookie, &amp;tinfo)) == B_OK)
+ 			{
+ 				if (!strncmp(&quot;w&gt;&quot;, tinfo.name, 2) 
+-					&amp;&amp; strcmp(&quot;w&gt;pe: Open&quot;, tinfo.name)
++					&amp;&amp; strcmp(&quot;w&gt;Pe: Open&quot;, tinfo.name)
++					&amp;&amp; strcmp(&quot;w&gt;Find&quot;, tinfo.name)
+ 					&amp;&amp; strcmp(&quot;w&gt;/boot/home/config/settings/pe&quot;, tinfo.name))
+ 				{
+ 					threads.push_back(tinfo.thread);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000161.html">[pe-commits] r565 - trunk/lpe
+</A></li>
+	<LI>Next message: <A HREF="000163.html">[pe-commits] r567 - trunk/build
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#162">[ date ]</a>
+              <a href="thread.html#162">[ thread ]</a>
+              <a href="subject.html#162">[ subject ]</a>
+              <a href="author.html#162">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

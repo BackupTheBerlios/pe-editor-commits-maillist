@@ -1,0 +1,1201 @@
+From zooey at mail.berlios.de  Sat Oct  7 14:39:44 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sat, 7 Oct 2006 14:39:44 +0200
+Subject: [pe-commits] r446 - in trunk/Languages: Resources Sources
+Message-ID: <200610071239.k97CdiFm029811@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-10-07 14:39:43 +0200 (Sat, 07 Oct 2006)
+New Revision: 446
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=446&view=rev
+
+Added:
+   trunk/Languages/Resources/keywords.d
+   trunk/Languages/Resources/keywords.d.r
+   trunk/Languages/Resources/keywords.lt
+   trunk/Languages/Resources/keywords.lt.r
+   trunk/Languages/Sources/CDPopup.cpp
+   trunk/Languages/Sources/CLang_d.cpp
+   trunk/Languages/Sources/CLang_lout.cpp
+   trunk/Languages/Sources/CLoutFuncPopup.l
+Modified:
+   trunk/Languages/Resources/Jamfile
+   trunk/Languages/Sources/Jamfile
+Log:
+* added two new language add-ons, one for the 'D' programming language and one for
+  the 'Lout' typesetting system.
+  Both have kindly been provided by Oscar Lesta (thanks!).
+
+
+Modified: trunk/Languages/Resources/Jamfile
+===================================================================
+--- trunk/Languages/Resources/Jamfile	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Resources/Jamfile	2006-10-07 12:39:43 UTC (rev 446)
+@@ -4,11 +4,14 @@
+ RezObjects
+ 	keywords.asm.r
+ 	keywords.cpp.r
++	keywords.d.r
++	keywords.diff.r
+ 	keywords.g.r
++	keywords.html-js.r
+ 	keywords.html.r
+-	keywords.html-js.r
+ 	keywords.jam.r
+ 	keywords.java.r
++	keywords.lt.r
+ 	keywords.lua.r
+ 	keywords.m.r
+ 	keywords.ob2.r
+@@ -19,6 +22,5 @@
+ 	keywords.sh.r
+ 	keywords.sql.r
+ 	keywords.tex.r
+-	keywords.diff.r
+ 	;
+ # </pe-src>
+
+Added: trunk/Languages/Resources/keywords.d
+===================================================================
+--- trunk/Languages/Resources/keywords.d	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Resources/keywords.d	2006-10-07 12:39:43 UTC (rev 446)
+@@ -0,0 +1,108 @@
++-Pe-Keywords-Language-
++abstract
++alias
++align
++asm
++assert
++auto
++body
++bool
++break
++byte
++case
++cast
++catch
++cdouble
++cent
++cfloat
++char
++class
++const
++continue
++creal
++dchar
++debug
++default
++delegate
++delete
++deprecated
++do
++double
++else
++enum
++export
++extern
++false
++final
++finally
++float
++for
++foreach
++function
++goto
++idouble
++if
++ifloat
++import
++in
++inout
++int
++interface
++invariant
++ireal
++is
++long
++mixin
++module
++new
++null
++out
++override
++package
++pragma
++private
++protected
++public
++real
++return
++scope
++short
++static
++struct
++super
++switch
++synchronized
++template
++this
++throw
++true
++try
++typedef
++typeid
++typeof
++ubyte
++ucent
++uint
++ulong
++union
++unittest
++ushort
++version
++void
++volatile
++wchar
++while
++with
++-Pe-Keywords-User1-
++// Add Phobos classes/types/functions here if you like
++
++-Pe-Keywords-User2-
++
++-Pe-Keywords-User3-
++
++-Pe-Keywords-SpecialTokens-
++__FILE__
++__LINE__
++__DATE__
++__TIME__
++__TIMESTAMP__
+
+Added: trunk/Languages/Resources/keywords.d.r
+===================================================================
+--- trunk/Languages/Resources/keywords.d.r	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Resources/keywords.d.r	2006-10-07 12:39:43 UTC (rev 446)
+@@ -0,0 +1,2 @@
++read 'KeyW' (0, "keywords.d")
++	"keywords.d";
+
+Added: trunk/Languages/Resources/keywords.lt
+===================================================================
+--- trunk/Languages/Resources/keywords.lt	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Resources/keywords.lt	2006-10-07 12:39:43 UTC (rev 446)
+@@ -0,0 +1,720 @@
++-Pe-Keywords-Language-
++# List of Lout's predefined symbols
++ at BackEnd
++ at Background
++ at Begin
++ at BeginHeaderComponent
++ at Break
++ at Case
++ at Char
++ at ClearHeaderComponent
++ at Common
++ at CurrLang
++ at CurrYUnit
++ at CurrZUnit
++ at Database
++ at End
++ at EndHeaderComponent
++ at Font
++ at FontDef
++ at ForceGalley
++ at Galley
++ at Graphic
++ at HAdjust
++ at HContract
++ at HCover
++ at HExpand
++ at High
++ at HLimited
++ at HMirror
++ at HScale
++ at HShift
++ at HSpan
++ at Include
++ at IncludeGraphic
++ at IncludeGraphicRepeated
++ at Insert
++ at KernShrink
++ at Language
++ at LinkDest
++ at LinkSource
++ at Meld
++ at Moment
++ at Next
++ at NotRevealed
++ at Null
++ at OneCol
++ at OneOf
++ at OneRow
++ at Open
++ at Outline
++ at PAdjust
++ at PageLabel
++ at PlainGraphic
++ at PrependGraphic
++ at RawVerbatim
++ at Rotate
++ at Rump
++ at Scale
++ at SetColor
++ at SetColour
++ at SetHeaderComponent
++ at SetTexture
++ at Space
++ at StartHSpan
++ at StartHVSpan
++ at StartVSpan
++ at SysDatabase
++ at SysInclude
++ at SysIncludeGraphic
++ at SysIncludeGraphicRepeated
++ at SysPrependGraphic
++ at Tagged
++ at Underline
++ at URLLink
++ at Use
++ at VAdjust
++ at VContract
++ at VCover
++ at Verbatim
++ at VExpand
++ at VLimited
++ at VMirror
++ at VScale
++ at VShift
++ at VSpan
++ at Wide
++ at YUnit
++ at ZUnit
++-Pe-Keywords-User1-
++# List of symbols exported by base packages provided with lout 3.31, except for
++# symbols not starting with an @, and except for those made with not alpha chars.
++# Symbols exported by @BasicSetup (bsf) and @DocumentSetup (dsf):
++# "^" "&-"
++# "~" "~~" "``" "''" ",," "--" "---" "..."
++ at AlignedDisplay
++ at AlignedNumberedDisplay
++ at Alpha
++ at AlphaList
++ at And
++ at AnotherFootNote
++ at B
++ at BI
++ at BeginAlignedDisplays
++ at BeginDisplayCounter
++ at BoundaryMarks
++ at Box
++ at Bullet
++ at BulletList 
++ at BypassBeginIndex
++ at BypassBeginIndexA
++ at BypassBeginIndexB
++ at BypassChapReference
++ at BypassContentsEntry
++ at BypassEndIndex
++ at BypassEndIndexA
++ at BypassEndIndexB
++ at BypassFigureContentsEntry
++ at BypassMajorContentsEntry
++ at BypassRawIndex
++ at BypassRawIndexA
++ at BypassRawIndexB
++ at BypassReference
++ at BypassTableContentsEntry
++ at CDot
++ at CNP
++ at CenteredList
++ at Centre
++ at CentredAlignedDisplay
++ at CentredAlignedNumberedDisplay
++ at CentredDisplay
++ at CentredList
++ at CentredNumberedDisplay
++ at ChapCite
++ at ChapRef
++ at Cite
++ at Claim
++ at ColonSep
++ at CopyRight
++ at Corollary
++ at CrossLink
++ at CurveBox
++ at DP
++ at Dagger
++ at DaggerDbl
++ at DashJoin
++ at DashList
++ at Date
++ at DateTimeFormat
++ at DefaultIndent
++ at Definition
++ at Degree
++ at Ding
++ at Display
++ at DisplayGap
++ at DisplayIndent
++ at DisplayNumStyle
++ at Divide
++ at DotJoin
++ at DotSep
++ at DropCapThree
++ at DropCapTwo
++ at DropListItem
++ at DropTagItem
++ at EndAlignedDisplays
++ at EndList
++ at EndNote
++ at EndProof
++ at Euro
++ at Example
++ at ExternalLink
++ at F
++ at Figure
++ at Florin
++ at FnBullets
++ at FnSymbols
++ at FootNote
++ at FullWidthRule
++ at Glossary
++ at Heading
++ at HeadingFont
++ at I
++ at II
++ at If
++ at InGlossary
++ at IndentedAlignedDisplay
++ at IndentedAlignedNumberedDisplay
++ at IndentedDisplay
++ at IndentedList
++ at IndentedNumberedDisplay
++ at Index
++ at IndexA
++ at IndexABlanks
++ at IndexALetters
++ at IndexASpacer
++ at IndexB
++ at IndexBBlanks
++ at IndexBLetters
++ at IndexBSpacer
++ at IndexBlanks
++ at IndexLetters
++ at IndexSpacer
++ at InitialBreak
++ at InitialColour
++ at InitialFont
++ at InitialIndexASpacer
++ at InitialIndexBSpacer
++ at InitialIndexSpacer
++ at InitialLanguage
++ at InitialOutdent
++ at InitialSpace
++ at InnerNote
++ at Join
++ at LLP
++ at LOP
++ at LP
++ at LeftAlignedDisplay
++ at LeftAlignedNumberedDisplay
++ at LeftDisplay
++ at LeftList
++ at LeftNote
++ at LeftNumberedDisplay
++ at Lemma
++ at List
++ at ListGap
++ at ListIndent
++ at ListInterruptItem
++ at ListItem
++ at ListLabelWidth
++ at ListNewPage
++ at ListRightIndent
++ at LocalWidthRule
++ at Lozenge
++ at MeriDiems
++ at Minute
++ at Months
++ at Multiply
++ at NP
++ at NoChapCite
++ at NoChapRef
++ at NoCite
++ at NoDotJoin
++ at NoDotSep
++ at NoLinkPageMark
++ at NoRef
++ at Not
++ at NumSep
++ at NumberMarker
++ at NumberOf
++ at NumberSeparator
++ at NumberedDisplay
++ at NumberedList 
++ at OptimizePages
++ at Or
++ at OuterNote
++ at OverStrike
++ at PP
++ at PageMark
++ at PageMarker
++ at PageOf
++ at ParSym
++ at ParaGap
++ at ParaIndent
++ at ParagraphItem
++ at ParenAlphaList
++ at ParenNumberedList
++ at ParenRomanList
++ at ParenUCAlphaList
++ at ParenUCRomanList
++ at Place
++ at Proof
++ at Proposition
++ at QuotedAlignedDisplay
++ at QuotedAlignedNumberedDisplay
++ at QuotedDisplay
++ at QuotedList
++ at QuotedNumberedDisplay
++ at R
++ at RawAlignedDisplay
++ at RawAlignedNumberedDisplay
++ at RawAlphaList
++ at RawBulletList
++ at RawCenteredList
++ at RawCentredAlignedDisplay
++ at RawCentredAlignedNumberedDisplay
++ at RawCentredDisplay
++ at RawCentredList
++ at RawCentredNumberedDisplay
++ at RawDashList
++ at RawDisplay
++ at RawEndList
++ at RawIndentedAlignedDisplay
++ at RawIndentedAlignedNumberedDisplay
++ at RawIndentedDisplay
++ at RawIndentedList
++ at RawIndentedNumberedDisplay
++ at RawIndex
++ at RawIndexA
++ at RawIndexB
++ at RawLeftAlignedDisplay
++ at RawLeftAlignedNumberedDisplay
++ at RawLeftDisplay
++ at RawLeftList
++ at RawLeftNumberedDisplay
++ at RawList
++ at RawNumberedDisplay
++ at RawNumberedList
++ at RawParenAlphaList
++ at RawParenNumberedList
++ at RawParenRomanList
++ at RawParenUCAlphaList
++ at RawParenUCRomanList
++ at RawQuotedAlignedDisplay
++ at RawQuotedAlignedNumberedDisplay
++ at RawQuotedDisplay
++ at RawQuotedList
++ at RawQuotedNumberedDisplay
++ at RawRightAlignedDisplay
++ at RawRightAlignedNumberedDisplay
++ at RawRightDisplay
++ at RawRightNumberedDisplay
++ at RawRomanList
++ at RawStarList
++ at RawSubIndex
++ at RawSubIndexA
++ at RawSubIndexB
++ at RawSubSubIndex
++ at RawSubSubIndexA
++ at RawSubSubIndexB
++ at RawTaggedList
++ at RawUCAlphaList
++ at RawUCRomanList
++ at RawVeryWideTaggedList
++ at RawWideTaggedList
++ at Ref
++ at RefPrint
++ at RefStyle
++ at Reference
++ at Register
++ at Right
++ at RightAlignedDisplay
++ at RightAlignedNumberedDisplay
++ at RightDisplay
++ at RightNote
++ at RightNumberedDisplay
++ at Roman
++ at RomanList
++ at Runner
++ at S
++ at Second
++ at SectSym
++ at Sep
++ at ShadowBox
++ at ShortHours
++ at ShortMeriDiems
++ at ShortMonths
++ at ShortWeekDays
++ at Star
++ at StarList 
++ at Sterling
++ at Sub
++ at SubIndex
++ at SubIndexA
++ at SubIndexB
++ at SubSubIndex
++ at SubSubIndexA
++ at SubSubIndexB
++ at Sup
++ at Sym
++ at Table
++ at TagItem
++ at TaggedList
++ at Theorem
++ at Time
++ at TitleMarker
++ at TitleOf
++ at TradeMark
++ at True
++ at TwelveHours
++ at UCAlpha
++ at UCAlphaList
++ at UCRoman
++ at UCRomanList
++ at VStrut
++ at VeryWideIndent
++ at VeryWideTaggedList
++ at WeekDays
++ at WideIndent
++ at WideTaggedList
++ at Word
++ at Yen
++ at ZeroHeight
++ at ZeroWidth
++-Pe-Keywords-User2-
++# List of symbols exported by common packages provided with lout 3.31, except for
++# symbols not starting with an @, and except for those made with not alpha chars.
++#
++# Symbols exported by @OrdinarySetup (from doc/docf)
++# Symbols exported by @BookSetup (from book/bookf)
++# Symbols exported by @BasicSetup @DocumentSetup (from report/reportf)
++# Symbols exported by @BasicSetup @DocumentSetup (from slides/slidesf)
++ at Abbreviations
++ at Appendix
++ at Appendix
++ at Appendix
++ at BeginAppendices
++ at BeginOverheads
++ at BeginSections
++ at BeginSections
++ at BeginSubAppendices
++ at BeginSubAppendices
++ at BeginSubAppendices
++ at BeginSubIntroductions
++ at BeginSubPrefaces
++ at BeginSubSections
++ at BeginSubSections
++ at BeginSubSections
++ at BeginSubSubAppendices
++ at BeginSubSubAppendices
++ at BeginSubSubAppendices
++ at BeginSubSubSections
++ at BeginSubSubSections
++ at BeginSubSubSections
++ at Book
++ at Chapter
++ at Colophon
++ at ContentsGoesHere
++ at Doc
++ at Document
++ at EndAppendices
++ at EndOverheads
++ at EndSections
++ at EndSections
++ at EndSubAppendices
++ at EndSubAppendices
++ at EndSubAppendices
++ at EndSubIntroductions
++ at EndSubPrefaces
++ at EndSubSections
++ at EndSubSections
++ at EndSubSections
++ at EndSubSubAppendices
++ at EndSubSubAppendices
++ at EndSubSubAppendices
++ at EndSubSubSections
++ at EndSubSubSections
++ at EndSubSubSections
++ at FullWidth
++ at Introduction
++ at Lecture
++ at Overhead
++ at Overhead
++ at OverheadTransparencies
++ at Preface
++ at Report
++ at Section
++ at Section
++ at Section
++ at SubAppendix
++ at SubAppendix
++ at SubAppendix
++ at SubIntroduction
++ at SubPreface
++ at SubSection
++ at SubSection
++ at SubSection
++ at SubSubAppendix
++ at SubSubAppendix
++ at SubSubAppendix
++ at SubSubSection
++ at SubSubSection
++ at SubSubSection
++ at Text
++ at Title
++ at Val
++-Pe-Keywords-User3-
++# List of symbols exported by common packages provided with lout 3.31, except for
++# symbols not starting with an @, and except for those made with not alpha chars.
++#
++# Symbols exported by diag/diagf
++# Symbols exported by diag/diagf: Not added because they don't start with @
++# Symbols exported by fig/figf
++# Symbols exported by graph/graphf: Most not added because they don't start with @
++# Symbols exported by picture/picturef
++# Symbols exported by pie/pief
++# Symbols exported by tab/tabf
++# Symbols exported by tbl/tblf
++# "::" "<<" "**" "++" "--"
++ at ACell
++ at ACurve
++ at ACurveArrow
++ at ANode
++ at Angle
++ at Arc
++ at Arrow
++ at Arrow
++ at ArrowHead
++ at BCell
++ at BNode
++ at BaseOf
++ at Bezier
++ at BezierArrow
++ at Box
++ at Box
++ at BoxArrowHead
++ at CC
++ at CCell
++ at CCurve
++ at CCurveArrow
++ at CNode
++ at CatchTags
++ at Circle
++ at Circle
++ at CircleArrowHead
++ at Curve
++ at CurveArrow
++ at CurveBox
++ at CurveBox
++ at DWrapArrow
++ at DWrapCurve
++ at DWrapCurveArrow
++ at DWrapLine
++ at Data
++ at Diag
++ at Diamond
++ at Diamond
++ at Distance
++ at Diverted
++ at DoubleArrow
++ at DoubleLine
++ at DoubleLine
++ at DoubleRule
++ at Ellipse
++ at Ellipse
++ at EndHeaderRow
++ at Figure
++ at FirstRow
++ at FirstRowa
++ at FirstRowa
++ at FirstRowb
++ at FirstRowb
++ at FirstRowc
++ at FirstRowc
++ at FirstRowd
++ at FirstRowd
++ at FirstRowe
++ at FirstRowe
++ at FirstRowf
++ at FirstRowf 
++ at FirstRowg
++ at FirstRowg
++ at FirstRowh
++ at FirstRowh
++ at FirstRowi
++ at FirstRowj 
++ at FirstSub
++ at Frame
++ at HArrow
++ at HLine
++ at HTree
++ at HVArrow
++ at HVCurve
++ at HVCurveArrow
++ at HVHArrow
++ at HVHCurve
++ at HVHCurveArrow
++ at HVHLine
++ at HVLine
++ at HalfOpenArrowHead
++ at HalfOpenCurvedArrowHead
++ at HeaderFirstRow
++ at HeaderFirstRowa
++ at HeaderFirstRowb
++ at HeaderFirstRowc
++ at HeaderFirstRowd
++ at HeaderFirstRowe
++ at HeaderFirstRowf
++ at HeaderFirstRowg
++ at HeaderFirstRowh
++ at HeaderRow
++ at HeaderRowa
++ at HeaderRowb
++ at HeaderRowc
++ at HeaderRowd
++ at HeaderRowe
++ at HeaderRowf
++ at HeaderRowg
++ at HeaderRowh
++ at Illustration
++ at Isosceles
++ at LVRArrow
++ at LVRCurve
++ at LVRCurveArrow
++ at LVRLine
++ at Label
++ at LeftSub
++ at Line
++ at Line
++ at Line
++ at Link
++ at Loop
++ at LoopOpposite
++ at MarkOf
++ at MarkRow
++ at MarkRowa
++ at MarkRowa
++ at MarkRowb
++ at MarkRowb
++ at MarkRowc
++ at MarkRowc
++ at MarkRowd
++ at MarkRowd
++ at MarkRowe
++ at MarkRowe
++ at MarkRowf
++ at MarkRowf 
++ at MarkRowg
++ at MarkRowg
++ at MarkRowh
++ at MarkRowh
++ at MarkRowi
++ at MarkRowj 
++ at Max
++ at Min
++ at NP
++ at NP
++ at NextSub
++ at NoBreakRow
++ at NoBreakRowa
++ at NoBreakRowb
++ at NoBreakRowc
++ at NoBreakRowd
++ at NoBreakRowe
++ at NoBreakRowf
++ at NoBreakRowg
++ at NoBreakRowh
++ at Node
++ at OneOrBoth
++ at OpenArrowHead
++ at OpenCurvedArrowHead
++ at Optional
++ at OptionalDiverted
++ at OrIfPlain
++ at Pie
++ at Polygon
++ at Polygon
++ at Prev
++ at RR
++ at RVLArrow
++ at RVLCurve
++ at RVLCurveArrow
++ at RVLLine
++ at Repeat
++ at RepeatDiverted
++ at RepeatOpposite
++ at RightSub
++ at Row
++ at Rowa
++ at Rowa
++ at Rowb
++ at Rowb
++ at Rowc
++ at Rowc
++ at Rowd
++ at Rowd
++ at Rowe
++ at Rowe
++ at Rowf
++ at Rowf
++ at Rowg
++ at Rowg
++ at Rowh
++ at Rowh
++ at Rowi
++ at Rowj
++ at Rule
++ at Select
++ at Sequence
++ at ShadowBox
++ at ShadowBox
++ at ShowDirections
++ at ShowLabels
++ at ShowPoints
++ at ShowTags
++ at Skip
++ at Slice
++ at SolidArrowHead
++ at SolidCurvedArrowHead
++ at Square
++ at Square
++ at StartDown
++ at StartLeft
++ at StartRight
++ at StartRightDown
++ at StartRightRight
++ at StartRightRightRight
++ at StartUp
++ at StubSub
++ at SyntaxDiag
++ at Tbl
++ at Transform
++ at Tree
++ at UWrapArrow
++ at UWrapCurve
++ at UWrapCurveArrow
++ at UWrapLine
++ at VArrow
++ at VHArrow
++ at VHCurve
++ at VHCurveArrow
++ at VHLine
++ at VHVArrow
++ at VHVCurve
++ at VHVCurveArrow
++ at VHVLine
++ at VLine
++ at XCell
++ at XDistance
++ at YDistance
++-Pe-Keywords-User4-
++# Add your own symbols here if you like
+
+Added: trunk/Languages/Resources/keywords.lt.r
+===================================================================
+--- trunk/Languages/Resources/keywords.lt.r	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Resources/keywords.lt.r	2006-10-07 12:39:43 UTC (rev 446)
+@@ -0,0 +1,2 @@
++read 'KeyW' (0, "keywords.lt")
++	"keywords.lt";
+
+Added: trunk/Languages/Sources/CDPopup.cpp
+===================================================================
+--- trunk/Languages/Sources/CDPopup.cpp	2006-09-03 13:14:17 UTC (rev 445)
++++ trunk/Languages/Sources/CDPopup.cpp	2006-10-07 12:39:43 UTC (rev 446)
+@@ -0,0 +1,691 @@
++/*	based on CCppPopup.cpp, which is
++
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++
++
++	This is basically a copycat version of CCppPopup.cpp, with several things
++	removed/simplified, as D's syntax is somehow simpler than C++.
++	Hacked up in 2006 by:
++	- Oscar Lesta.
++*/
++
++// ToDos:
++// - more clean up of C++'s peculiarities is needed.
++// - imports (included files) are shown, but you can't open them.
++// - "Show Types" (specially for classes) and "Prototypes" need a lot of work.
++
++#include "CLanguageAddOn.h"
++
++const int kMaxNameSize = 256;
++
++const char* comment(const char text[], bool strippp = true, CLanguageProxy* proxy = NULL);
++const char* parens(const char text[], char open);
++const char* skip(const char text[], char ch);
++const char* skip_ne(const char text[], char ch);
++const char* preprocessor(const char text[], CLanguageProxy& proxy);
++const char* params(const char text[], char* &name, int& size);
++const char* ident(const char text[], CLanguageProxy& proxy);
++const char* i_extern(const char text[]);
++void pragma(const char* &text, int offset, CLanguageProxy& proxy);
++
++
++////////////////////////////////////////////////////////////////////////////////
++
++inline bool isidentf(char c)
++{
++	// Could this be the first character of an identifier?
++	return (isalpha(c) || ((c) == '_'));
++}
++
++
++inline bool isident(char c)
++{
++	// Could this be a subsequent character of an identifier?
++	return (isalnum(c) || ((c) == '_'));
++}
++
++
++const char*
++skip(const char text[], char ch)
++{
++	while (*text) {
++		if (*text == ch) {
++			text++;
++			break;
++		}
++		if (*text == '\\' && text[1] != 0)
++			text++;
++		text++;
++	}
++
++	return text;
++}
++
++
++const char*
++skip_ne(const char text[], char ch)
++{
++	while (*text) {
++		if (*text == ch) {
++			text++;
++			break;
++		}
++		text++;
++	}
++
++	return text;
++}
++
++
++const char*
++comment(const char text[], bool strippp, CLanguageProxy* proxy)
++{
++	do {
+
+[... truncated: 1658 lines follow ...]
+
+
+From axeld at mail.berlios.de  Mon Oct 16 16:00:37 2006
+From: axeld at mail.berlios.de (axeld at BerliOS)
+Date: Mon, 16 Oct 2006 16:00:37 +0200
+Subject: [pe-commits] r447 - in trunk: . artwork homepage homepage/images
+Message-ID: <200610161400.k9GE0bA4017705@sheep.berlios.de>
+
+Author: axeld
+Date: 2006-10-16 16:00:37 +0200 (Mon, 16 Oct 2006)
+New Revision: 447
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=447&view=rev
+
+Added:
+   trunk/artwork/
+   trunk/artwork/pe_icon.svg
+   trunk/homepage/
+   trunk/homepage/images/
+   trunk/homepage/images/pe_logo.png
+   trunk/homepage/index.html
+Log:
+The beginnings of a homepage. Don't get excited just yet ;-)
+
+
+Added: trunk/artwork/pe_icon.svg
+===================================================================
+--- trunk/artwork/pe_icon.svg	2006-10-07 12:39:43 UTC (rev 446)
++++ trunk/artwork/pe_icon.svg	2006-10-16 14:00:37 UTC (rev 447)
+@@ -0,0 +1,107 @@
++<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<svg width="128" height="128" color-interpolation="linearRGB">
++ <g>
++  <path style="fill:#010101; fill-opacity:0.5725"
++        d="M54 124l4 4l6.26 -6.33l9.73 6.33l16.77 -22.91l37.22 -19.08l-10 -6l4 4l-50 24l-18 16z
++           M116 78l8 -6l-8 -4l-6 6l6 4z"
++  />
++  <path style="fill:none; stroke:#010101; stroke-width:8"
++        d="M12.5 70c0 0 11.23 12 21.24 25c10 13 18.75 26.5 18.75 26.5l65.73 -37.76l-54.23 -43.73l-51.5 30z"
++  />
++  <radialGradient id="gradient0" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="200" gradientTransform="matrix(0.3656,0,0,0.2133,52,80)">
++   <stop offset="0.4885" stop-color="#4fb009"/>
++   <stop offset="1" stop-color="#ccff89"/>
++  </radialGradient>
++  <path style="fill:url(#gradient0)"
++        d="M12.5 70c0 0 11.23 12 21.24 25c10 13 18.75 26.5 18.75 26.5l47.58 -27.33l-8.08 -0.16l6 -8l16.09 0.12l4.13 -2.38l-54.23 -43.73l-51.5 30z"
++  />
++  <path style="fill:#5a9e1e"
++        d="M100.08 94.16l-8.08 -0.16l6 -8l16.09 0.12l-14.01 8.04z"
++  />
++  <path style="fill:none; stroke:#010101; stroke-width:8"
++        d="M5.23 71.73c0 0 16.65 10.77 32.76 22c16.88 11.76 33.5 21.76 33.5 21.76l44.73 -52.75c0 0 -25.36 -11.34 -45.5 -22c-10.37 -5.5 -18.73 -12 -18.73 -12l-46.76 43z"
++  />
++  <linearGradient id="gradient1" gradientUnits="userSpaceOnUse" x1="214.08" y1="-24.18" x2="236.66" y2="65.98">
++   <stop offset="0" stop-color="#b6f55c"/>
++   <stop offset="0.7423" stop-color="#dcffb3"/>
++   <stop offset="1" stop-color="#d7ffba"/>
++  </linearGradient>
++  <path style="fill:url(#gradient1)"
++        d="M5.23 71.73c0 0 16.65 10.77 32.76 22c16.88 11.76 33.5 21.76 33.5 21.76l18.22 -21.5l-23.72 -3.5l-20 -4.5l4 -2l24 -2.5l25.48 1l16.75 -19.75c0 0 -25.36 -11.34 -45.5 -22c-10.37 -5.5 -18.73 -12 -18.73 -12l-46.76 43z"
++  />
++  <linearGradient id="gradient2" gradientUnits="userSpaceOnUse" x1="-94.27" y1="-21.55" x2="-56.91" y2="-65.69">
++   <stop offset="0" stop-color="#010101"/>
++   <stop offset="1" stop-color="#85cb52"/>
++  </linearGradient>
++  <path style="fill:none; stroke:url(#gradient2); stroke-width:2"
++        d="M40 82l29.73 -30.25
++           M28 74l25.74 -26"
++  />
++  <linearGradient id="gradient3" gradientUnits="userSpaceOnUse" x1="-94.27" y1="-21.55" x2="-56.91" y2="-65.69">
++   <stop offset="0" stop-color="#010101"/>
++   <stop offset="1" stop-color="#85cb52"/>
++  </linearGradient>
++  <path style="fill:none; stroke:url(#gradient3); stroke-width:4"
++        d="M40 82l29.73 -30.25
++           M28 74l25.74 -26"
++  />
++  <linearGradient id="gradient4" gradientUnits="userSpaceOnUse" x1="-94.27" y1="-21.55" x2="-56.91" y2="-65.69">
++   <stop offset="0" stop-color="#010101"/>
++   <stop offset="1" stop-color="#85cb52"/>
++  </linearGradient>
++  <path style="fill:none; stroke:url(#gradient4); stroke-width:2"
++        d="M34 78l22.24 -22.75"
++  />
++  <linearGradient id="gradient5" gradientUnits="userSpaceOnUse" x1="46.04" y1="-131" x2="102.94" y2="-131">
++   <stop offset="0" stop-color="#2f500a"/>
++   <stop offset="1" stop-color="#7cb53f"/>
++  </linearGradient>
++  <path style="fill:url(#gradient5)"
++        d="M89.72 94l-23.72 -3.5l-20 -4.5l4 -2l24 -2.5l25.48 1l-9.76 11.5z"
++  />
++  <path style="fill:none; stroke:#010101; stroke-width:7.9999"
++        d="M61.34 56.68l48.08 -48.08c0 0 5.65 -2.82 11.31 2.82c5.65 5.65 2.82 11.31 2.82 11.31l-48.08 48.08l-22.62 8.48l8.48 -22.62z
++           M63.52 56.14l0.65 6.19l5.65 5.65l6.18 0.63
++           M108.77 10.89c-0.26 2.16 0.04 5.58 3.47 9.02c3.42 3.42 6.84 3.73 9 3.46"
++  />
++  <linearGradient id="gradient6" gradientUnits="userSpaceOnUse" x1="60.57" y1="106.85" x2="34.92" y2="85.39">
++   <stop offset="0" stop-color="#ffeed5"/>
++   <stop offset="0.5529" stop-color="#dbab5f"/>
++   <stop offset="0.8143" stop-color="#ffeed5"/>
++  </linearGradient>
++  <path style="fill:url(#gradient6)"
++        d="M61.34 56.68l0.18 7.62l6.32 6.32l7.63 0.19l-17.63 5.86l-2.36 -2.5l5.85 -17.5z"
++  />
++  <linearGradient id="gradient7" gradientUnits="userSpaceOnUse" x1="-43.9" y1="-30.4" x2="30.81" y2="-105.11">
++   <stop offset="0" stop-color="#80c2fa"/>
++   <stop offset="1" stop-color="#f8fbff"/>
++  </linearGradient>
++  <path style="fill:url(#gradient7)"
++        d="M64.17 53.85l-0.01 9.15l42.71 -42.38l-0.27 -9.19l-42.42 42.42z"
++  />
++  <linearGradient id="gradient8" gradientUnits="userSpaceOnUse" x1="-30.94" y1="-43.35" x2="15.02" y2="-89.33">
++   <stop offset="0" stop-color="#287ab9"/>
++   <stop offset="1" stop-color="#3aa6d8"/>
++  </linearGradient>
++  <path style="fill:url(#gradient8)"
++        d="M64.15 61.86l6.38 6.21l42.38 -42.06l-6.54 -6.21l-42.22 42.06z"
++  />
++  <linearGradient id="gradient9" gradientUnits="userSpaceOnUse" x1="114.23" y1="9.9" x2="138.36" y2="42.59">
++   <stop offset="0" stop-color="#022262"/>
++   <stop offset="0.9962" stop-color="#046da4"/>
++  </linearGradient>
++  <path style="fill:url(#gradient9)"
++        d="M70.16 68.08l8.14 -0.08l42.42 -42.42h-8.48l-42.08 42.51z"
++  />
++  <linearGradient id="gradient10" gradientUnits="userSpaceOnUse" x1="187.02" y1="-88.25" x2="209.89" y2="-65.16">
++   <stop offset="0" stop-color="#dbab5f"/>
++   <stop offset="1" stop-color="#fddcab"/>
++  </linearGradient>
++  <path style="fill:url(#gradient10)"
++        d="M109.42 8.59c0 0 5.65 -2.82 11.31 2.82c5.65 5.65 2.82 11.31 2.82 11.31c0 0 -5.65 2.82 -11.31 -2.82c-5.65 -5.65 -2.82 -11.31 -2.82 -11.31z"
++  />
++  <path style="fill:#010101"
++        d="M113.66 12.84c0 0 4.24 -1.41 5.65 0c1.41 1.41 0 5.65 0 5.65c0 0 -2.82 0 -4.24 -1.41c-1.41 -1.41 -1.41 -4.24 -1.41 -4.24z"
++  />
++ </g>
++</svg>
+
+Added: trunk/homepage/images/pe_logo.png
+===================================================================
+(Binary files differ)
+
+
+Property changes on: trunk/homepage/images/pe_logo.png
+___________________________________________________________________
+Name: svn:mime-type
+   + application/octet-stream
+
+Added: trunk/homepage/index.html
+===================================================================
+--- trunk/homepage/index.html	2006-10-07 12:39:43 UTC (rev 446)
++++ trunk/homepage/index.html	2006-10-16 14:00:37 UTC (rev 447)
+@@ -0,0 +1,15 @@
++<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
++<html>
++<head>
++	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
++	<title>pe - programmer's editor for BeOS</title>
++</head>
++<body>
++
++<img src="images/pe_logo.png" border=0 alt="pe Logo">
++<h2>Welcome to pe's Website</h2>
++<p>For now, please visit the <a href="http://developer.berlios.de/projects/pe-editor">BerliOS project page for more information</a>.</p>
++<p>This project is hosted by <a href="http://developer.berlios.de"><img src="http://developer.berlios.de/bslogo.php?group_id=0&type=1" width="124" height="32" border="0" alt="BerliOS Logo"></a>
++
++</body>
++</html>
+
+
+

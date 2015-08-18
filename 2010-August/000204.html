@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r599 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2010-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r599%20-%20trunk/Sources&In-Reply-To=%3C20100815004757.1050A480F3D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r599 - trunk/Sources</H1>
+    <B>mmu_man at mail.berlios.de</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r599%20-%20trunk/Sources&In-Reply-To=%3C20100815004757.1050A480F3D%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r599 - trunk/Sources">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug 15 02:47:56 CEST 2010</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#204">[ date ]</a>
+              <a href="thread.html#204">[ thread ]</a>
+              <a href="subject.html#204">[ subject ]</a>
+              <a href="author.html#204">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2010-08-15 02:47:56 +0200 (Sun, 15 Aug 2010)
+New Revision: 599
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=599&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=599&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+Make the error string view use updated ViewColor on B_UI_SETTINGS_CHANGED on Dano. It's visually disturbing when using themes. Haiku should likely also broadcast this message someday.
+Btw, do we really use this view at all ???
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2010-06-01 19:52:14 UTC (rev 598)
++++ trunk/Sources/PDoc.cpp	2010-08-15 00:47:56 UTC (rev 599)
+@@ -223,6 +223,7 @@
+ 	r.left = fButtonBar-&gt;Frame().right + 4;
+ 	fToolBar-&gt;AddChild(fError = new BStringView(r, &quot;error&quot;, &quot;&quot;, B_FOLLOW_LEFT_RIGHT));
+ 	fError-&gt;SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++	fError-&gt;SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+ 	fError-&gt;SetFont(be_plain_font);
+ 	fError-&gt;SetHighColor(kBlack);
+ 
+@@ -1239,6 +1240,18 @@
+ 	int caret = fText-&gt;Caret();
+ 	int changeCounter = fText-&gt;TextBuffer().ChangeCounter();
+ 
++
++	switch (message-&gt;what) {
++		/* handle Dano-style color changes */
++		case '_UIC':
++		{
++			fError-&gt;SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++			fError-&gt;SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++			break;
++		}
++	}
++
++
+ 	inherited::DispatchMessage(message, handler);
+ 
+ 	if (fText-&gt;Anchor() != anchor || fText-&gt;Caret() != caret)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#204">[ date ]</a>
+              <a href="thread.html#204">[ thread ]</a>
+              <a href="subject.html#204">[ subject ]</a>
+              <a href="author.html#204">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

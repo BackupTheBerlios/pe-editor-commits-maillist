@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r497 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r497%20-%20trunk/Extensions&In-Reply-To=%3C200802282200.m1SM00Il025306%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000090.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r497 - trunk/Extensions</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r497%20-%20trunk/Extensions&In-Reply-To=%3C200802282200.m1SM00Il025306%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r497 - trunk/Extensions">zooey at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb 28 23:00:00 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000090.html">[pe-commits] r496 - trunk/Resources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-02-28 22:59:59 +0100 (Thu, 28 Feb 2008)
+New Revision: 497
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=497&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=497&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/BeHappy.cpp
+Log:
+* Applied improvement to BeHappy extension by Francois, now both
+  known app-signatures are supported.
+* Added a loop to the code that invokes BeHappy as it didn't work on
+  my machine the first time round (it simply took too long). Now there's
+  one second breathing space, that should be enough I suppose.
+
+
+Modified: trunk/Extensions/BeHappy.cpp
+===================================================================
+--- trunk/Extensions/BeHappy.cpp	2008-02-28 10:01:16 UTC (rev 496)
++++ trunk/Extensions/BeHappy.cpp	2008-02-28 21:59:59 UTC (rev 497)
+@@ -8,7 +8,8 @@
+ 
+ #include &quot;PeAddOn.h&quot;
+ 
+-#define kBeHappySig		&quot;application/x.vnd-STertois.BeHappy&quot;
++#define kBeHappySig		&quot;application/x-vnd.STertois.BeHappy&quot;
++#define kBeHappySigAlt	&quot;application/x.vnd-STertois.BeHappy&quot;
+ 
+ static team_id gBeHappyTeam = -1;
+ 
+@@ -20,18 +21,23 @@
+ 	status_t err;
+ 	int32 lastWindow = 0;
+ 	
+-	BMessenger msgr(kBeHappySig, gBeHappyTeam);
++	BMessenger msgr(NULL, gBeHappyTeam);
+ 	// if we didn't start it yet or it's gone...
+ 	if (gBeHappyTeam &lt; 0 || !msgr.IsValid()) {
+ 		// start it
+ 		err = be_roster-&gt;Launch(kBeHappySig, (BMessage *)NULL, &amp;gBeHappyTeam);
+ 		if (err &lt; B_OK) {
+-			MStopAlert(&quot;Can't launch BeHappy!&quot;).Go();
+-			return err;
++			err = be_roster-&gt;Launch(kBeHappySigAlt, (BMessage *)NULL, &amp;gBeHappyTeam);
++			if (err &lt; B_OK)
++				return B_LAUNCH_FAILED;
+ 		}
+ 		// leave it some time to start
+-		snooze(100000);
+-		msgr = BMessenger(kBeHappySig, gBeHappyTeam);
++		for(int i=0; i&lt;10; ++i) {
++			snooze(100000);
++			msgr = BMessenger(NULL, gBeHappyTeam);
++			if (msgr.IsValid())
++				break;
++		}
+ 	}
+ 	
+ 	// XXX: lastWindow = (hey count Window) -1
+@@ -144,6 +150,11 @@
+ 	if (err &gt;= B_OK)
+ 		return B_OK;
+ 
++	if (err == B_LAUNCH_FAILED) {
++		MStopAlert(&quot;Can't launch BeHappy!&quot;).Go();
++		return B_OK;
++	}
++	
+ 	BString message(&quot;Nothing was found by BeHappy for: &quot;);
+ 	message += selection.String();
+ 	MInfoAlert(message.String()).Go();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000090.html">[pe-commits] r496 - trunk/Resources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

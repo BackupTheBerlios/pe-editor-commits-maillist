@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r434 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r434%20-%20trunk/Sources&In-Reply-To=%3C200608071417.k77EHZ5N024076%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000024.html">
+   <LINK REL="Next"  HREF="000026.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r434 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r434%20-%20trunk/Sources&In-Reply-To=%3C200608071417.k77EHZ5N024076%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r434 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 16:17:35 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000024.html">[pe-commits] r433 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000026.html">[pe-commits] r435 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 16:17:34 +0200 (Mon, 07 Aug 2006)
+New Revision: 434
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=434&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=434&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/HDialog.cpp
+Log:
+* minor cleanup
+
+
+Modified: trunk/Sources/HDialog.cpp
+===================================================================
+--- trunk/Sources/HDialog.cpp	2006-08-07 09:25:05 UTC (rev 433)
++++ trunk/Sources/HDialog.cpp	2006-08-07 14:17:34 UTC (rev 434)
+@@ -394,13 +394,13 @@
+ 		case 'edit':
+ 		{
+ 			char val[256], allowed[256];
+-			short max, width;
+-			data &gt;&gt; r &gt;&gt; name &gt;&gt; label &gt;&gt; val &gt;&gt; allowed &gt;&gt; max &gt;&gt; width;
++			short max, divider;
++			data &gt;&gt; r &gt;&gt; name &gt;&gt; label &gt;&gt; val &gt;&gt; allowed &gt;&gt; max &gt;&gt; divider;
+ 			
+ 			BRect b = r.ToBe();
+ 			
+ 			inside-&gt;AddChild(v = new BTextControl(b, name, *label ? label : NULL,
+-				val, new BMessage(msg_FieldChanged)));
++				val, new BMessage(msg_FieldChanged), B_FOLLOW_NONE));
+ 					
+ 			BTextView *tv = static_cast&lt;BTextControl*&gt;(v)-&gt;TextView();
+ 			if (*allowed)
+@@ -414,7 +414,7 @@
+ 			}
+ 
+ 			if (max) tv-&gt;SetMaxBytes(max);
+-			if (width) static_cast&lt;BTextControl*&gt;(v)-&gt;SetDivider(width * gFactor);
++			if (divider) static_cast&lt;BTextControl*&gt;(v)-&gt;SetDivider(divider * gFactor);
+ 			
+ 			if (v-&gt;Bounds().Height() &lt; b.Height())
+ 			{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000024.html">[pe-commits] r433 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000026.html">[pe-commits] r435 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

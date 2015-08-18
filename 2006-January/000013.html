@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r422 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr422%20-%20trunk/Sources&In-Reply-To=%3C200601141140.k0EBebcd013446%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000012.html">
+   <LINK REL="Next"  HREF="000014.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r422 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr422%20-%20trunk/Sources&In-Reply-To=%3C200601141140.k0EBebcd013446%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r422 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Sat Jan 14 12:40:37 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000012.html">[pe-commits]r421 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000014.html">[pe-commits]r423 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-01-14 12:40:26 +0100 (Sat, 14 Jan 2006)
+New Revision: 422
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=422&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=422&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PCmd.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+- fixed a pretty bad bug that caused regex-based replaces on multiple files to
+  replace the wrong amount of bytes. Instead of replacing the number of bytes
+  that the regex matched on, it simply replaced the number of bytes the regex
+  itself contained.
+- PText::FindNext() now passes back the matched length on request.
+
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2006-01-14 10:57:17 UTC (rev 421)
++++ trunk/Sources/PCmd.cpp	2006-01-14 11:40:26 UTC (rev 422)
+@@ -618,18 +618,18 @@
+ 
+ 	int a, c;
+ 	
+-	int fl, rl, offset = 0;
+-	fl = strlen(fFind);
++	int rl, offset = 0;
+ 	rl = strlen(fRepl);
+ 		
+ 	PLongAction la(fText);
+ 		
+ 	BString what;
++	int matchLen = 0;
+ 	while (fText-&gt;FindNext(fFind, offset, fIgnoreCase,	false, false, 
+-		fEntireWord, fGrep, false))
++		fEntireWord, fGrep, false, &amp;matchLen))
+ 	{
+-		what.SetTo(fText-&gt;Text() + offset, fl);
+-		fText-&gt;Delete(offset, offset + fl);
++		what.SetTo(fText-&gt;Text() + offset, matchLen);
++		fText-&gt;Delete(offset, offset + matchLen);
+ 		if (fGrep)
+ 		{
+ 			char* repStr 
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-01-14 10:57:17 UTC (rev 421)
++++ trunk/Sources/PText.cpp	2006-01-14 11:40:26 UTC (rev 422)
+@@ -4023,7 +4023,7 @@
+ } /* CCellView::CanReplace */
+ 
+ bool PText::FindNext(const char *what, int&amp; offset, bool ignoreCase,
+-	bool wrap, bool backward, bool entireWord, bool regx, bool scroll)
++	bool wrap, bool backward, bool entireWord, bool regx, bool scroll, int* foundLen)
+ {
+ 	int skip[256], wl = strlen((char *)what);
+ 	bool wrapped = false;
+@@ -4113,6 +4113,9 @@
+ 					fAnchor = offset;
+ 					fCaret = offset + wl;
+ 				}
++				if (foundLen)
++					// fill in the length of the match:
++					*foundLen = wl;
+ 				return true;
+ 			}
+ 		}
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2006-01-14 10:57:17 UTC (rev 421)
++++ trunk/Sources/PText.h	2006-01-14 11:40:26 UTC (rev 422)
+@@ -234,7 +234,7 @@
+ 			bool CanReplace(const char *s, bool ignoreCase, bool regx);
+ 			bool FindNext(const char *what, int&amp; offset, bool ignoreCase,
+ 					bool wrap, bool backward, bool entireWord, bool regx,
+-					bool scroll = true);
++					bool scroll = true, int* foundLen = NULL);
+ 			bool IsIncSearching() const;
+ 			void DoIncSearch(bool forward);
+ 			void IncSearchKey(const char *bytes, int numBytes);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000012.html">[pe-commits]r421 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000014.html">[pe-commits]r423 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

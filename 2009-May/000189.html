@@ -1,0 +1,933 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r584 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r584%20-%20trunk/Sources&In-Reply-To=%3C200905082322.n48NMYOr004593%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000188.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r584 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r584%20-%20trunk/Sources&In-Reply-To=%3C200905082322.n48NMYOr004593%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r584 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Sat May  9 01:22:34 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000188.html">[pe-commits] r583 - trunk/Extensions
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-09 01:22:32 +0200 (Sat, 09 May 2009)
+New Revision: 584
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=584&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=584&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CFindDialog.cpp
+Log:
+* CRecentPatternController::Next(): Check the saved pattern only when we've
+  actually reached it. Doing that unconditionally prevented navigating to the
+  next pattern when the last pattern wasn't modified.
+* Automatic white space cleanup.
+
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2009-05-06 16:05:44 UTC (rev 583)
++++ trunk/Sources/CFindDialog.cpp	2009-05-08 23:22:32 UTC (rev 584)
+@@ -1,8 +1,6 @@
+-/*	$Id$
+-	
+-	Copyright 1996, 1997, 1998, 2002
++/*	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +10,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +26,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: long ago
+ */
+@@ -75,15 +73,15 @@
+ 
+ CFindDialog* gFindDialog;
+ 
+-bool FileContains(const char *path, const char *what, bool ignoreCase, 
++bool FileContains(const char *path, const char *what, bool ignoreCase,
+ 				  bool word, vector&lt;PMessageItem*&gt; *lst = NULL);
+-bool BufferContains(const char *buf, int size, const char *path, 
+-					const char *what, bool ignoreCase, bool word, 
++bool BufferContains(const char *buf, int size, const char *path,
++					const char *what, bool ignoreCase, bool word,
+ 					vector&lt;PMessageItem*&gt; *lst = NULL);
+ 
+-bool FileContainsEx(const char *path, CRegex* regex, 
++bool FileContainsEx(const char *path, CRegex* regex,
+ 					vector&lt;PMessageItem*&gt; *lst = NULL);
+-bool BufferContainsEx(const char *buf, int size, const char *path, 
++bool BufferContainsEx(const char *buf, int size, const char *path,
+ 					  CRegex* regex, vector&lt;PMessageItem*&gt; *lst = NULL);
+ 
+ #pragma mark - CRecentPatternController
+@@ -113,7 +111,7 @@
+ 
+ CRecentPatternController::~CRecentPatternController()
+ {
+-	for(uint32 i=0; i&lt;fPatternVect.size(); ++i) 
++	for(uint32 i=0; i&lt;fPatternVect.size(); ++i)
+ 		delete fPatternVect[i];
+ 	fPatternVect.clear();
+ }
+@@ -127,7 +125,7 @@
+ 
+ bool CRecentPatternController::AddCurrentPattern()
+ {
+-	BMessage* lastPatternMsg 
++	BMessage* lastPatternMsg
+ 		= fPatternVect.empty() ? NULL : fPatternVect.back();
+ 	if (!lastPatternMsg || gFindDialog-&gt;PatternInfoDiffersFrom(lastPatternMsg))
+ 	{	// current pattern is different than last, we add it:
+@@ -143,12 +141,12 @@
+ 
+ void CRecentPatternController::Next()
+ {
+-	if (fSavedPattern.IsEmpty())
+-		return;
+ 	if (fCurrIdx == fPatternVect.size()-1)
+ 	{	// restore the saved pattern edited by user:
++		if (fSavedPattern.IsEmpty())
++			return;
+ 		gFindDialog-&gt;SetPatternInfo(&amp;fSavedPattern);
+-	} 
++	}
+ 	else if (fCurrIdx &lt; fPatternVect.size()-1)
+ 	{	// navigate downwards:
+ 		fCurrIdx++;
+@@ -158,10 +156,10 @@
+ 
+ void CRecentPatternController::Previous()
+ {
+-	if (fCurrIdx == fPatternVect.size()-1 
++	if (fCurrIdx == fPatternVect.size()-1
+ 	&amp;&amp; gFindDialog-&gt;PatternInfoDiffersFrom(fPatternVect.back()))
+ 	{	// save pattern edited by user before navigating upwards, such
+-		// that the user can get back to this pattern when navigating 
++		// that the user can get back to this pattern when navigating
+ 		// back downwards:
+ 		fSavedPattern.MakeEmpty();
+ 		gFindDialog-&gt;GetPatternInfo(&amp;fSavedPattern);
+@@ -201,22 +199,22 @@
+ filter_result CFindDialogKeyFilter::Filter(BMessage *msg, BHandler **target)
+ {
+ 	int32 keychar, modifiers;
+-	if (*target &amp;&amp; msg-&gt;FindInt32(&quot;modifiers&quot;, &amp;modifiers) == B_OK 
++	if (*target &amp;&amp; msg-&gt;FindInt32(&quot;modifiers&quot;, &amp;modifiers) == B_OK
+ 		&amp;&amp; msg-&gt;FindInt32(&quot;raw_char&quot;, &amp;keychar) == B_OK)
+ 	{
+ 		// if the user pressed return the given target will already
+ 		// be set to the default button, so we have to find out the
+-		// focus view by accessing the preferred handler: 
+-		BHandler* focusHandler 
++		// focus view by accessing the preferred handler:
++		BHandler* focusHandler
+ 			= (*target)-&gt;Looper()-&gt;PreferredHandler();
+-		BTextView* textview 
++		BTextView* textview
+ 			= dynamic_cast&lt;BTextView*&gt;(focusHandler);
+ 		if (!textview)
+ 			// we only want to filter keys pressed in a textview
+ 			return B_DISPATCH_MESSAGE;
+ 		switch(keychar)
+ 		{
+-			case B_RETURN: 
++			case B_RETURN:
+ 				if (modifiers &amp; (B_CONTROL_KEY | B_OPTION_KEY))
+ 				{
+ 					// insert a newline into the focused textview:
+@@ -227,7 +225,7 @@
+ 				}
+ 				break;
+ 			case B_UP_ARROW:
+-				if (modifiers &amp; (B_CONTROL_KEY | B_OPTION_KEY)) 
++				if (modifiers &amp; (B_CONTROL_KEY | B_OPTION_KEY))
+ 				{
+ 					CRecentPatternController::ActiveController()-&gt;Previous();
+ 					return B_SKIP_MESSAGE;
+@@ -253,9 +251,9 @@
+ {
+ 	gFindDialog = this;
+ 	fCurrentDir = NULL;
+-	
++
+ 	char *bi = strdup(getenv(&quot;BEINCLUDES&quot;));
+-	
++
+ 	int i = 1;
+ 	const char *p = bi;
+ 	while ((p = strchr(p + 1, ';')) != NULL)
+@@ -263,33 +261,33 @@
+ 
+ 	fBeIncludes = (char **)malloc(i * sizeof(char *));
+ 	FailNil(fBeIncludes);
+-	
++
+ 	p = bi;
+ 	i = 0;
+-	
++
+ 	do
+ 	{
+ 		char *ep = strchr(p, ';');
+ 		if (ep) *ep++ = 0;
+-		
++
+ 		fBeIncludes[i] = strdup(p);
+ 		FailNil(fBeIncludes[i++]);
+ 		p = ep;
+ 	}
+ 	while (p);
+-	
++
+ 	free(bi);
+ 	fBeIncludeCount = i;
+-	
++
+ 	fDirPanel = NULL;
+-	
++
+ 	Create();
+ 	Layout();
+ 
+ 	UpdateSearchDirMenu();
+ 
+ 	fOpenWindowIndex = -1;
+-	
++
+ 	UpdateFields();
+ } /* CFindDialog::CFindDialog */
+ 
+@@ -318,10 +316,10 @@
+ 	// Add Settings
+ 	fChkCase = new HCheckBox(fMainView, &quot;case&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWrap = new HCheckBox(fMainView, &quot;wrap&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkBack = new HCheckBox(fMainView, &quot;back&quot;, new BMessage(msg_FlagBackward), 
++	fChkBack = new HCheckBox(fMainView, &quot;back&quot;, new BMessage(msg_FlagBackward),
+ 		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWord = new HCheckBox(fMainView, &quot;word&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkGrep = new HCheckBox(fMainView, &quot;regx&quot;, new BMessage(msg_FlagRegex), 
++	fChkGrep = new HCheckBox(fMainView, &quot;regx&quot;, new BMessage(msg_FlagRegex),
+ 		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkBtch = new HCheckBox(fMainView, &quot;btch&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkCase-&gt;SetOn(gPrefs-&gt;GetPrefInt(prf_I_SearchIgnoreCase, 1));
+@@ -509,7 +507,7 @@
+ 
+ 	if (fChkGrep-&gt;IsOn() &amp;&amp; (cmd == msg_Find || cmd == msg_ReplaceAll))
+ 	{
+-		status_t res = fRegex.SetTo(fEdiFind-&gt;Text(), fChkCase-&gt;IsOn(), 
++		status_t res = fRegex.SetTo(fEdiFind-&gt;Text(), fChkCase-&gt;IsOn(),
+ 									fChkWord-&gt;IsOn());
+ 		if (res != B_OK)
+ 		{
+@@ -518,7 +516,7 @@
+ 			return;
+ 		}
+ 	}
+-	
++
+ 	if (fChkMult-&gt;IsOn())
+ 	{
+ 		switch (fMfdMeth-&gt;FindMarkedIndex())
+@@ -526,9 +524,9 @@
+ 			case METHOD_IDX_DIR:
+ 			{
+ 				PDoc *w = NULL;
+-				
++
+ 				MultiReplaceKind all = mrNone;
+-				
++
+ 				if (cmd == msg_ReplaceAll)
+ 				{
+ 					switch (MAlert(&quot;Replace All on multiple files&quot;, &quot;Cancel&quot;, &quot;Leave Open&quot;, &quot;Save To Disk&quot;).Go())
+@@ -538,7 +536,7 @@
+ 						case 3:	all = mrSaveToDisk; break;
+ 					}
+ 				}
+-				
++
+ 				if (!DoMultiFileFind(fMfdSdir-&gt;Menu()-&gt;FindMarked()-&gt;Label(),
+ 					fChkRecu-&gt;IsOn(), true, all, &amp;w))
+ 					beep();
+@@ -574,7 +572,7 @@
+ 	else
+ 	{
+ 		BMessage msg(cmd);
+-		
++
+ 		msg.AddString(&quot;what&quot;, fEdiFind-&gt;Text());
+ 		msg.AddString(&quot;with&quot;, fEdiRepl-&gt;Text());
+ 		msg.AddBool  (&quot;wrap&quot;, fChkWrap-&gt;IsOn());
+@@ -625,7 +623,7 @@
+ 		fMfdNamp-&gt;SetEnabled(meth == METHOD_IDX_DIR);
+ 		fChkText-&gt;SetEnabled(meth == METHOD_IDX_DIR);
+ 		fChkRecu-&gt;SetEnabled(meth == METHOD_IDX_DIR || meth == METHOD_IDX_INC);
+-		
++
+ 		if (meth == METHOD_IDX_INC)
+ 			fChkText-&gt;SetOn(true);
+ 
+@@ -640,13 +638,13 @@
+ 		fEdiName-&gt;SetEnabled(false);
+ 		fMfdNamp-&gt;SetEnabled(false);
+ 		fChkRecu-&gt;SetEnabled(false);
+-		
++
+ 		fCurrentDir = NULL;
+ 		while (fDirStack.size())
+ 		{
+ 			closedir(fDirStack.top());
+ 			fDirStack.pop();
+-			
++
+ 			char *p = fDirNameStack.top();
+ 			free(p);
+ 			fDirNameStack.pop();
+@@ -670,7 +668,7 @@
+ 			entry_ref ref;
+ 			FailOSErr(msg-&gt;FindRef(&quot;refs&quot;, &amp;ref));
+ 			BEntry e(&amp;ref);
+-			
++
+ 			if (!e.IsDirectory())
+ 				BEntry(&amp;ref).GetParent(&amp;e); // nasty huh?
+ 
+@@ -679,7 +677,7 @@
+ 			fChkMult-&gt;SetOn(true);
+ 			BPath path;
+ 			e.GetPath(&amp;path);
+-			
++
+ 			AddPathToDirMenu(path.Path(), true);
+ 			UpdateFields();
+ 		}
+@@ -691,7 +689,7 @@
+ 			case msg_ReplaceAll:
+ 				DoFind(what);
+ 				break;
+-	
++
+ 			case msg_ReplyCanReplace:
+ 			{
+ 				bool canReplace;
+@@ -702,7 +700,7 @@
+ 				}
+ 				break;
+ 			}
+-			
++
+ 			case msg_EnterSearchString:
+ 			case msg_FindSelection:
+ 			case msg_FindSelectionBackward:
+@@ -719,7 +717,7 @@
+ 					DoFind(msg_FindAgainBackward);
+ 				break;
+ 			}
+-				
++
+ 			case msg_EnterReplaceString:
+ 			{
+ 				fChkMult-&gt;SetOn(false);
+@@ -730,7 +728,7 @@
+ 					fEdiRepl-&gt;SetText(s);
+ 				break;
+ 			}
+-			
++
+ 			case msg_FindInNextFile:
+ 			{
+ 				switch (fMfdMeth-&gt;FindMarkedIndex())
+@@ -745,11 +743,11 @@
+ 							w-&gt;Show();
+ 						break;
+ 					}
+-					
++
+ 					case METHOD_IDX_WIN:
+ 						DoOpenWindows(false);
+ 						break;
+-					
++
+ 					case METHOD_IDX_INC:
+ 						DoIncludesFind();
+ 						break;
+@@ -765,7 +763,7 @@
+ 				}
+ 				fDirPanel-&gt;Show();
+ 				break;
+-			
++
+ 			case msg_SelectedDir:
+ 			{
+ 				entry_ref ref;
+@@ -779,12 +777,12 @@
+ 				fChkMult-&gt;SetOn(true);
+ 				UpdateFields();
+ 				break;
+-			
++
+ 			case msg_FindPopup:
+ 			{
+ 				long ix;
+ 				FailOSErr(msg-&gt;FindInt32(&quot;index&quot;, &amp;ix));
+-				
++
+ 				CRecentPatternController::ActiveController()-&gt;GoToIndex(ix);
+ 				break;
+ 			}
+@@ -894,7 +892,7 @@
+ 	FailOSErr(e.SetTo(&amp;ref));
+ 	BPath p;
+ 	FailOSErr(e.GetPath(&amp;p));
+-	
++
+ 	AddPathToDirMenu(p.Path(), select, addToPrefs);
+ } /* CFindDialog::AddPathToDirMenu */
+ 
+@@ -991,7 +989,7 @@
+ 			label &lt;&lt; B_UTF8_ELLIPSIS;
+ 		}
+ 	}
+-	BMenuItem* item 
++	BMenuItem* item
+ 		= new BMenuItem(label.String(), new BMessage(msg_FindPopup));
+ 	fMfdPats-&gt;Menu()-&gt;AddItem(item);
+ }
+@@ -1003,7 +1001,7 @@
+ 	char path[PATH_MAX];
+ 	bool batch = fChkBtch-&gt;IsOn();
+ 	vector&lt;PMessageItem*&gt; *lst = NULL;
+-	
++
+ 	if (batch &amp;&amp; replace == mrNone)
+ 		lst = new vector&lt;PMessageItem*&gt;;
+ 
+@@ -1024,28 +1022,28 @@
+ 	}
+ 
+ 	if (!fCurrentDir) THROW((&quot;Directory not found: %s&quot;, dir));
+-	
++
+ 	struct dirent *dent;
+ 	struct stat stbuf;
+-	
++
+ 	PLongAction la;
+ 	bool cancel = false;
+-	
++
+ 	while (fDirStack.size() &amp;&amp; ! cancel)
+ 	{
+ 		fCurrentDir = fDirStack.top();
+ 		dir = fDirNameStack.top();
+-		
++
+ 		while ((dent = readdir(fCurrentDir)) != NULL &amp;&amp; ! cancel)
+ 		{
+ 			strcpy(path, dir);
+ 			strcat(path, &quot;/&quot;);
+ 			strcat(path, dent-&gt;d_name);
+ 			status_t err = stat(path, &amp;stbuf);
+-			
++
+ 			if (err || !(strcmp(dent-&gt;d_name, &quot;.&quot;) &amp;&amp; strcmp(dent-&gt;d_name, &quot;..&quot;)))
+ 				continue;
+-			
++
+ 			if (S_ISREG(stbuf.st_mode))
+ 			{
+ 				entry_ref ref;
+@@ -1057,7 +1055,7 @@
+ 						if (doc)
+ 						{
+ 							BAutolock lock(doc);
+-		
++
+ 							doc-&gt;TextView()-&gt;Find(msg_ReplaceAll, NULL);
+ 						}
+ 					}
+@@ -1067,9 +1065,9 @@
+ 						if (doc)
+ 						{
+ 							doc-&gt;Lock();
+-		
++
+ 							doc-&gt;TextView()-&gt;Find(msg_ReplaceAll, NULL);
+-							
++
+ 							if (doc-&gt;IsHidden())
+ 							{
+ 								doc-&gt;Save();
+@@ -1085,11 +1083,11 @@
+ 						if (doc)
+ 						{
+ 							BAutolock lock(doc);
+-		
++
+ 							int offset = 0;
+-							
++
+ 							doc-&gt;TextView()-&gt;FindNext(fEdiFind-&gt;Text(),
+-								offset, fChkCase-&gt;IsOn(), false, false, false, 
++								offset, fChkCase-&gt;IsOn(), false, false, false,
+ 								fChkGrep-&gt;IsOn(), true);
+ 							return true;
+ 						}
+@@ -1105,7 +1103,7 @@
+ 				fCurrentDir = NULL;
+ 				break;
+ 			}
+-			
++
+ 			cancel = la.Tick();
+ 		}
+ 
+@@ -1114,20 +1112,20 @@
+ 			closedir(fDirStack.top());
+ 			fDirStack.pop();
+ 			fCurrentDir = NULL;
+-			
++
+ 			free(fDirNameStack.top());
+ 			fDirNameStack.pop();
+ 			dir = NULL;
+ 		}
+ 	}
+-	
++
+ 	// not found... or batch of course!
+ 	if (lst)
+ 	{
+ 		ShowBatch(lst, (BWindow**)w);
+ 		delete lst;
+ 	}
+-	
++
+ 	return false;
+ } /* CFindDialog::DoMultiFileFind */
+ 
+@@ -1139,7 +1137,7 @@
+ 	if (fChkText-&gt;IsOn())
+ 	{
+ 		BNode n;
+-		
++
+ 		FailOSErr(n.SetTo(&amp;ref));
+ 
+ 		char mime[64];
+@@ -1148,13 +1146,13 @@
+ 		if (strncmp(mime, &quot;text/&quot;, 5))
+ 			result = false;
+ 	}
+-	
++
+ 	int fnam = fMfdNamp-&gt;FindMarkedIndex();
+ 	if (result &amp;&amp; fnam != FNAME_IDX_ANY)
+ 	{
+ 		const char *pat = fEdiName-&gt;Text();
+ 		char *file = strrchr(path, '/') + 1;
+-	
++
+ 		switch (fnam)
+ 		{
+ 			case 1:	result = strcmp(file + strlen(file) - strlen(pat), pat) == 0; break;
+@@ -1178,7 +1176,7 @@
+ 	BPath p;
+ 	FailOSErr(e.GetPath(&amp;p));
+ 	const char *path = p.Path();
+-	
++
+ 	doc = dynamic_cast&lt;PDoc*&gt;(CDoc::FindDoc(ref));
+ 
+ 	if (doc)
+@@ -1190,7 +1188,7 @@
+ 			found = BufferContainsEx(txt-&gt;Text(), txt-&gt;Size(), path,
+ 									 &amp;fRegex, lst);
+ 		else
+-			found = BufferContains(txt-&gt;Text(), txt-&gt;Size(), path, what, 
++			found = BufferContains(txt-&gt;Text(), txt-&gt;Size(), path, what,
+ 								   fChkCase-&gt;IsOn(), word, lst);
+ 	}
+ 	else if (fChkGrep-&gt;IsOn())
+@@ -1204,7 +1202,7 @@
+ void CFindDialog::DoIncludesFind()
+ {
+ 	PDoc *w = NULL;
+-	
++
+ 	if (fCurrentIncludeIndex &gt; -1)
+ 	{
+ 		if (fCurrentDir &amp;&amp; DoMultiFileFind(fBeIncludes[fCurrentIncludeIndex], false, false, mrNone, &amp;w))
+@@ -1214,7 +1212,7 @@
+ 	}
+ 	else
+ 		fCurrentIncludeIndex = 0;
+-		
++
+ 	do
+ 	{
+ 		if (DoMultiFileFind(fBeIncludes[fCurrentIncludeIndex], false, true, mrNone, &amp;w))
+@@ -1224,7 +1222,7 @@
+ 
+ 	if (w)
+ 		w-&gt;Show();
+-		
++
+ 	fCurrentIncludeIndex = -1;
+ 	beep();
+ } /* CFindDialog::DoBeIncludesFind */
+@@ -1251,19 +1249,19 @@
+ 		if (fOpenWindowIndex == -1)
+ 		{
+ 			fOpenWindows.clear();
+-	
++
+ 			int i = be_app-&gt;CountWindows();
+-			
++
+ 			while (i--)
+ 			{
+ 				PDoc *doc = dynamic_cast&lt;PDoc*&gt;(be_app-&gt;WindowAt(i));
+ 				if (doc)
+ 					fOpenWindows.push_back(doc);
+ 			}
+-			
++
+ 			fOpenWindowIndex = fOpenWindows.size();
+ 		}
+-	
++
+ 		while (--fOpenWindowIndex &gt;= 0)
+ 		{
+ 			PDoc* doc = fOpenWindows[fOpenWindowIndex];
+@@ -1273,7 +1271,7 @@
+ 			if (doc &amp;&amp; FindInFile(file, NULL))
+ 			{
+ 				BAutolock lock(doc);
+-				
++
+ 				if (!lock.IsLocked())
+ 					continue;
+ 				doc-&gt;Activate();
+@@ -1283,7 +1281,7 @@
+ 				{
+ 					int offset = 0;
+ 					doc-&gt;TextView()-&gt;FindNext(fEdiFind-&gt;Text(), offset,
+-						fChkCase-&gt;IsOn(), false, false, fChkWord-&gt;IsOn(), 
++						fChkCase-&gt;IsOn(), false, false, fChkWord-&gt;IsOn(),
+ 						fChkGrep-&gt;IsOn(), true);
+ 					return;
+ 				}
+@@ -1291,7 +1289,7 @@
+ 		}
+ 		beep();
+ 	}
+-	
++
+ } /* CFindDialog::DoOpenWindows */
+ 
+ void CFindDialog::ShowBatch(vector&lt;PMessageItem*&gt; *lst, BWindow** w)
+@@ -1299,21 +1297,21 @@
+ 	if (lst &amp;&amp; lst-&gt;size())
+ 	{
+ 		PMessageWindow *m;
+-		
++
+ 		if (w &amp;&amp; *w)
+ 			m = static_cast&lt;PMessageWindow*&gt;(*w);
+ 		else
+ 			m = new PMessageWindow(&quot;Search Results&quot;);
+ 
+ 		BAutolock lock(m);
+-		
++
+ 		if (lock.IsLocked())
+ 		{
+ 			if (w) *w = m;
+-	
++
+ 			for (int i = 0; i &lt; lst-&gt;size(); i++)
+ 				m-&gt;AddMessage(static_cast&lt;PMessageItem*&gt;((*lst)[i]));
+-	
++
+ 			if (w &amp;&amp; *w)
+ 				m-&gt;Show();
+ 		}
+@@ -1327,16 +1325,16 @@
+ {
+ 	for (int i = 0; i &lt; 255; i++)
+ 		skip[i] = 1;
+-		
++
+ 	// [zooey]: temporary fix, as the current code isn't able to deal
+ 	//          with utf-8 chars correctly.
+ 
+ #if 0
+ 	int M = strlen((char *)p), i;
+-	
++
+ 	for (i = 0; i &lt; 255; i++)
+ 		skip[i] = M;
+-	
++
+ 	if (ignoreCase)
+ 	{
+ 		for (i = 0; i &lt; M; i++)
+@@ -1395,16 +1393,16 @@
+ {
+ 	for (int i = 0; i &lt; 255; i++)
+ 		skip[i] = 1;
+-		
++
+ 	// [zooey]: temporary fix, as the current code isn't able to deal
+ 	//          with utf-8 chars correctly.
+ 
+ #if 0
+ 	int M = strlen((char *)p), i;
+-	
++
+ 	for (i = 0; i &lt; 255; i++)
+ 		skip[i] = M;
+-	
++
+ 	if (ignoreCase)
+ 	{
+ 		for (i = M - 1; i &gt;= 0; i--)
+@@ -1473,12 +1471,12 @@
+ static bool IsWord(const char *buf, int size, int start, int len)
+ {
+ 	bool result;
+-	
++
+ 	result = isalnum(buf[start]);
+ 	if (result) result = isalnum(buf[start + len - 1]);
+ 	if (result) result = (start == 0 || (!isalnum(buf[start - 1]) &amp;&amp; buf[start - 1] != '_'));
+ 	if (result) result = (start + len == size || (!isalnum(buf[start + len]) &amp;&amp; buf[start + len] != '_'));
+-	
++
+ 	return result;
+ } /* IsWord */
+ 
+@@ -1486,7 +1484,7 @@
+ {
+ 	line = 1;
+ 	int i = 0, ls = 0;
+-	
++
+ 	while (i &lt; offset)
+ 	{
+ 		if (buf[i] == '\n')
+@@ -1496,7 +1494,7 @@
+ 		}
+ 		i++;
+ 	}
+-	
++
+ 	selStart = offset - ls + 2;
+ 
+ 	i = ls + 1;
+@@ -1522,13 +1520,13 @@
+ 		fseek(f, 0, SEEK_END);
+ 		int size = ftell(f);
+ 		fseek(f, 0, SEEK_SET);
+-		
++
+ 		char *buf = (char *)malloc(size + 1);
+ 		if (buf)
+ 		{
+ 			fread(buf, 1, size, f);
+ 			buf[size] = 0;
+-			result = BufferContains(buf, size, path, what, ignoreCase, word, lst);			
++			result = BufferContains(buf, size, path, what, ignoreCase, word, lst);
+ 			free(buf);
+ 		}
+ 		fclose(f);
+@@ -1545,7 +1543,7 @@
+ 	int offset = 0;
+ 
+ 	initskip(what, skip, ignoreCase);
+-	
++
+ 	do
+ 	{
+ 		offset += mismatchsearch(what, buf + offset, size - offset, skip, ignoreCase);
+@@ -1563,30 +1561,30 @@
+ 			if (!word || IsWord(buf, size, offset + 1, strlen(what)))
+ 			{
+ 				PMessageItem *i = new PMessageItem;
+-				
++
+ 				char *l;
+ 				int line, start;
+-				
++
+ 				Offset2Line(buf, size, offset, line, start, &amp;l);
+-				
++
+ 				i-&gt;SetError(l);
+ 				i-&gt;SetFile(path);
+ 				i-&gt;SetLine(line);
+ 				i-&gt;SetSel(start, strlen(what));
+ 				i-&gt;SetKind(3);
+-				
++
+ 				lst-&gt;push_back(i);
+-				
++
+ 				free(l);
+ 			}
+-			
++
+ 			offset += strlen(what);
+ 			offset += mismatchsearch(what, buf + offset,
+ 				size - offset, skip, ignoreCase);
+ 		}
+ 		while (offset &lt; size);
+ 	}
+-				
++
+ 	return result;
+ } /* BufferContains */
+ 
+@@ -1600,7 +1598,7 @@
+ 		fseek(f, 0, SEEK_END);
+ 		int size = ftell(f);
+ 		fseek(f, 0, SEEK_SET);
+-		
++
+ 		char *buf = (char *)malloc(size + 1);
+ 		if (buf)
+ 		{
+@@ -1609,18 +1607,18 @@
+ 			result = BufferContainsEx(buf, size, path, regex, lst);
+ 			free(buf);
+ 		}
+-		
++
+ 		fclose(f);
+ 	}
+ 
+ 	return result;
+ } /* FileContainsEx */
+ 
+-bool BufferContainsEx(const char *buf, int size, const char *path, 
++bool BufferContainsEx(const char *buf, int size, const char *path,
+ 					  CRegex* regex, vector&lt;PMessageItem*&gt; *lst)
+ {
+ 	int offset, e = 0, r;
+-	
++
+ 	offset = e;
+ 	r = regex-&gt;Match(buf, size, offset);
+ 	offset = regex-&gt;MatchStart();
+@@ -1631,22 +1629,22 @@
+ 		do
+ 		{
+ 			PMessageItem *i = new PMessageItem;
+-				
++
+ 			char *l;
+ 			int line, start;
+-				
++
+ 			Offset2Line(buf, size, offset, line, start, &amp;l);
+-				
++
+ 			i-&gt;SetError(l);
+ 			i-&gt;SetFile(path);
+ 			i-&gt;SetLine(line);
+ 			i-&gt;SetSel(start - 1, e - offset);
+ 			i-&gt;SetKind(3);
+-				
++
+ 			lst-&gt;push_back(i);
+-				
++
+ 			free(l);
+-			
++
+ 			offset = std::max(e, offset+1);
+ 			r = regex-&gt;Match(buf, size, offset);
+ 			offset = regex-&gt;MatchStart();
+@@ -1654,6 +1652,6 @@
+ 		}
+ 		while (r == 0);
+ 	}
+-				
++
+ 	return (r == 0);
+ } /* BufferContainsEx */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000188.html">[pe-commits] r583 - trunk/Extensions
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

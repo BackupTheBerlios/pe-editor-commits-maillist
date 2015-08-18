@@ -1,0 +1,1656 @@
+From zooey at mail.berlios.de  Mon Aug  7 10:52:23 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 10:52:23 +0200
+Subject: [pe-commits] r429 - trunk/Sources
+Message-ID: <200608070852.k778qNcb024398@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 10:52:23 +0200 (Mon, 07 Aug 2006)
+New Revision: 429
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=429&view=rev
+
+Removed:
+   trunk/Sources/PTextCmds.cpp
+   trunk/Sources/PTextCmds.h
+Log:
+* removed unused PTextCmds.*
+
+
+Deleted: trunk/Sources/PTextCmds.cpp
+
+Deleted: trunk/Sources/PTextCmds.h
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 10:58:08 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 10:58:08 +0200
+Subject: [pe-commits] r430 - trunk/Sources
+Message-ID: <200608070858.k778w8iw024840@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 10:58:08 +0200 (Mon, 07 Aug 2006)
+New Revision: 430
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=430&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed potential call to debugger in SetDirty()
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-08-07 08:52:23 UTC (rev 429)
++++ trunk/Sources/PDoc.cpp	2006-08-07 08:58:08 UTC (rev 430)
+@@ -822,13 +822,15 @@
+ 
+ void PDoc::SetDirty(bool dirty)
+ {
+-	inherited::SetDirty(dirty);
+-	if (!dirty)
+-		// if the new state is non-dirty, we propagate this info to the 
+-		// undo-stack, such that the non-dirty state is updated accordingly:
+-		fText->ResetUndo();
+-	fButtonBar->SetEnabled(msg_Save, dirty);
+-	BString title = Title();
++	if (LockLooper()) {
++		inherited::SetDirty(dirty);
++		if (!dirty)
++			// if the new state is non-dirty, we propagate this info to the 
++			// undo-stack, such that the non-dirty state is updated accordingly:
++			fText->ResetUndo();
++		fButtonBar->SetEnabled(msg_Save, dirty);
++		UnlockLooper();
++	}
+ } /* PDoc::SetDirty */
+ 
+ void PDoc::CreateFilePanel()
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 11:12:22 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 11:12:22 +0200
+Subject: [pe-commits] r431 - trunk/Sources
+Message-ID: <200608070912.k779CMrF026207@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 11:12:22 +0200 (Mon, 07 Aug 2006)
+New Revision: 431
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=431&view=rev
+
+Modified:
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+   trunk/Sources/PApp.cpp
+Log:
+* changed node-monitoring code to improve behaviour in case of node recycling
+  during the creation of backup files. Pe used to have problems with renaming
+  documents to backup names (ending with a tilde) when you saved several files
+  at once.
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDoc.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -536,6 +536,8 @@
+ 	
+ 	doclist lst = sfDocList;
+ 	
++	BLooper *me = BLooper::LooperForThread(find_thread(NULL));
++
+ 	for (di = lst.begin(); di != lst.end(); di++)
+ 	{
+ 		BWindow *w = dynamic_cast<BWindow*>(*di);
+@@ -543,8 +545,6 @@
+ 		{
+ 			BMessage reply;
+ 			
+-			BLooper *me = BLooper::LooperForThread(find_thread(NULL));
+-
+ 			if (async || w == dynamic_cast<BWindow*>(me))
+ 				w->PostMessage(msg);
+ 			else
+@@ -555,3 +555,17 @@
+ 		}
+ 	}
+ }
++
++void CDoc::HandleFolderNodeMonitorMsg(BMessage* msg)
++{
++	doclist::iterator di;
++	
++	doclist lst = sfDocList;
++	
++	for (di = lst.begin(); di != lst.end(); di++)
++	{
++		if ((*di)->fDocIO && (*di)->fDocIO->MatchesNodeMonitorMsg(msg))
++			(*di)->fDocIO->HandleNodeMonitorMsg(msg);
++	}
++}
++
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDoc.h	2006-08-07 09:12:22 UTC (rev 431)
+@@ -94,6 +94,7 @@
+ 	static	const doclist& DocList();
+ 	static	void InvalidateAll();
+ 	static	void PostToAll(unsigned long msg, bool async);
++	static  void HandleFolderNodeMonitorMsg(BMessage* msg);
+ 
+ 	static	void AddRecent(const char *path);
+ 	static	bool GetNextRecent(char *path, int& indx);
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDocIO.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -121,8 +121,17 @@
+ 	}
+ }
+ 
+-#pragma mark -
++bool operator< (const node_ref& left, const node_ref& right)
++{
++	if (left.node < right.node)
++		return true;
++	else
++		return left.device < right.device;
++}
+ 
++
++// #pragma mark - CDocIO
++
+ CDocIO::CDocIO(CDoc* doc)
+ 	: fDoc(doc)
+ 	, fLastSaved(0)
+@@ -169,6 +178,11 @@
+ {
+ }
+ 
++bool CDocIO::MatchesNodeMonitorMsg(BMessage* msg)
++{
++	return false;
++}
++
+ bool CDocIO::DoPreEditTextConversions(BString& docText)
+ {
+ 	// convert from document's native encoding to internal type (UTF-8):
+@@ -229,8 +243,10 @@
+ 	return true;
+ }
+ 
+-#pragma mark -
++// #pragma mark - CLocalDocIO
+ 
++BLocker CLocalDocIO::sfDocListLock("DocListLock");
++
+ CLocalDocIO::CLocalDocIO(CDoc* doc, const entry_ref* eref, BLooper* target)
+ 	: CDocIO(doc)
+ 	, fEntryRef(NULL)
+@@ -411,6 +427,40 @@
+ 	return fTarget;
+ }
+ 
++void CLocalDocIO::StartWatchingFolder()
++{
++	node_ref directoryNodeRef;
++	BEntry entry(fEntryRef);
++	BNode node;
++	if (entry.GetParent(&entry) == B_OK
++		&& node.SetTo(&entry) == B_OK
++		&& node.GetNodeRef(&directoryNodeRef) == B_OK)
++	{
++		if (sfDocListLock.Lock()) {
++			if (sfWatchedFolderMap[directoryNodeRef]++ == 0)
++				watch_node(&directoryNodeRef, B_WATCH_DIRECTORY, be_app);
++			sfDocListLock.Unlock();
++		}
++	}
++}
++
++void CLocalDocIO::StopWatchingFolder()
++{
++	node_ref directoryNodeRef;
++	BEntry entry(fEntryRef);
++	BNode node;
++	if (entry.GetParent(&entry) == B_OK
++		&& node.SetTo(&entry) == B_OK
++		&& node.GetNodeRef(&directoryNodeRef) == B_OK)
++	{
++		if (sfDocListLock.Lock()) {
++			if (sfWatchedFolderMap[directoryNodeRef]-- == 1)
++				watch_node(&directoryNodeRef, B_STOP_WATCHING, be_app);
++			sfDocListLock.Unlock();
++		}
++	}
++}
++
+ void CLocalDocIO::StartWatchingFile()
+ {
+ 	if (fEntryRef == NULL || fTarget == NULL)
+@@ -421,12 +471,8 @@
+ 	if (node.GetNodeRef(&fNodeRef) == B_OK)
+ 		watch_node(&fNodeRef, B_WATCH_NAME | B_WATCH_STAT, fTarget);
+ 
+-	node_ref directoryNodeRef;
+-	BEntry entry(fEntryRef);
+-	if (entry.GetParent(&entry) == B_OK
+-		&& node.SetTo(&entry) == B_OK
+-		&& node.GetNodeRef(&directoryNodeRef) == B_OK)
+-		watch_node(&directoryNodeRef, B_WATCH_DIRECTORY, fTarget);
++
++	StartWatchingFolder();
+ }
+ 
+ void CLocalDocIO::StopWatchingFile(bool stopDirectory)
+@@ -434,21 +480,16 @@
+ 	if (fEntryRef == NULL || fTarget == NULL)
+ 		return;
+ 
++
++
+ 	watch_node(&fNodeRef, B_STOP_WATCHING, fTarget);
+ 
+ 	// if we get late messages, we don't want to deal with them
+ 	fNodeRef.device = -1;
+ 	fNodeRef.node = -1;
+ 
+-	if (stopDirectory) {
+-		node_ref directoryNodeRef;
+-		BEntry entry(fEntryRef);
+-		BNode node;
+-		if (entry.GetParent(&entry) == B_OK
+-			&& node.SetTo(&entry) == B_OK
+-			&& node.GetNodeRef(&directoryNodeRef) == B_OK)
+-			watch_node(&directoryNodeRef, B_STOP_WATCHING, fTarget);
+-	}
++	if (stopDirectory)
++		StopWatchingFolder();
+ }
+ 
+ void CLocalDocIO::HandleNodeMonitorMsg(BMessage* msg)
+@@ -484,11 +525,14 @@
+ 			if (msg->FindString("name", &name) == B_OK)
+ 				fEntryRef->set_name(name);
+ 
++printf("detected changed name of <%s:%Ld>\n", name, fNodeRef.node);
++
+ 			fDoc->NameChanged();
+ 			break;
+ 		}
+ 		case B_ENTRY_REMOVED:
+ 		{
++printf("detected removal of <%s:%Ld>\n", fEntryRef->name, fNodeRef.node);
+ 			StopWatchingFile(false);
+ 				// We don't want to stop monitoring the directory; BTW, it
+ 				// will get automatically updated on next save, the monitoring
+@@ -503,6 +547,17 @@
+ 	}
+ }
+ 
++bool CLocalDocIO::MatchesNodeMonitorMsg(BMessage* msg)
++{
++	node_ref nref;
++	if (fEntryRef == NULL 
++	|| msg->FindInt64("node", &nref.node) != B_OK
++	|| msg->FindInt32("device", &nref.device) != B_OK)
++		return false;
++
++	return nref == fNodeRef;
++}
++
+ bool CLocalDocIO::VerifyFile()
+ {
+ 	bool result = true;
+@@ -546,7 +601,7 @@
+ 	return result;
+ }
+ 
+-#pragma mark -
++// #pragma mark - CFtpDocIO
+ 
+ CFtpDocIO::CFtpDocIO(CDoc* doc, const URLData& url)
+ 	: CDocIO(doc)
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/CDocIO.h	2006-08-07 09:12:22 UTC (rev 431)
+@@ -7,6 +7,10 @@
+ #ifndef CDOC_IO_H
+ #define CDOC_IO_H
+ 
++#include <map>
++
++#include <Locker.h>
++
+ #include "CFtpStream.h"
+ #include "utf-support.h"
+ 
+@@ -30,6 +34,7 @@
+ 	virtual	void StartWatchingFile(void);
+ 	virtual	void StopWatchingFile(bool stopDirectory = true);
+ 	virtual void HandleNodeMonitorMsg(BMessage* msg);
++	virtual bool MatchesNodeMonitorMsg(BMessage* msg);
+ 	virtual bool VerifyFile();
+ 	virtual void SetEntryRef(const entry_ref* ref);
+ 	virtual BLooper* Target();
+@@ -64,14 +69,22 @@
+ 
+ 	virtual	void StartWatchingFile(void);
+ 	virtual	void StopWatchingFile(bool stopDirectory = true);
++	virtual bool MatchesNodeMonitorMsg(BMessage* msg);
+ 	virtual void HandleNodeMonitorMsg(BMessage* msg);
+ 	virtual bool VerifyFile();
+ 	virtual void SetEntryRef(const entry_ref* ref);
+ 	virtual BLooper* Target();
+ private:
++	virtual	void StartWatchingFolder(void);
++	virtual	void StopWatchingFolder(void);
++
+ 			entry_ref *fEntryRef;
+ 			node_ref fNodeRef;
+ 			BLooper* fTarget;
++
++	typedef map<node_ref, int32> WatchedFolderMap;
++	WatchedFolderMap sfWatchedFolderMap;
++	static	BLocker sfDocListLock;
+ };
+ 
+ class CFtpDocIO : public CDocIO
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-08-07 08:58:08 UTC (rev 430)
++++ trunk/Sources/PApp.cpp	2006-08-07 09:12:22 UTC (rev 431)
+@@ -747,6 +747,11 @@
+ 				break;
+ 			}
+ 	
++			case B_NODE_MONITOR: {
++				CDoc::HandleFolderNodeMonitorMsg(msg);
++				break;
++			}
++
+ 			case msg_OpenSelected:
+ 				DialogCreator<COpenSelection>::CreateDialog(NULL);
+ 				break;
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 11:17:00 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 11:17:00 +0200
+Subject: [pe-commits] r432 - trunk/Sources
+Message-ID: <200608070917.k779H0au026545@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 11:17:00 +0200 (Mon, 07 Aug 2006)
+New Revision: 432
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=432&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+* fixed coding style violation
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-08-07 09:12:22 UTC (rev 431)
++++ trunk/Sources/PDoc.cpp	2006-08-07 09:17:00 UTC (rev 432)
+@@ -822,7 +822,8 @@
+ 
+ void PDoc::SetDirty(bool dirty)
+ {
+-	if (LockLooper()) {
++	if (LockLooper()) 
++	{
+ 		inherited::SetDirty(dirty);
+ 		if (!dirty)
+ 			// if the new state is non-dirty, we propagate this info to the 
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 11:25:06 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 11:25:06 +0200
+Subject: [pe-commits] r433 - trunk/Sources
+Message-ID: <200608070925.k779P6ss027338@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 11:25:05 +0200 (Mon, 07 Aug 2006)
+New Revision: 433
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=433&view=rev
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/PApp.cpp
+Log:
+* fixed some more coding style violations
+* removed debug output
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-07 09:17:00 UTC (rev 432)
++++ trunk/Sources/CDocIO.cpp	2006-08-07 09:25:05 UTC (rev 433)
+@@ -436,7 +436,8 @@
+ 		&& node.SetTo(&entry) == B_OK
+ 		&& node.GetNodeRef(&directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) {
++		if (sfDocListLock.Lock()) 
++		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]++ == 0)
+ 				watch_node(&directoryNodeRef, B_WATCH_DIRECTORY, be_app);
+ 			sfDocListLock.Unlock();
+@@ -453,7 +454,8 @@
+ 		&& node.SetTo(&entry) == B_OK
+ 		&& node.GetNodeRef(&directoryNodeRef) == B_OK)
+ 	{
+-		if (sfDocListLock.Lock()) {
++		if (sfDocListLock.Lock()) 
++		{
+ 			if (sfWatchedFolderMap[directoryNodeRef]-- == 1)
+ 				watch_node(&directoryNodeRef, B_STOP_WATCHING, be_app);
+ 			sfDocListLock.Unlock();
+@@ -525,14 +527,11 @@
+ 			if (msg->FindString("name", &name) == B_OK)
+ 				fEntryRef->set_name(name);
+ 
+-printf("detected changed name of <%s:%Ld>\n", name, fNodeRef.node);
+-
+ 			fDoc->NameChanged();
+ 			break;
+ 		}
+ 		case B_ENTRY_REMOVED:
+ 		{
+-printf("detected removal of <%s:%Ld>\n", fEntryRef->name, fNodeRef.node);
+ 			StopWatchingFile(false);
+ 				// We don't want to stop monitoring the directory; BTW, it
+ 				// will get automatically updated on next save, the monitoring
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-08-07 09:17:00 UTC (rev 432)
++++ trunk/Sources/PApp.cpp	2006-08-07 09:25:05 UTC (rev 433)
+@@ -747,7 +747,8 @@
+ 				break;
+ 			}
+ 	
+-			case B_NODE_MONITOR: {
++			case B_NODE_MONITOR: 
++			{
+ 				CDoc::HandleFolderNodeMonitorMsg(msg);
+ 				break;
+ 			}
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 16:17:35 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 16:17:35 +0200
+Subject: [pe-commits] r434 - trunk/Sources
+Message-ID: <200608071417.k77EHZ5N024076@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 16:17:34 +0200 (Mon, 07 Aug 2006)
+New Revision: 434
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=434&view=rev
+
+Modified:
+   trunk/Sources/HDialog.cpp
+Log:
+* minor cleanup
+
+
+Modified: trunk/Sources/HDialog.cpp
+===================================================================
+--- trunk/Sources/HDialog.cpp	2006-08-07 09:25:05 UTC (rev 433)
++++ trunk/Sources/HDialog.cpp	2006-08-07 14:17:34 UTC (rev 434)
+@@ -394,13 +394,13 @@
+ 		case 'edit':
+ 		{
+ 			char val[256], allowed[256];
+-			short max, width;
+-			data >> r >> name >> label >> val >> allowed >> max >> width;
++			short max, divider;
++			data >> r >> name >> label >> val >> allowed >> max >> divider;
+ 			
+ 			BRect b = r.ToBe();
+ 			
+ 			inside->AddChild(v = new BTextControl(b, name, *label ? label : NULL,
+-				val, new BMessage(msg_FieldChanged)));
++				val, new BMessage(msg_FieldChanged), B_FOLLOW_NONE));
+ 					
+ 			BTextView *tv = static_cast<BTextControl*>(v)->TextView();
+ 			if (*allowed)
+@@ -414,7 +414,7 @@
+ 			}
+ 
+ 			if (max) tv->SetMaxBytes(max);
+-			if (width) static_cast<BTextControl*>(v)->SetDivider(width * gFactor);
++			if (divider) static_cast<BTextControl*>(v)->SetDivider(divider * gFactor);
+ 			
+ 			if (v->Bounds().Height() < b.Height())
+ 			{
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 16:20:13 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 16:20:13 +0200
+Subject: [pe-commits] r435 - trunk/Sources
+Message-ID: <200608071420.k77EKDWg024222@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 16:20:07 +0200 (Mon, 07 Aug 2006)
+New Revision: 435
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=435&view=rev
+
+Modified:
+   trunk/Sources/HHelpWindow.cpp
+Log:
+* changed window feel from normal to floating-app in order to avoid problems
+  with a showing tooltip temporarily hiding subset windows (like 'File Options').
+
+
+Modified: trunk/Sources/HHelpWindow.cpp
+===================================================================
+--- trunk/Sources/HHelpWindow.cpp	2006-08-07 14:17:34 UTC (rev 434)
++++ trunk/Sources/HHelpWindow.cpp	2006-08-07 14:20:07 UTC (rev 435)
+@@ -59,7 +59,7 @@
+ } /* HHelpView::Draw */
+ 			
+ HHelpWindow::HHelpWindow(BRect r, const char *msg)
+-	: BWindow(r, "", B_BORDERED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, B_AVOID_FOCUS | B_AVOID_FRONT)
++	: BWindow(r, "", B_BORDERED_WINDOW_LOOK, B_FLOATING_APP_WINDOW_FEEL, B_AVOID_FOCUS | B_AVOID_FRONT)
+ {
+ 	r.OffsetTo(0, 0);
+ 	AddChild(new HHelpView(r, msg));
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 16:29:26 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 16:29:26 +0200
+Subject: [pe-commits] r436 - trunk/Sources
+Message-ID: <200608071429.k77ETQHH024915@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 16:29:26 +0200 (Mon, 07 Aug 2006)
+New Revision: 436
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=436&view=rev
+
+Modified:
+   trunk/Sources/CInfoDialog.cpp
+   trunk/Sources/CInfoDialog.h
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/CPrefsDialog.h
+   trunk/Sources/HTabSheet.cpp
+   trunk/Sources/HTabSheet.h
+Log:
+* added support for automatic resizing of panes and windows to tabsheets
+* made 'Preferences'- and 'File Options'-dialog use the auto-resizing feature
+  in order to fix layouting problems for larger fonts.
+
+
+
+Modified: trunk/Sources/CInfoDialog.cpp
+===================================================================
+--- trunk/Sources/CInfoDialog.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CInfoDialog.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -43,6 +43,7 @@
+ #include "CLangIntf.h"
+ #include "HPreferences.h"
+ #include "HDefines.h"
++#include "HTabSheet.h"
+ #include "MAlert.h"
+ #include "Prefs.h"
+ 
+@@ -187,7 +188,7 @@
+ 	lang->SetRadioMode(true);
+ 	int curLang = fDoc->TextView()->Language();
+ 	SetValue("language", curLang >= 0 ? curLang + 3 : 1);
+-	
++
+ 	CancelClicked();
+ } /* CInfoDialog::CInfoDialog */
+ 		
+@@ -319,3 +320,22 @@
+ 	SetEnabled("ok", true);
+ 	SetEnabled("cancel", true);
+ } /* CInfoDialog::UpdateFields */
++
++void CInfoDialog::Show() 
++{
++	HDialog::Show();
++	if (LockLooper())
++	{
++		HTabSheet* tabBook = (HTabSheet*)FindView("tabbook");
++		BRect okFrame = FindView("ok")->Frame();
++		if (tabBook) {
++			BPoint bottomRight = tabBook->AdjustBottomRightOfAllPanes();
++			if (bottomRight.x < okFrame.right)
++				bottomRight.x = okFrame.right;
++			if (bottomRight.y < okFrame.bottom)
++				bottomRight.y = okFrame.bottom;
++			ResizeTo(bottomRight.x+5, bottomRight.y+5);
++		}
++		UnlockLooper();
++	}
++}
+
+Modified: trunk/Sources/CInfoDialog.h
+===================================================================
+--- trunk/Sources/CInfoDialog.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CInfoDialog.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -51,6 +51,8 @@
+ virtual	bool CancelClicked();
+ virtual	void UpdateFields();
+ 
++		void Show();
++
+ private:
+ 		BMenu *fTypes, *fMenu, *fSourceEncoding, *fEncoding, *fLineBreaks;
+ 		PDoc *fDoc;
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CPrefsDialog.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -50,6 +50,7 @@
+ #include "HColorControl.h"
+ #include "HPreferences.h"
+ #include "HDefines.h"
++#include "HTabSheet.h"
+ #include "MAlert.h"
+ #include "CMimeBox.h"
+ #include "CGrepBox.h"
+@@ -1046,3 +1047,22 @@
+ 		}
+ 	}
+ } /* CPrefsDialog::DeleteKeybinding */
++
++void CPrefsDialog::Show() 
++{
++	HDialog::Show();
++	if (LockLooper())
++	{
++		HTabSheet* tabBook = (HTabSheet*)FindView("tabB");
++		BRect okFrame = FindView("ok  ")->Frame();
++		if (tabBook) {
++			BPoint bottomRight = tabBook->AdjustBottomRightOfAllPanes();
++			if (bottomRight.x < okFrame.right)
++				bottomRight.x = okFrame.right;
++			if (bottomRight.y < okFrame.bottom)
++				bottomRight.y = okFrame.bottom;
++			ResizeTo(bottomRight.x+5, bottomRight.y+5);
++		}
++		UnlockLooper();
++	}
++}
+
+Modified: trunk/Sources/CPrefsDialog.h
+===================================================================
+--- trunk/Sources/CPrefsDialog.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CPrefsDialog.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -59,6 +59,7 @@
+ virtual bool CancelClicked();
+ virtual void UpdateFields();
+ virtual void MessageReceived(BMessage *msg);
++virtual	void Show();
+ 	void GetDefPageSetup();
+ 
+ 	static void CreateField(int kind, BPositionIO& data, BView*& inside);
+
+Modified: trunk/Sources/HTabSheet.cpp
+===================================================================
+--- trunk/Sources/HTabSheet.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/HTabSheet.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -43,7 +43,7 @@
+ 	kListWidth = 80;
+ 
+ HTabSheet::HTabSheet(BRect frame, const char *name)
+-	: BView(frame, name, B_FOLLOW_ALL_SIDES, B_WILL_DRAW | B_NAVIGABLE)
++	: BView(frame, name, B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
+ {
+ 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+ 	SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+@@ -56,9 +56,9 @@
+ 	fListArea.OffsetTo(f, f);
+ 	fListArea.right = fListArea.left + kListWidth * gFactor;
+ 	
+-	fEntries = new BListView(fListArea, "entries");
++	fEntries = new BListView(fListArea, "entries", B_SINGLE_SELECTION_LIST, B_FOLLOW_TOP_BOTTOM);
+ 	fEntries->SetSelectionMessage(new BMessage(msg_Flip));
+-	AddChild(new BScrollView("scroller", fEntries, B_FOLLOW_ALL_SIDES, 0, false, true));
++	AddChild(new BScrollView("scroller", fEntries, B_FOLLOW_TOP_BOTTOM, 0, false, true));
+ 	
+ 	fListArea.right += B_V_SCROLL_BAR_WIDTH;
+ 
+@@ -126,6 +126,50 @@
+ 	EndLineArray();
+ } /* HTabSheet::Draw */
+ 
++BPoint HTabSheet::AdjustBottomRightOfAllPanes()
++{
++	BPoint overallBottomRight(0.0, 0.0);
++	for(int i=0; i<fPanes.CountItems(); ++i)
++	{
++		BView* pane = (BView*)fPanes.ItemAt(i);
++		if (!pane)
++			continue;
++		BPoint paneBottomRight = DetermineBottomRightOfPane(pane);
++		if (overallBottomRight.x < paneBottomRight.x)
++			overallBottomRight.x = paneBottomRight.x;
++		if (overallBottomRight.y < paneBottomRight.y)
++			overallBottomRight.y = paneBottomRight.y;
++	}
++	BPoint paneLeftTop;
++	for(int i=0; i<fPanes.CountItems(); ++i)
++	{
++		BView* pane = (BView*)fPanes.ItemAt(i);
++		if (!pane)
++			continue;
++		if (i == 0)
++			paneLeftTop = pane->Frame().LeftTop();
++		pane->ResizeTo(overallBottomRight.x + 51, overallBottomRight.y + 51);
++	}
++	return overallBottomRight+paneLeftTop;
++}
++
++BPoint HTabSheet::DetermineBottomRightOfPane(BView* pane)
++{
++	BPoint bottomRight(0, 0);
++	for(int i=0; i<pane->CountChildren(); ++i)
++	{
++		BView* child = pane->ChildAt(i);
++		if (!child)
++			continue;
++		BRect childFrame = child->Frame();
++		if (bottomRight.x < childFrame.right)
++			bottomRight.x = childFrame.right;
++		if (bottomRight.y < childFrame.bottom)
++			bottomRight.y = childFrame.bottom;
++	}
++	return bottomRight;
++}
++
+ BRect HTabSheet::ClientArea()
+ {
+ 	return fClientArea;
+
+Modified: trunk/Sources/HTabSheet.h
+===================================================================
+--- trunk/Sources/HTabSheet.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/HTabSheet.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -48,17 +48,20 @@
+ virtual void MouseDown(BPoint where);
+ virtual void Draw(BRect update);
+ 	
+-BRect ClientArea();
++		void MessageReceived(BMessage *msg);
++		void AttachedToWindow();
++
++		BPoint AdjustBottomRightOfAllPanes();
++
++		BRect ClientArea();
+ 	
+-BView* AddSheet(const char *name, const char *desc = NULL);
++		BView* AddSheet(const char *name, const char *desc = NULL);
+ 	
+ 		int CurrentTab()	{ return fCurrent; };
+-	
+ private:
+ 		
+ 		void FlipTo(int page);
+-		void MessageReceived(BMessage *msg);
+-		void AttachedToWindow();
++		BPoint DetermineBottomRightOfPane(BView* pane);
+ 
+ 		BRect fClientArea, fListArea;
+ 		BList fPanes;
+
+
+
+From zooey at mail.berlios.de  Mon Aug  7 17:07:58 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 7 Aug 2006 17:07:58 +0200
+Subject: [pe-commits] r437 - trunk/Sources
+Message-ID: <200608071507.k77F7wp9028478@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-07 17:07:58 +0200 (Mon, 07 Aug 2006)
+New Revision: 437
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=437&view=rev
+
+Modified:
+   trunk/Sources/HTabSheet.cpp
+Log:
+* oops, fixed debugging values that caused buttons to not be clickable!
+
+
+Modified: trunk/Sources/HTabSheet.cpp
+===================================================================
+--- trunk/Sources/HTabSheet.cpp	2006-08-07 14:29:26 UTC (rev 436)
++++ trunk/Sources/HTabSheet.cpp	2006-08-07 15:07:58 UTC (rev 437)
+@@ -148,7 +148,7 @@
+ 			continue;
+ 		if (i == 0)
+ 			paneLeftTop = pane->Frame().LeftTop();
+-		pane->ResizeTo(overallBottomRight.x + 51, overallBottomRight.y + 51);
++		pane->ResizeTo(overallBottomRight.x + 1, overallBottomRight.y + 1);
+ 	}
+ 	return overallBottomRight+paneLeftTop;
+ }
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 00:48:12 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 00:48:12 +0200
+Subject: [pe-commits] r438 - trunk/Sources
+Message-ID: <200608072248.k77MmC9J009949@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 00:48:08 +0200 (Tue, 08 Aug 2006)
+New Revision: 438
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=438&view=rev
+
+Modified:
+   trunk/Sources/PAbout.cpp
+Log:
+* prepared upcoming release 2.4
+
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2006-08-07 15:07:58 UTC (rev 437)
++++ trunk/Sources/PAbout.cpp	2006-08-07 22:48:08 UTC (rev 438)
+@@ -46,9 +46,9 @@
+ const char
+ 	kAboutText[] =
+ #if __INTEL__
+-		"Pe 2.3 (x86) Open Source Version\n\n"
++		"Pe 2.4 (x86) Open Source Version\n\n"
+ #else
+-		"Pe 2.3 (PPC) Open Source Version\n\n"
++		"Pe 2.4 (PPC) Open Source Version\n\n"
+ #endif
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+@@ -56,7 +56,7 @@
+ 		"Copyright ? 1997, 1998, 2002.\n\n"
+ 		"-\n\n"
+ 		"This is the Open Source version of Pe,\n"
+-		"copyright ? 2003-2005, Team Pe at BeUnited,\n"
++		"copyright ? 2003-2006, Team Pe at BeUnited,\n"
+ 		"compiled on:\n%s\n\n"
+ 		"Pe is now hosted at BerliOS:\n"
+ 		"http://developer.berlios.de/projects/pe-editor\n\n"
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 00:49:09 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 00:49:09 +0200
+Subject: [pe-commits] r439 - trunk/Sources
+Message-ID: <200608072249.k77Mn9nt010249@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 00:49:02 +0200 (Tue, 08 Aug 2006)
+New Revision: 439
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=439&view=rev
+
+Modified:
+   trunk/Sources/CFindDialog.cpp
+   trunk/Sources/CFindDialog.h
+   trunk/Sources/PText.cpp
+Log:
+* fixed replace not working with regular expression searches (used to always
+  replace with the empty string)
+
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/CFindDialog.cpp	2006-08-07 22:49:02 UTC (rev 439)
+@@ -503,7 +503,7 @@
+ 	if (CRecentPatternController::ActiveController()->AddCurrentPattern())
+ 		AddCurrentPatternToFindPopup(cmd != msg_Find);
+ 
+-	if (fChkGrep->IsOn())
++	if (fChkGrep->IsOn() && (cmd == msg_Find || cmd == msg_ReplaceAll))
+ 	{
+ 		status_t res = fRegex.SetTo(fEdiFind->Text(), fChkCase->IsOn(), 
+ 									fChkWord->IsOn());
+
+Modified: trunk/Sources/CFindDialog.h
+===================================================================
+--- trunk/Sources/CFindDialog.h	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/CFindDialog.h	2006-08-07 22:49:02 UTC (rev 439)
+@@ -78,6 +78,8 @@
+ 	bool Grep();
+ 	bool IsInMultiFileState() const;
+ 	
++	CRegex* Regex();
++	
+ 	void GetPatternInfo(BMessage* patternMsg);
+ 	void SetPatternInfo(const BMessage* patternMsg);
+ 	bool PatternInfoDiffersFrom(const BMessage* patternMsg);
+@@ -189,6 +191,11 @@
+ 	return fCurrentDir != NULL || fOpenWindowIndex >= 0;
+ }
+ 
++inline CRegex* CFindDialog::Regex()
++{
++	return &fRegex;
++}
++
+ #pragma mark - Find
+ 
+ void initskip(const char *p, int skip[], bool ignoreCase);
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/PText.cpp	2006-08-07 22:49:02 UTC (rev 439)
+@@ -4037,15 +4037,12 @@
+ 		return false;
+ 	}
+ 	
+-	CRegex rx;
++	CRegex* rx = NULL;
+ 	if (regx)
+ 	{
+-		if (rx.SetTo(what, ignoreCase, entireWord, backward) != B_OK)
+-		{
+-			MWarningAlert a(rx.ErrorStr().String());
+-			a.Go();
++		rx = gFindDialog->Regex();
++		if (!rx)
+ 			return false;
+-		}
+ 	}
+ 	else
+ 	{
+@@ -4065,9 +4062,9 @@
+ 							: krx_NotBOL;
+  
+ 			if (backward)
+-				r = rx.Match(fText.Buffer(), offset, 0, options);
++				r = rx->Match(fText.Buffer(), offset, 0, options);
+ 			else
+-				r = rx.Match(fText.Buffer(), fText.Size(), offset, options);
++				r = rx->Match(fText.Buffer(), fText.Size(), offset, options);
+ 			
+ 			if (r == krx_NoMatch)
+ 			{
+@@ -4076,8 +4073,8 @@
+ 			}
+ 			else 
+ 			{
+-				offset = rx.MatchStart();
+-				wl = rx.MatchLen();
++				offset = rx->MatchStart();
++				wl = rx->MatchLen();
+ 			}
+ 		}
+ 		else if (backward)
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 11:13:50 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 11:13:50 +0200
+Subject: [pe-commits] r440 - trunk/Sources
+Message-ID: <200608080913.k789DoYX020298@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 11:13:49 +0200 (Tue, 08 Aug 2006)
+New Revision: 440
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=440&view=rev
+
+Modified:
+   trunk/Sources/CDocWindow.cpp
+Log:
+* the default window frame is not changed just by opening a new window,
+  you need to move or resize (and then close) it in order to cause the
+  frame of this window to define the new default frame.
+
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2006-08-07 22:49:02 UTC (rev 439)
++++ trunk/Sources/CDocWindow.cpp	2006-08-08 09:13:49 UTC (rev 440)
+@@ -182,13 +182,14 @@
+ void CDocWindow::Quit()
+ {
+ 	WriteState();
+-	if (fDocIO->LastSaved() == 0)
++	BRect frame = Frame();
++	if (fDocIO->LastSaved() == 0 && frame != fInitialFrame)
+ 	{
+ 		// closing a new (unsaved) document (a.k.a. 'Untitled') defines
+ 		// the default document frame for the current window type:
+ 		BString prefsName = prf_R_DefaultDocumentRect;
+ 			prefsName << DocWindowType();
+-		gPrefs->SetPrefRect(prefsName.String(), Frame());
++		gPrefs->SetPrefRect(prefsName.String(), frame);
+ 		sfNewCount = -1;
+ 	}
+ 	inheritedWindow::Quit();
+@@ -344,7 +345,7 @@
+ 	lh = fh.ascent + fh.descent + fh.leading;
+ 
+ 	BRect initialDefaultRect(
+-		40, 25,	
++		40, 25,
+ 		40 + 80*textFont.StringWidth("m") + B_V_SCROLL_BAR_WIDTH + 5, 
+ 		25 + 40*lh + B_H_SCROLL_BAR_HEIGHT
+ 	);
+
+
+
+From bonefish at cs.tu-berlin.de  Tue Aug  8 11:41:47 2006
+From: bonefish at cs.tu-berlin.de (Ingo Weinhold)
+Date: Tue, 08 Aug 2006 11:41:47 +0200
+Subject: [pe-commits] r440 - trunk/Sources
+In-Reply-To: <200608080913.k789DoYX020298@sheep.berlios.de>
+References: <200608080913.k789DoYX020298@sheep.berlios.de>
+Message-ID: <20060808114147.534.1@cs.tu-berlin.de>
+
+
+On 2006-08-08 at 11:13:50 [+0200], zooey at BerliOS <zooey at mail.berlios.de> 
+wrote:
+> Author: zooey
+> Date: 2006-08-08 11:13:49 +0200 (Tue, 08 Aug 2006)
+> New Revision: 440
+> ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=440&view=rev
+> 
+> Modified:
+>    trunk/Sources/CDocWindow.cpp
+> Log:
+> * the default window frame is not changed just by opening a new window,
+>   you need to move or resize (and then close) it in order to cause the
+>   frame of this window to define the new default frame.
+
+BTW, I'm not sure, if I like this feature at all. I often copy text from 
+the terminal to a new Pe window to have better search and editing features 
+and no line wrapping. Especially when I want to see the long lines I resize 
+the window, which screws my painstakingly finetuned default window size (80 
+columns).
+
+So I'd prefer, if one would need to set the default window size explicitly. 
+E.g. via an "Apply as Default Window Size" menu item/action. Or at least 
+set the default window size only if the document is unchanged, i.e. if you 
+have a freshly opened new document.
+
+CU, Ingo
+
+
+From zooey at mail.berlios.de  Tue Aug  8 11:55:21 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 11:55:21 +0200
+Subject: [pe-commits] r441 - trunk/Sources
+Message-ID: <200608080955.k789tL22027000@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 11:55:21 +0200 (Tue, 08 Aug 2006)
+New Revision: 441
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=441&view=rev
+
+Modified:
+   trunk/Sources/CDocWindow.cpp
+Log:
+* new default frame is now only stored for pristine windows (as suggested by Ingo).
+
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2006-08-08 09:13:49 UTC (rev 440)
++++ trunk/Sources/CDocWindow.cpp	2006-08-08 09:55:21 UTC (rev 441)
+@@ -183,7 +183,7 @@
+ {
+ 	WriteState();
+ 	BRect frame = Frame();
+-	if (fDocIO->LastSaved() == 0 && frame != fInitialFrame)
++	if (fDocIO->LastSaved() == 0 && !IsDirty() && frame != fInitialFrame)
+ 	{
+ 		// closing a new (unsaved) document (a.k.a. 'Untitled') defines
+ 		// the default document frame for the current window type:
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 12:36:16 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 12:36:16 +0200
+Subject: [pe-commits] r442 - trunk/Sources
+Message-ID: <200608081036.k78AaGf1031916@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 12:36:13 +0200 (Tue, 08 Aug 2006)
+New Revision: 442
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=442&view=rev
+
+Modified:
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocWindow.cpp
+Log:
+* fixed an annoying bug when opening documents with encoding problems: Pe used
+  to show the alert on the application workspace and the document wasn't opened,
+  so that in the current workspace nothing seemed to happen.
+  Now the document is opened as expected in the current workspace and the alert
+  is shown next to it.
+
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDoc.h	2006-08-08 10:36:13 UTC (rev 442)
+@@ -105,6 +105,11 @@
+ 			const entry_ref* EntryRef() const;
+ 			void SetEntryRef(const entry_ref* ref);
+ 			
++			bool HadError() const;
++			const char* ErrorMsg() const;
++			void SetErrorMsg(const char*);
++			void ClearErrorMsg();
++
+ 			const URLData* URL() const;
+ 			
+ 			void SetDocIO( CDocIO* docIO);
+@@ -129,7 +134,7 @@
+ 
+ 			void StartWatchingFile(void);
+ 			void StopWatchingFile(bool stopDirectory = true);
+-
++			
+ protected:
+ 			CDocIO* fDocIO;
+ 			BFilePanel *fSavePanel;
+@@ -141,6 +146,7 @@
+ 			bool fReadOnly;
+ 			int fEncoding;
+ 			int fLineEndType;
++			string fErrorMsg;
+ };
+ 
+ inline bool CDoc::IsDirty() const
+@@ -173,6 +179,26 @@
+ 	fLineEndType = lineEndType;
+ }
+ 
++inline bool CDoc::HadError() const
++{
++	return fErrorMsg.length() > 0;
++}
++
++inline const char* CDoc::ErrorMsg() const
++{
++	return fErrorMsg.c_str();
++}
++
++inline void CDoc::SetErrorMsg(const char* errorMsg)
++{
++	fErrorMsg = errorMsg;
++}
++
++inline void CDoc::ClearErrorMsg()
++{
++	fErrorMsg.clear();
++}
++
+ inline const char *CDoc::MimeType() const
+ {
+ 	return fMimeType.c_str();
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDocIO.cpp	2006-08-08 10:36:13 UTC (rev 442)
+@@ -193,15 +193,17 @@
+ 		BString err;
+ 		if (fDoc->Encoding() != B_UNICODE_UTF8)
+ 			err = BString("An error occurred when converting the document ")
+-					<< "from its native encoding to UTF-8.\n"
+-					<< "Please use the 'Change Encoding'-dialog to select "
+-					<< "the correct encoding.";
++					<< "from its native encoding to UTF-8. The first "
++					<< "problematic character is highlighted.\n"
++					<< "Please use the 'File Options'-dialog to select "
++					<< "the correct source encoding.";
+ 		else
+ 			err = BString("An error occurred when checking the document's ")
+-					<< "UTF-8 encoding.\n"
+-					<< "The first problematic character is highlighted.";
+-		MInfoAlert a(err.String(), "I See");
+-		a.Go();
++					<< "UTF-8 encoding. The first problematic character is "
++					<< "highlighted.\n"
++					<< "Please use the 'File Options'-dialog to select "
++					<< "the correct source encoding.";
++		fDoc->SetErrorMsg(err.String());
+ 		return false;
+ 	}
+ 
+@@ -223,8 +225,10 @@
+ 			fDoc->HighlightErrorPos(fConv.ErrorPos());
+ 			BString err = 
+ 				BString("An error occurred when converting the document ")
+-					<< "to the requested destination encoding.\n"
+-					<< "The first problematic character is highlighted.";
++					<< "to the requested destination encoding. The first "
++					<< "problematic character is highlighted.\n"
++					<< "Please use the 'File Options'-dialog to select "
++					<< "another destination encoding.";
+ 			MInfoAlert a(err.String(), "I See");
+ 			a.Go();
+ 			return false;
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDocWindow.cpp	2006-08-08 10:36:13 UTC (rev 442)
+@@ -214,6 +214,14 @@
+ 
+ 	inheritedWindow::Show();
+ 	fInitialFrame = Frame();
++
++	// now that the window is shown, we might have to show any error alongside
++	// it that may have ocurred during load (conversion failure):
++	if (HadError()) {
++		MInfoAlert a(ErrorMsg(), "I See");
++		a.Go();
++		ClearErrorMsg();
++	}
+ }
+ 
+ void CDocWindow::MessageReceived(BMessage *msg)
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 13:08:58 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 13:08:58 +0200
+Subject: [pe-commits] r443 - in trunk: . Extensions Resources Sources
+	rez/Sources
+Message-ID: <200608081108.k78B8wZU009186@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 13:08:53 +0200 (Tue, 08 Aug 2006)
+New Revision: 443
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=443&view=rev
+
+Modified:
+   trunk/Extensions/BeBookFetch.cpp
+   trunk/Extensions/CopyContaining.cpp
+   trunk/Extensions/CutContaining.cpp
+   trunk/Extensions/ImageToC.cpp
+   trunk/Extensions/Jamfile
+   trunk/Jamfile
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/CDocIO.h
+   trunk/Sources/CRegex.cpp
+   trunk/Sources/HDialogViews.cpp
+   trunk/Sources/HDialogViews.h
+   trunk/Sources/Jamfile
+   trunk/Sources/pe.h
+   trunk/Sources/pe.pch++
+   trunk/rez/Sources/Jamfile
+Log:
+* fixed several compilation issues on PPC
+
+
+Modified: trunk/Extensions/BeBookFetch.cpp
+===================================================================
+--- trunk/Extensions/BeBookFetch.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/BeBookFetch.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -12,6 +12,8 @@
+ 
+ #include "PeAddOn.h"
+ 
++#include <vector>
++
+ #define kTrackerSig		"application/x-vnd.Be-TRAK"
+ 
+ //------------------------------------------------------------------------------
+
+Modified: trunk/Extensions/CopyContaining.cpp
+===================================================================
+--- trunk/Extensions/CopyContaining.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/CopyContaining.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -34,7 +34,8 @@
+ */
+ 
+ #include "PeAddOn.h"
+-#include <regex.h>
++#include <pcreposix.h>
++#define REG_NOERROR 0
+ #include "copycon.r.h"
+ 
+ #if __INTEL__
+
+Modified: trunk/Extensions/CutContaining.cpp
+===================================================================
+--- trunk/Extensions/CutContaining.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/CutContaining.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -34,7 +34,8 @@
+ */
+ 
+ #include "PeAddOn.h"
+-#include "regex.h"
++#include <pcreposix.h>
++#define REG_NOERROR 0
+ #include "copycon.r.h"
+ 
+ #if __INTEL__
+
+Modified: trunk/Extensions/ImageToC.cpp
+===================================================================
+--- trunk/Extensions/ImageToC.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/ImageToC.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -156,6 +156,16 @@
+ 	baseName.Prepend("k");
+ 
+ 	char line[1024];
++#ifdef __MWERKS__
++	sprintf(line,
++		"const %sWidth = %ld;\n"
++		"const %sHeight = %ld;\n"
++		"const %sColorSpace = %s;\n"
++		"const %sBytesPerRow = %ld;\n\n",
++		baseName.String(), bitmap->Bounds().IntegerWidth() + 1, baseName.String(),
++		bitmap->Bounds().IntegerHeight() + 1, baseName.String(), colorSpace,
++		baseName.String(), bitmap->BytesPerRow());
++#else
+ 	snprintf(line, sizeof(line),
+ 		"const %sWidth = %ld;\n"
+ 		"const %sHeight = %ld;\n"
+@@ -164,6 +174,7 @@
+ 		baseName.String(), bitmap->Bounds().IntegerWidth() + 1, baseName.String(),
+ 		bitmap->Bounds().IntegerHeight() + 1, baseName.String(), colorSpace,
+ 		baseName.String(), bitmap->BytesPerRow());
++#endif
+ 
+ 	text.Insert(line);
+ 
+@@ -181,8 +192,12 @@
+ 
+ 	int32 size = bitmap->BitsLength() / bytesPerPixel;
+ 
++#ifdef __MWERKS__
++	sprintf(line, "const %sData[%ld] = {", baseName.String(), size);
++#else
+ 	snprintf(line, sizeof(line), "const %sData[%ld] = {",
+ 		baseName.String(), size);
++#endif
+ 	text.Insert(line);
+ 
+ 	line[0] = '\0';
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -2,10 +2,8 @@
+ 
+ SubDirHdrs $(TOP) Sources ;
+ 
+-if $(OSPLAT) = PPC {
+-	# include regex-subfolder as system header folder
+-	SubDirSysHdrs $(TOP) regex ;
+-}
++SubDirSysHdrs /boot/home/config/include ;
++LINKFLAGS += -L/boot/home/config/lib ;
+ 
+ # <pe-src>
+ PeExtension PrefixLines 
+@@ -25,7 +23,7 @@
+ # <pe-src>
+ PeExtension Copy\ Lines\ Containing 
+ 	: CopyContaining.cpp 
+-	: libhekkel.so $(RX_LIB) be $(STDC++LIB) 
++	: libhekkel.so pcreposix $(RX_LIB) be $(STDC++LIB) 
+ 	: copycon.r
+ 	;
+ # </pe-src>
+@@ -33,7 +31,7 @@
+ # <pe-src>
+ PeExtension Cut\ Lines\ Containing 
+ 	: CutContaining.cpp 
+-	: libhekkel.so $(RX_LIB) be $(STDC++LIB) 
++	: libhekkel.so pcreposix $(RX_LIB) be $(STDC++LIB) 
+ 	;
+ # </pe-src>
+ 
+
+Modified: trunk/Jamfile
+===================================================================
+--- trunk/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -1,10 +1,6 @@
+ SubDir TOP ;
+ 
+ SubInclude TOP rez ;
+-if $(OSPLAT) = PPC {
+-	# need to build regex-library on PPC, as BeOS doesn't provide one!
+-	SubInclude TOP regex ;
+-}
+ SubInclude TOP Sources ;
+ SubInclude TOP Extensions ;
+ SubInclude TOP Resources ;
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/CDocIO.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -53,6 +53,8 @@
+ 	return fLastSaved;
+ }
+ 
++bool operator< (const node_ref& left, const node_ref& right);
++
+ class CLocalDocIO : public CDocIO
+ {
+ public:
+
+Modified: trunk/Sources/CRegex.cpp
+===================================================================
+--- trunk/Sources/CRegex.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/CRegex.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -53,7 +53,7 @@
+ 		return res;
+ 	infoCount++;
+ 	int vs = infoCount*3;
+-	int mvect[vs];
++	int *mvect = new int [vs];
+ 	res = pcre_exec(fRegex, NULL, subject, len, offset, options, mvect, vs);
+ 	fMatchInfos.clear();
+ 	if (res >= 0)
+@@ -74,8 +74,9 @@
+ 			}
+ 			fMatchInfos.push_back(mi);
+ 		}
+-		return 0;
++		res = 0;
+ 	}
++	delete [] mvect;
+ 	return res;
+ }
+ 
+
+Modified: trunk/Sources/HDialogViews.cpp
+===================================================================
+--- trunk/Sources/HDialogViews.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/HDialogViews.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -272,11 +272,8 @@
+ 
+ 
+ HScrollView::HScrollView(BView* view, const char *name, BView *target,
+-				uint32 resizingMode = B_FOLLOW_LEFT|B_FOLLOW_TOP,
+-				uint32 flags = 0,
+-				bool horizontal = false,
+-				bool vertical = false,
+-				border_style border = B_FANCY_BORDER)
++				uint32 resizingMode, uint32 flags, bool horizontal, bool vertical,
++				border_style border)
+ : BScrollView(name, target, resizingMode, flags, horizontal, vertical, border)
+ {
+ 	if (view != NULL)
+@@ -286,10 +283,8 @@
+ #pragma mark - HBox
+ 
+ 
+-HBox::HBox(BView* view, const char *name = NULL,
+-			uint32 resizingMode,
+-			uint32 flags,
+-			border_style border)
++HBox::HBox(BView* view, const char *name, uint32 resizingMode, uint32 flags,
++			  border_style border)
+ : BBox(BRect(0, 0, 100, 50), name, resizingMode, flags, border)
+ {
+ 	if (view != NULL)
+
+Modified: trunk/Sources/HDialogViews.h
+===================================================================
+--- trunk/Sources/HDialogViews.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/HDialogViews.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -161,7 +161,7 @@
+ 			   uint32 resizingMode = H_FOLLOW_LEFT_TOP, bool fixedSize = false, float width = 100);
+ 	void ResizeLocalized(const char* label=NULL, const char* itemLabel=NULL);
+ 	BMenuItem *AddMenuItem(uint32 cmd, int32 index = -1);
+-	int32 HMenuField::FindMarkedIndex(void);
++	int32 FindMarkedIndex(void);
+ 	//
+ 	float Left(void)									{ return Frame().left; }
+ 	float Right(void)									{ return Frame().right; }
+
+Modified: trunk/Sources/Jamfile
+===================================================================
+--- trunk/Sources/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -10,8 +10,6 @@
+ 	Depends libhekkel.so : $(PREFIX_FILE) ;
+ 	PreCompile $(PREFIX_FILE) : [ FDirName $(TOP) Sources pe.pch++ ] ;
+ 	C++FLAGS += -prefix $(PREFIX_FILE) ;
+-
+-	SubDirSysHdrs $(TOP) regex ;
+ }
+ 
+ SAVED_DEFINES = $(DEFINES) ;
+
+Modified: trunk/Sources/pe.h
+===================================================================
+--- trunk/Sources/pe.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/pe.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -45,6 +45,7 @@
+ 
+ 	// include only subset of interfacekit
+ #include <Alert.h>
++#include <Box.h>
+ #include <Bitmap.h>
+ #include <Button.h>
+ #include <CheckBox.h>
+
+Modified: trunk/Sources/pe.pch++
+===================================================================
+--- trunk/Sources/pe.pch++	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/pe.pch++	2006-08-08 11:08:53 UTC (rev 443)
+@@ -41,6 +41,7 @@
+ 
+ 	// include only subset of interfacekit
+ #include <Alert.h>
++#include <Box.h>
+ #include <Bitmap.h>
+ #include <Button.h>
+ #include <CheckBox.h>
+
+Modified: trunk/rez/Sources/Jamfile
+===================================================================
+--- trunk/rez/Sources/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/rez/Sources/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -1,7 +1,7 @@
+ 
+ SubDir TOP rez Sources ;
+ 
+-SubDirHdrs $(OBJECTS_DIR) Sources ;
++# SubDirHdrs $(OBJECTS_DIR) Sources ;
+ 
+ if $(OSPLAT) = X86 {
+ 	C++FLAGS += -Wno-uninitialized -Wno-unused ;
+
+
+
+From axeld at pinc-software.de  Tue Aug  8 13:11:32 2006
+From: axeld at pinc-software.de (Axel =?iso-8859-15?q?D=F6rfler?=)
+Date: Tue, 08 Aug 2006 13:11:32 +0200 CEST
+Subject: [pe-commits] r441 - trunk/Sources
+In-Reply-To: <200608080955.k789tL22027000@sheep.berlios.de>
+Message-ID: <2473818322-BeMail@zon>
+
+zooey at BerliOS <zooey at mail.berlios.de> wrote:
+> Log:
+> * new default frame is now only stored for pristine windows (as 
+> suggested by Ingo).
+
+I like that behaviour now - that's exactly how I initially meant it, 
+thanks! :-)
+
+Bye,
+   Axel.
+
+
+
+From zooey at mail.berlios.de  Tue Aug  8 15:56:43 2006
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 8 Aug 2006 15:56:43 +0200
+Subject: [pe-commits] r444 - trunk
+Message-ID: <200608081356.k78DuhNq024376@sheep.berlios.de>
+
+Author: zooey
+Date: 2006-08-08 15:56:42 +0200 (Tue, 08 Aug 2006)
+New Revision: 444
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=444&view=rev
+
+Modified:
+   trunk/Jamrules
+Log:
+* improved MakeDistro rule to leave out .svn directories and two copy the
+  required shared libs (for pcre), too.
+
+
+Modified: trunk/Jamrules
+===================================================================
+--- trunk/Jamrules	2006-08-08 11:08:53 UTC (rev 443)
++++ trunk/Jamrules	2006-08-08 13:56:42 UTC (rev 444)
+@@ -43,7 +43,11 @@
+ {
+ 	echo "making distro $(DISTRO_DIR)" ;
+ 	rm -rf $(DISTRO_DIR)/Documentation ;
+-	cp -a $(TOP)/doc $(DISTRO_DIR)/Documentation ;
++	mkdir $(DISTRO_DIR)/Documentation ;
++	cp -a $(TOP)/doc/*.html $(DISTRO_DIR)/Documentation/ ;
++	mkdir $(DISTRO_DIR)/Documentation/gifs ;
++	cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+ 	ln -sf /boot/home/config/bin/ $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
++	cp -a /boot/home/config/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+ }
+ 
+
+
+

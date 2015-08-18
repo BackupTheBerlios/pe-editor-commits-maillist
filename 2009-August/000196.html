@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r591 - trunk/build
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r591%20-%20trunk/build&In-Reply-To=%3C200908081004.n78A4J0A008008%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000195.html">
+   <LINK REL="Next"  HREF="000197.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r591 - trunk/build</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r591%20-%20trunk/build&In-Reply-To=%3C200908081004.n78A4J0A008008%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r591 - trunk/build">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug  8 12:04:19 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000195.html">[pe-commits] r590 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000197.html">[pe-commits] r592 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#196">[ date ]</a>
+              <a href="thread.html#196">[ thread ]</a>
+              <a href="subject.html#196">[ subject ]</a>
+              <a href="author.html#196">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2009-08-08 12:04:13 +0200 (Sat, 08 Aug 2009)
+New Revision: 591
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=591&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=591&amp;view=rev</A>
+
+Modified:
+   trunk/build/MainBuildRules
+Log:
+* do not accept undefined symbols in Pe's shared libs, as otherwise
+  we only notice them once the app (or add-on) is started
+
+
+
+Modified: trunk/build/MainBuildRules
+===================================================================
+--- trunk/build/MainBuildRules	2009-08-04 08:52:09 UTC (rev 590)
++++ trunk/build/MainBuildRules	2009-08-08 10:04:13 UTC (rev 591)
+@@ -64,7 +64,8 @@
+ 	MakeLocate $(lib) : $(LOCATE_MAIN_TARGET) ;
+ 	local linkFlags ;
+ 	if $(OSPLAT) = X86 {
+-		linkFlags = -nostart -Xlinker -soname=\&quot;$(lib)\&quot; ;
++		linkFlags = -nostart -Xlinker -soname=\&quot;$(lib)\&quot; 
++			-Xlinker --no-undefined ;
+ 	} else {
+ 		linkFlags = -xms ;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000195.html">[pe-commits] r590 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000197.html">[pe-commits] r592 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#196">[ date ]</a>
+              <a href="thread.html#196">[ thread ]</a>
+              <a href="subject.html#196">[ subject ]</a>
+              <a href="author.html#196">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

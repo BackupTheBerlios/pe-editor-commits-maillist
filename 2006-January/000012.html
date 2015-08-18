@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits]r421 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr421%20-%20trunk/Sources&In-Reply-To=%3C200601141057.k0EAvHdq022703%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000011.html">
+   <LINK REL="Next"  HREF="000013.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits]r421 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5Dr421%20-%20trunk/Sources&In-Reply-To=%3C200601141057.k0EAvHdq022703%40sheep.berlios.de%3E"
+       TITLE="[pe-commits]r421 - trunk/Sources">zooey at berlios.de
+       </A><BR>
+    <I>Sat Jan 14 11:57:17 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000011.html">[pe-commits]r420 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000013.html">[pe-commits]r422 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#12">[ date ]</a>
+              <a href="thread.html#12">[ thread ]</a>
+              <a href="subject.html#12">[ subject ]</a>
+              <a href="author.html#12">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-01-14 11:57:17 +0100 (Sat, 14 Jan 2006)
+New Revision: 421
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=421&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=421&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PCmd.cpp
+Log:
+- fixed crash when replacing something with nothing
+
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2006-01-13 21:03:37 UTC (rev 420)
++++ trunk/Sources/PCmd.cpp	2006-01-14 10:57:17 UTC (rev 421)
+@@ -551,11 +551,11 @@
+ void PReplaceCmd::Do()
+ {
+ 	fText-&gt;Delete(fOffset, fOffset + fSize);
+-	if (*fWith)
++	if (fWith &amp;&amp; *fWith)
+ 		fText-&gt;Insert(fWith, strlen(fWith), fOffset);
+ 
+ 	int offset = fOffset;
+-	if (!fBackward)
++	if (!fBackward &amp;&amp; fWith)
+ 		offset += strlen(fWith);
+ 	fText-&gt;SetCaret(offset);
+ 
+@@ -577,7 +577,8 @@
+ 
+ void PReplaceCmd::Undo()
+ {
+-	if (fWith &amp;&amp; *fWith) fText-&gt;Delete(fOffset, fOffset + strlen(fWith));
++	if (fWith &amp;&amp; *fWith) 
++		fText-&gt;Delete(fOffset, fOffset + strlen(fWith));
+ 	fText-&gt;Insert(fWhat, strlen(fWhat), fOffset);
+ 	Update();
+ 	fText-&gt;Select(fOffset, fOffset + strlen(fWhat), true, false);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000011.html">[pe-commits]r420 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000013.html">[pe-commits]r422 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#12">[ date ]</a>
+              <a href="thread.html#12">[ thread ]</a>
+              <a href="subject.html#12">[ subject ]</a>
+              <a href="author.html#12">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

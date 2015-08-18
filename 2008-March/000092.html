@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r498 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r498%20-%20trunk/Sources&In-Reply-To=%3C200803011642.m21Ggu0N008495%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000093.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r498 - trunk/Sources</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r498%20-%20trunk/Sources&In-Reply-To=%3C200803011642.m21Ggu0N008495%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r498 - trunk/Sources">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Sat Mar  1 17:42:56 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000093.html">[pe-commits] r499 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-03-01 17:42:55 +0100 (Sat, 01 Mar 2008)
+New Revision: 498
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=498&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=498&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CStdErrBox.cpp
+Log:
+This should prevent the first 2 stderr regexps from being always overwritten I think.
+
+Modified: trunk/Sources/CStdErrBox.cpp
+===================================================================
+--- trunk/Sources/CStdErrBox.cpp	2008-02-28 21:59:59 UTC (rev 497)
++++ trunk/Sources/CStdErrBox.cpp	2008-03-01 16:42:55 UTC (rev 498)
+@@ -287,7 +287,7 @@
+ 	{
+ 		gPrefs-&gt;SetIxPrefString(prf_X_StdErrPattern, 0, &quot;1;2;4;3;^([^:]+):([0-9]+): (warning: )?(.*)\\n&quot;);
+ 		gPrefs-&gt;SetIxPrefString(prf_X_StdErrPattern, 1, &quot;4;5;2;1;^### [^ ]+ (.*)\\n(#[ \\t](.*\\n))+#-+\\n[ \\t]*File \&quot;([^\&quot;]+)\&quot;; Line ([0-9]+)\\n(#.*\\n)*#-+\\n&quot;);
+-		gPrefs-&gt;GetPrefInt(prf_I_StdErrInitEd, 1);
++		gPrefs-&gt;SetPrefInt(prf_I_StdErrInitEd, 1);
+ 	}
+ 
+ 	i = 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000093.html">[pe-commits] r499 - in trunk: Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

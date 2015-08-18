@@ -1,0 +1,35 @@
+From zooey at mail.berlios.de  Tue Jun  1 21:52:14 2010
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Tue, 1 Jun 2010 21:52:14 +0200
+Subject: [pe-commits] r598 - trunk/Sources
+Message-ID: <201006011952.o51JqECw017474@sheep.berlios.de>
+
+Author: zooey
+Date: 2010-06-01 21:52:14 +0200 (Tue, 01 Jun 2010)
+New Revision: 598
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=598&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+applied patch from idefix:
+* avoid tenth document window getting shortcut ALT-':'
+
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2010-01-20 21:58:16 UTC (rev 597)
++++ trunk/Sources/PDoc.cpp	2010-06-01 19:52:14 UTC (rev 598)
+@@ -1640,7 +1640,7 @@
+ 			   strcmp(fWindows->ItemAt(insertId)->Label(), w->Title()) < 0) ;
+ 		// Finally insert
+ 		fWindows->AddItem(new BMenuItem(w->Title(), msg,
+-			(doc && doc->fShortcut < 10) ? '1' + doc->fShortcut : 0), insertId);
++			(doc && doc->fShortcut < 9) ? '1' + doc->fShortcut : 0), insertId);
+ 	}
+ 
+ 	// Disable "Save" menuitem on non-dirty/new files
+
+
+

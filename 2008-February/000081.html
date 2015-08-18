@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r487 - trunk/build
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r487%20-%20trunk/build&In-Reply-To=%3C200802131907.m1DJ7ake027102%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000082.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r487 - trunk/build</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r487%20-%20trunk/build&In-Reply-To=%3C200802131907.m1DJ7ake027102%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r487 - trunk/build">zooey at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 13 20:07:36 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000082.html">[pe-commits] r488 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#81">[ date ]</a>
+              <a href="thread.html#81">[ thread ]</a>
+              <a href="subject.html#81">[ subject ]</a>
+              <a href="author.html#81">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-02-13 20:07:36 +0100 (Wed, 13 Feb 2008)
+New Revision: 487
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=487&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=487&amp;view=rev</A>
+
+Modified:
+   trunk/build/BuildSettings
+Log:
+* applied patch from Francois Revol that allows Pe to be compiled
+  on Zeta, too (thanks!)
+
+
+
+Modified: trunk/build/BuildSettings
+===================================================================
+--- trunk/build/BuildSettings	2008-01-17 17:33:16 UTC (rev 486)
++++ trunk/build/BuildSettings	2008-02-13 19:07:36 UTC (rev 487)
+@@ -29,6 +29,12 @@
+ 	if $(haveZeta)	{
+ 		LINKLIBS += -lzeta ;
+ 	}
++	# check for pcre...
++	local haveHeadersPcre = [ GLOB /boot/develop/headers/pcre : pcre.h ] ;
++	if $(haveHeadersPcre)	{
++		CCFLAGS += -isystem /boot/develop/headers/pcre ;
++		C++FLAGS += -isystem /boot/develop/headers/pcre ;
++	}
+ }
+ 
+ # Use copyattr for copying.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000082.html">[pe-commits] r488 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#81">[ date ]</a>
+              <a href="thread.html#81">[ thread ]</a>
+              <a href="subject.html#81">[ subject ]</a>
+              <a href="author.html#81">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

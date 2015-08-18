@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r548 - trunk/build
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r548%20-%20trunk/build&In-Reply-To=%3C200811062246.mA6MkHK8006082%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000139.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r548 - trunk/build</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r548%20-%20trunk/build&In-Reply-To=%3C200811062246.mA6MkHK8006082%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r548 - trunk/build">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov  6 23:46:17 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000139.html">[pe-commits] r549 - in trunk: Extensions Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-11-06 23:46:16 +0100 (Thu, 06 Nov 2008)
+New Revision: 548
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=548&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=548&amp;view=rev</A>
+
+Modified:
+   trunk/build/MainBuildRules
+Log:
+Make sure Pe has _APP_ as SONAME so extensions don't break when renaming the binary.
+At least on x86. Shouldn't we check on gcc vs mwcc anyway ??
+
+
+Modified: trunk/build/MainBuildRules
+===================================================================
+--- trunk/build/MainBuildRules	2008-10-16 23:11:45 UTC (rev 547)
++++ trunk/build/MainBuildRules	2008-11-06 22:46:16 UTC (rev 548)
+@@ -18,6 +18,13 @@
+ 
+ 	Main $(app) : $(sources) ;
+ 	MakeLocate $(app) : $(LOCATE_MAIN_TARGET) ;
++	local linkFlags ;
++	if $(OSPLAT) = X86 {
++		linkFlags = -Xlinker -soname=\&quot;_APP_\&quot; ;
++	} else {
++		linkFlags = ;
++	}
++	LINKFLAGS on $(app) = [ on $(app) return $(LINKFLAGS) ] $(linkFlags) ;
+ 	LinkAgainst $(app) : $(libs) ;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000139.html">[pe-commits] r549 - in trunk: Extensions Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

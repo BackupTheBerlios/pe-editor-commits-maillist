@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r508 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r508%20-%20trunk/Extensions&In-Reply-To=%3C200804091557.m39Fv5iT026984%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000101.html">
+   <LINK REL="Next"  HREF="000103.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r508 - trunk/Extensions</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r508%20-%20trunk/Extensions&In-Reply-To=%3C200804091557.m39Fv5iT026984%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r508 - trunk/Extensions">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  9 17:57:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000101.html">[pe-commits] r507 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000103.html">[pe-commits] r509 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#102">[ date ]</a>
+              <a href="thread.html#102">[ thread ]</a>
+              <a href="subject.html#102">[ subject ]</a>
+              <a href="author.html#102">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-09 17:57:05 +0200 (Wed, 09 Apr 2008)
+New Revision: 508
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=508&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=508&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/Jamfile
+   trunk/Extensions/WebPaste.cpp
+Log:
+Map language names on best effort. Also pass tabstops info.
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2008-04-09 15:43:49 UTC (rev 507)
++++ trunk/Extensions/Jamfile	2008-04-09 15:57:05 UTC (rev 508)
+@@ -122,6 +122,6 @@
+ # &lt;pe-src&gt;
+ PeExtension WebPaste 
+ 	: WebPaste.cpp 
+-	: libhekkel.so be
++	: libhekkel.so &lt;nogrist&gt;pe be $(STDC++LIB)
+ 	;
+ # &lt;/pe-src&gt;
+
+Modified: trunk/Extensions/WebPaste.cpp
+===================================================================
+--- trunk/Extensions/WebPaste.cpp	2008-04-09 15:43:49 UTC (rev 507)
++++ trunk/Extensions/WebPaste.cpp	2008-04-09 15:57:05 UTC (rev 508)
+@@ -10,12 +10,56 @@
+ // maybe later add configurable multiple handlers ?
+ 
+ #include &quot;PeAddOn.h&quot;
++#include &quot;PDoc.h&quot;
++#include &quot;PText.h&quot;
++#include &quot;CLanguageInterface.h&quot;
+ #include &lt;stdio.h&gt;
+ 
+ #define PASTE_URL &quot;<A HREF="http://rafb.net/paste/paste.php">http://rafb.net/paste/paste.php</A>&quot;
+ #define OPEN_IN_BROWSER 1
+ #define COPY_TO_CLIPBOARD 1
+ 
++struct {
++	const char *pe_name;
++	const char *cgi_name;
++} kLanguageNamesMap[] = {
++/*
++	{ &quot;Antlr&quot;,	&quot;&quot;	},
++	{ &quot;ASM-x86&quot;,	&quot;&quot;	},
++	{ &quot;D&quot;,	&quot;&quot;	},
++	{ &quot;Diff&quot;,	&quot;&quot;	},
++	{ &quot;HTML-CSS-JS-PHP&quot;,	&quot;&quot;	},
++	{ &quot;HTML-JS&quot;,	&quot;&quot;	},
++	{ &quot;HTML&quot;,	&quot;&quot;	},
++	{ &quot;Jam&quot;,	&quot;&quot;	},
++	{ &quot;Lout&quot;,	&quot;&quot;	},
++	{ &quot;Lua&quot;,	&quot;&quot;	},
++	{ &quot;Mathematica&quot;,	&quot;&quot;	},
++	{ &quot;Oberon-2&quot;,	&quot;&quot;	},
++	{ &quot;Rez&quot;,	&quot;&quot;	},
++	{ &quot;Shell&quot;,	&quot;&quot;	},
++	{ &quot;TeX&quot;,	&quot;&quot;	},
++*/
++	//{ ,	&quot;C89&quot;	/*C (C89)*/ }
++	//{ ,	&quot;C&quot;	/*C (C99)*/ },
++	{ &quot;C/C++&quot;,	&quot;C++&quot;	},
++	//{ ,	&quot;C#&quot;	},
++	{ &quot;Java&quot;,	&quot;Java&quot;	},
++	{ &quot;Pascal&quot;,	&quot;Pascal&quot;	},
++	{ &quot;Perl&quot;,	&quot;Perl&quot;	},
++	//{ ,	&quot;PHP&quot;	},
++	//{ ,	&quot;PL/I&quot;	},
++	{ &quot;Python&quot;,	&quot;Python&quot;	},
++	//{ ,	&quot;Ruby&quot;	},
++	//{ ,	&quot;Scheme&quot;	},
++	{ &quot;SQL&quot;,	&quot;SQL&quot;	},
++	//{ ,	&quot;VB&quot;	},
++	//{ ,	&quot;XML&quot;	},
++	/*{ ,	&quot;Plain Text Wrap&quot;	},
++	{ ,	&quot;Plain Text&quot;	},*/
++	{ NULL, NULL }
++};
++
+ //------------------------------------------------------------------------------
+ //	#pragma mark - class StdIOInString
+ 
+@@ -60,23 +104,22 @@
+ static const char *PeLangToPasteLang(const char *lang);
+ static status_t UrlEscape(BString &amp;str);
+ status_t POpenOut(const char *cmd, BString &amp;output);
+-static status_t RunWgetPaste(const char *language, const char *nick, const char *desc, const char *text);
++static status_t RunWgetPaste(const char *language, const char *nick, const char *desc, int tabstops, const char *text);
+ 
+ //------------------------------------------------------------------------------
+ 
+ const char *
+ PeLangToPasteLang(const char *lang)
+ {
++	int i;
+ 	BString l(lang);
+-	if (l == &quot;C&quot;)
+-		return &quot;C (99)&quot;;
+-	if (l == &quot;C++&quot;)
+-		return &quot;C++&quot;;
+-	if (l == &quot;Java&quot;)
+-		return &quot;Java&quot;;
+-	//XXX
++	for (i = 0; kLanguageNamesMap[i].pe_name; i++)
++	{
++		if (l == kLanguageNamesMap[i].pe_name)
++			return kLanguageNamesMap[i].cgi_name;
++	}
+ 	return &quot;Plain Text&quot;;
+-	
++	//return &quot;Plain Text Wrap&quot;;
+ }
+ 
+ status_t
+@@ -123,21 +166,28 @@
+ // <A HREF="http://rafb.net/p/ngZGZU48.html">http://rafb.net/p/ngZGZU48.html</A>
+ 
+ status_t
+-RunWgetPaste(const char *language, const char *nick, const char *desc, const char *text)
++RunWgetPaste(const char *language, const char *nick, const char *desc, int tabstops, const char *text)
+ {
+ 	BString langStr(PeLangToPasteLang(language));
+ 	BString nickStr(nick);
+ 	BString descStr(desc);
+ 	BString textStr(text);
++	BString tabsStr;
++	nickStr.Truncate(30);
++	descStr.Truncate(50);
+ 	UrlEscape(langStr);
+ 	UrlEscape(nickStr);
+ 	UrlEscape(descStr);
+ 	UrlEscape(textStr);
++	if (tabstops)
++		tabsStr &lt;&lt; tabstops;
++	else
++		tabsStr &lt;&lt; &quot;No&quot;;
+ 	BString postStr;
+ 	postStr &lt;&lt; &quot;lang=&quot; &lt;&lt; langStr &lt;&lt; &quot;&amp;&quot;;
+ 	postStr &lt;&lt; &quot;nick=&quot; &lt;&lt; nickStr &lt;&lt; &quot;&amp;&quot;;
+ 	postStr &lt;&lt; &quot;desc=&quot; &lt;&lt; descStr &lt;&lt; &quot;&amp;&quot;;
+-	postStr &lt;&lt; &quot;cvt_tabs=No&quot; &lt;&lt; &quot;&amp;&quot;;
++	postStr &lt;&lt; &quot;cvt_tabs=&quot; &lt;&lt; tabsStr &lt;&lt; &quot;&amp;&quot;;
+ 	postStr &lt;&lt; &quot;text=&quot; &lt;&lt; textStr;
+ 	
+ 	BString command(&quot;wget&quot;);
+@@ -240,13 +290,29 @@
+ 	selection.SetTo(addon-&gt;Text() + selStart, length);
+ 	
+ 	BString description;
+-	if (addon-&gt;Window()) {
++	BString language(&quot;C++&quot;);
++	BString nickname(&quot;unknown&quot;);
++	int tabstops = 0;
++	if (addon-&gt;Window())
++	{
+ 		description = addon-&gt;Window()-&gt;Title();
++		PDoc *doc = dynamic_cast&lt;PDoc *&gt;(addon-&gt;Window());
++		if (doc &amp;&amp; doc-&gt;TextView())
++		{
++			CLanguageInterface *langintf;
++			langintf = CLanguageInterface::FindIntf(doc-&gt;TextView()-&gt;Language());
++			if (langintf)
++				language = langintf-&gt;Name();
++			tabstops = doc-&gt;TextView()-&gt;TabStops();
++		}
+ 	}
++	
++	
+ 
+-	err = RunWgetPaste(&quot;C++&quot;, 
+-		&quot;unknown&quot;, 
++	err = RunWgetPaste(language.String(), 
++		nickname.String(), 
+ 		description.String(), 
++		tabstops,
+ 		selection.String());
+ 	if (err &gt;= B_OK)
+ 		return B_OK;
+@@ -262,3 +328,4 @@
+ 
+ 	return B_OK;
+ }
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000101.html">[pe-commits] r507 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000103.html">[pe-commits] r509 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#102">[ date ]</a>
+              <a href="thread.html#102">[ thread ]</a>
+              <a href="subject.html#102">[ subject ]</a>
+              <a href="author.html#102">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

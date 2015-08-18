@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r598 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r598%20-%20trunk/Sources&In-Reply-To=%3C201006011952.o51JqECw017474%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r598 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r598%20-%20trunk/Sources&In-Reply-To=%3C201006011952.o51JqECw017474%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r598 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun  1 21:52:14 CEST 2010</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2010-06-01 21:52:14 +0200 (Tue, 01 Jun 2010)
+New Revision: 598
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=598&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=598&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+applied patch from idefix:
+* avoid tenth document window getting shortcut ALT-':'
+
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2010-01-20 21:58:16 UTC (rev 597)
++++ trunk/Sources/PDoc.cpp	2010-06-01 19:52:14 UTC (rev 598)
+@@ -1640,7 +1640,7 @@
+ 			   strcmp(fWindows-&gt;ItemAt(insertId)-&gt;Label(), w-&gt;Title()) &lt; 0) ;
+ 		// Finally insert
+ 		fWindows-&gt;AddItem(new BMenuItem(w-&gt;Title(), msg,
+-			(doc &amp;&amp; doc-&gt;fShortcut &lt; 10) ? '1' + doc-&gt;fShortcut : 0), insertId);
++			(doc &amp;&amp; doc-&gt;fShortcut &lt; 9) ? '1' + doc-&gt;fShortcut : 0), insertId);
+ 	}
+ 
+ 	// Disable &quot;Save&quot; menuitem on non-dirty/new files
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

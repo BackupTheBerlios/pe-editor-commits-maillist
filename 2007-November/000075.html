@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r481 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r481%20-%20trunk/Sources&In-Reply-To=%3C20071111233200.477.1%40stippis.WG%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000074.html">
+   <LINK REL="Next"  HREF="000076.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r481 - trunk/Sources</H1>
+    <B>Stephan Assmus</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r481%20-%20trunk/Sources&In-Reply-To=%3C20071111233200.477.1%40stippis.WG%3E"
+       TITLE="[pe-commits] r481 - trunk/Sources">superstippi at gmx.de
+       </A><BR>
+    <I>Sun Nov 11 23:32:00 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000074.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000076.html">[pe-commits] r482 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#75">[ date ]</a>
+              <a href="thread.html#75">[ thread ]</a>
+              <a href="subject.html#75">[ subject ]</a>
+              <a href="author.html#75">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>
+zooey at BerliOS wrote (2007-11-11, 20:17:57 [+0100]):
+&gt;<i> Author: zooey
+</I>&gt;<i> Date: 2007-11-11 20:17:57 +0100 (Sun, 11 Nov 2007) New Revision: 481
+</I>&gt;<i> ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=481&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=481&amp;view=rev</A>
+</I>&gt;<i> 
+</I>&gt;<i> Modified:
+</I>&gt;<i>    trunk/Sources/CDocWindow.cpp
+</I>&gt;<i> Log:
+</I>&gt;<i> * When asked to quit, Pe will now try hard to show any dirty windows 
+</I>&gt;<i> asking the
+</I>&gt;<i>   user whether they should be saved. I am not so sure if unlocking the 
+</I>&gt;<i>   looper of those windows in order to allow redraws is safe ...
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Modified: trunk/Sources/CDocWindow.cpp
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- trunk/Sources/CDocWindow.cpp    2007-11-11 18:37:25 UTC (rev 480)
+</I>&gt;<i> +++ trunk/Sources/CDocWindow.cpp    2007-11-11 19:17:57 UTC (rev 481)
+</I>&gt;<i> @@ -148,9 +148,19 @@
+</I>&gt;<i>          char title[256];
+</I>&gt;<i>          sprintf(title, &quot;Save changes to '%s' before closing?&quot;, 
+</I>&gt;<i>          inheritedDoc::Name());
+</I>&gt;<i>  
+</I>&gt;<i> +        if (IsMinimized())
+</I>&gt;<i> +            Minimize(false);
+</I>&gt;<i> +        Activate();
+</I>&gt;<i> +
+</I>&gt;<i> +        UnlockLooper();
+</I>&gt;<i> +
+</I>&gt;<i>          MInfoAlert alert(title, &quot;Save&quot;, &quot;Cancel&quot;, &quot;Don't save&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> -        switch (alert.Go())
+</I>&gt;<i> +        int32 alertResult = alert.Go();
+</I>&gt;<i> +
+</I>&gt;<i> +        LockLooper();
+</I>
+Have you tried UpdateIfNeeded()?
+
+Best regards,
+-Stephan
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000074.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000076.html">[pe-commits] r482 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#75">[ date ]</a>
+              <a href="thread.html#75">[ thread ]</a>
+              <a href="subject.html#75">[ subject ]</a>
+              <a href="author.html#75">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

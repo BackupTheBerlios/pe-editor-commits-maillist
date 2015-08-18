@@ -1,0 +1,328 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r587 - in trunk: Extensions Languages/Sources Sources	rez/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r587%20-%20in%20trunk%3A%20Extensions%20Languages/Sources%20Sources%0A%09rez/Sources&In-Reply-To=%3C200907041804.n64I4257019829%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000193.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r587 - in trunk: Extensions Languages/Sources Sources	rez/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r587%20-%20in%20trunk%3A%20Extensions%20Languages/Sources%20Sources%0A%09rez/Sources&In-Reply-To=%3C200907041804.n64I4257019829%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r587 - in trunk: Extensions Languages/Sources Sources	rez/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul  4 20:04:02 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000193.html">[pe-commits] r588 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2009-07-04 20:04:00 +0200 (Sat, 04 Jul 2009)
+New Revision: 587
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=587&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=587&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/Jamfile
+   trunk/Extensions/Pipe.cpp
+   trunk/Extensions/WebPaste.cpp
+   trunk/Languages/Sources/Antlr_Popup.cpp
+   trunk/Sources/HColorUtils.cpp
+   trunk/Sources/HPreferences.cpp
+   trunk/Sources/PAbout.cpp
+   trunk/Sources/PAddOn.cpp
+   trunk/Sources/PAddOn.h
+   trunk/Sources/PApp.cpp
+   trunk/rez/Sources/rez.cpp
+   trunk/rez/Sources/rez.h
+   trunk/rez/Sources/rez_parser.y
+   trunk/rez/Sources/rez_scanner.l
+Log:
+* fixed a number of warning with gcc4
+* the extension ImageC wasn't linking against libstdc++.so, although it
+  required it. This wasn't noticed at build time since an add-on is a
+  shared library and haiku allows shared libs to contain unresolved
+  symbols.
+
+
+
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/Jamfile	2009-07-04 18:04:00 UTC (rev 587)
+@@ -74,7 +74,7 @@
+ # &lt;pe-src&gt;
+ PeExtension ImageToC
+ 	: ImageToC.cpp 
+-	: libhekkel.so &lt;nogrist&gt;Pe be translation
++	: libhekkel.so &lt;nogrist&gt;Pe be translation $(STDC++LIB)
+ 	;
+ # &lt;/pe-src&gt;
+ 
+
+Modified: trunk/Extensions/Pipe.cpp
+===================================================================
+--- trunk/Extensions/Pipe.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/Pipe.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -165,14 +165,14 @@
+ 			char cmd[1024];
+ 			sprintf(cmd, &quot;cat %s | %s&quot;, fn, sText);
+ 
+-			char *args[4];
++			const char *args[4];
+ 
+ 			args[0] = &quot;/bin/sh&quot;;
+ 			args[1] = &quot;-c&quot;;
+ 			args[2] = cmd;
+ 			args[3] = NULL;
+ 
+-			if (execvp(args[0], args) &lt; 0)
++			if (execvp(args[0], (char**)args) &lt; 0)
+ 				beep();	// what else can we do???
+ 		}
+ 		else if (pid &gt;= 0)	// parent
+
+Modified: trunk/Extensions/WebPaste.cpp
+===================================================================
+--- trunk/Extensions/WebPaste.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Extensions/WebPaste.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -19,7 +19,7 @@
+ #define OPEN_IN_BROWSER 1
+ #define COPY_TO_CLIPBOARD 1
+ 
+-struct {
++static struct {
+ 	const char *pe_name;
+ 	const char *cgi_name;
+ } kLanguageNamesMap[] = {
+
+Modified: trunk/Languages/Sources/Antlr_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/Antlr_Popup.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Languages/Sources/Antlr_Popup.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -582,8 +582,8 @@
+ 
+ void ScanForFunctions(CLanguageProxy&amp; proxy)
+ {
+-	const char *text = proxy.Text(), *max = text + proxy.Size();
+-	char * scope = &quot;file&quot;;
++	const char* text = proxy.Text(), *max = text + proxy.Size();
++	char* scope = (char*)&quot;file&quot;;
+ 	if (*max != 0)
+ 		return;
+ 	
+
+Modified: trunk/Sources/HColorUtils.cpp
+===================================================================
+--- trunk/Sources/HColorUtils.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/HColorUtils.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -66,6 +66,7 @@
+ 	result.red = 255 - highColor.red; 
+ 	result.green = 255 - highColor.green; 
+ 	result.blue = 255 - highColor.blue;
++	result.alpha = highColor.alpha;
+ 	
+ 	return result;
+ } /* DistinctColor */
+
+Modified: trunk/Sources/HPreferences.cpp
+===================================================================
+--- trunk/Sources/HPreferences.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/HPreferences.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -129,6 +129,7 @@
+ 	if (pi != fPrefs.end())
+ 	{
+ 		rgb_color c;
++		c.alpha = 255;
+ 		char s[4], *p;
+ 		const char *v = (*pi).second;
+ 		
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAbout.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -585,9 +585,8 @@
+ 				p.y = kPEOffsetV;
+ 				p.x = fPStop;
+ 
+-				unsigned int c = (int)fState2 * 10;
+-
+ #ifndef __HAIKU__
++				unsigned int c = (int)fState2 * 10;
+ 				fOffView-&gt;SetHighColor(c, c, (80 * (25 - fState2) + fState2 * 250) / 25);
+ 				fOffView-&gt;DrawString(&quot;B&quot;, p);
+ 				fOffView-&gt;SetHighColor((178 * (25 - fState2) + fState2 * 250) / 25 , c, c);
+
+Modified: trunk/Sources/PAddOn.cpp
+===================================================================
+--- trunk/Sources/PAddOn.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAddOn.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -123,6 +123,12 @@
+ }
+ 
+ 
++status_t PAddOn::Perform(perform_code d, void* arg)
++{
++	return BHandler::Perform(d, arg);
++}
++
++
+ status_t PAddOn::LanguagePerform(BMessage&amp; message)
+ {
+ 	return B_ERROR;
+
+Modified: trunk/Sources/PAddOn.h
+===================================================================
+--- trunk/Sources/PAddOn.h	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PAddOn.h	2009-07-04 18:04:00 UTC (rev 587)
+@@ -58,6 +58,9 @@
+ 
+ 	virtual void	LanguageChanged(BMessage&amp; message);
+ 
++	virtual status_t	Perform(perform_code d, void* arg);
++							// just to avoid it being hidden
++
+ protected:
+ 	/* buttons/menus */
+ 	void*			AddButton(BBitmap&amp; bitmap, const char* toolTip, uint32 kind,
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/Sources/PApp.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -35,7 +35,7 @@
+ 
+ #include &quot;pe.h&quot;
+ 
+-static char *rcsid = &quot;$Id$&quot;;
++static const char *rcsid = &quot;$Id$&quot;;
+ 
+ #include &quot;PApp.h&quot;
+ #include &quot;PDoc.h&quot;
+
+Modified: trunk/rez/Sources/rez.cpp
+===================================================================
+--- trunk/rez/Sources/rez.cpp	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez.cpp	2009-07-04 18:04:00 UTC (rev 587)
+@@ -55,7 +55,7 @@
+ char *gResName;
+ void *gResData;
+ int gResSize;
+-char *gIncludePaths[kMaxIncludePaths];
++const char *gIncludePaths[kMaxIncludePaths];
+ 
+ char out[PATH_MAX] = &quot;rez.out&quot;;
+ char *in = NULL;
+@@ -86,7 +86,7 @@
+ int getoptions(int argc, char *argv[])
+ {
+ 	int i = 1, icnt = 0;
+-	char **incl = gIncludePaths;
++	const char **incl = gIncludePaths;
+ 	
+ 	*incl++ = &quot;&quot;;
+ 	*incl++ = &quot;.&quot;;
+@@ -289,7 +289,8 @@
+ 	void *p;
+ 	size_t s;
+ 	FILE *f;
+-	char **i = gIncludePaths, path[PATH_MAX];
++	const char **i = gIncludePaths;
++	char path[PATH_MAX];
+ 	
+ 	do
+ 	{
+@@ -358,7 +359,8 @@
+ void Include(const char *file)
+ {
+ 	BFile f;
+-	char **i = gIncludePaths, path[PATH_MAX];
++	const char **i = gIncludePaths;
++	char path[PATH_MAX];
+ 	
+ 	do
+ 	{
+
+Modified: trunk/rez/Sources/rez.h
+===================================================================
+--- trunk/rez/Sources/rez.h	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez.h	2009-07-04 18:04:00 UTC (rev 587)
+@@ -59,6 +59,6 @@
+ extern char *gResName;
+ extern void *gResData;
+ extern int gResSize;
+-extern char *gIncludePaths[];
++extern const char *gIncludePaths[];
+ 
+ #endif
+
+Modified: trunk/rez/Sources/rez_parser.y
+===================================================================
+--- trunk/rez/Sources/rez_parser.y	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez_parser.y	2009-07-04 18:04:00 UTC (rev 587)
+@@ -73,7 +73,7 @@
+ %token ALIGN ARRAY AS BINARY BITSTRING BOOLEAN BYTE CASE CHANGE CHAR CSTRING
+ %token DECIMAL DELETE DEREZ FILL HEX INTEGER LITERAL LONGINT OCTAL INCLUDE
+ %token POINT PSTRING READ RECT RES REZ STRING SWITCH rTYPE WSTRING
+-%token LABEL IDENT REZVAR STRING NUMBER AND OR EQ NE LT LE GT GE SHR SHL
++%token LABEL IDENT REZVAR NUMBER AND OR EQ NE LT LE GT GE SHR SHL
+ %token STR_CONST WIDE BIT NIBBLE WORD LONG KEY HEXSTRING UNSIGNED rEOF COUNTOF
+ %token ARRAYINDEX LBITFIELD LBYTE FORMAT RESSIZE RESOURCE LLONG SHELL LWORD HEX_CONST
+ 
+
+Modified: trunk/rez/Sources/rez_scanner.l
+===================================================================
+--- trunk/rez/Sources/rez_scanner.l	2009-06-18 12:48:34 UTC (rev 586)
++++ trunk/rez/Sources/rez_scanner.l	2009-07-04 18:04:00 UTC (rev 587)
+@@ -227,7 +227,7 @@
+ 															include_lineno_stack[include_stack_ptr] = yylineno;
+ 															include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+ 															yytext[yyleng - 1] = 0;
+-															char **i = gIncludePaths;
++															const char **i = gIncludePaths;
+ 															char p[PATH_MAX];
+ 															
+ 															do
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000193.html">[pe-commits] r588 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

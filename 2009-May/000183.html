@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r582 - trunk/Extensions
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r582%20-%20trunk/Extensions&In-Reply-To=%3C200905061505.n46F5cCA010685%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000182.html">
+   <LINK REL="Next"  HREF="000184.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r582 - trunk/Extensions</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r582%20-%20trunk/Extensions&In-Reply-To=%3C200905061505.n46F5cCA010685%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r582 - trunk/Extensions">hoern at mail.berlios.de
+       </A><BR>
+    <I>Wed May  6 17:05:38 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000182.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000184.html">[pe-commits] r583 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#183">[ date ]</a>
+              <a href="thread.html#183">[ thread ]</a>
+              <a href="subject.html#183">[ subject ]</a>
+              <a href="author.html#183">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2009-05-06 17:05:38 +0200 (Wed, 06 May 2009)
+New Revision: 582
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=582&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=582&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/CopyContaining.cpp
+   trunk/Extensions/CutContaining.cpp
+Log:
+* Bugfix: &quot;Copy/Cut Lines Containing&quot; now copy to the clipboard again
+* Both should use less memory and execute a little bit faster
+
+
+Modified: trunk/Extensions/CopyContaining.cpp
+===================================================================
+--- trunk/Extensions/CopyContaining.cpp	2009-05-05 21:10:46 UTC (rev 581)
++++ trunk/Extensions/CopyContaining.cpp	2009-05-06 15:05:38 UTC (rev 582)
+@@ -131,77 +131,61 @@
+ {
+ 	//  error checking
+ 
+-	long	selStart;
++	long	selBeg;
+ 	long	selEnd;
+ 
+ 	if (sSelectionOnly)
+ 	{
+-		addon-&gt;GetSelection(&amp;selStart, &amp;selEnd);
+-		if (selEnd &lt;= selStart)
++		addon-&gt;GetSelection(&amp;selBeg, &amp;selEnd);
++		if (selEnd &lt;= selBeg)
+ 			return B_ERROR;
+ 	}
+ 	else
+ 	{
+-		selStart = 0;
++		selBeg = 0;
+ 		selEnd = addon-&gt;TextLength();
+ 	}
+ 
+ 	//  set-up
+ 
+-	const char *txt = addon-&gt;Text(), *ptr = txt + selStart;
+-	int size = selEnd - selStart;
+-
+ 	regex_t pb;
+ 	memset(&amp;pb, 0, sizeof(pb));
+ 	int r = regcomp(&amp;pb, sText, REG_EXTENDED);
+ 
+ 	if (r == REG_NOERROR)
+ 	{
+-		//  perform operation into temporary buffer
++		BString clip;
++		BString line;
++		const char *txt = addon-&gt;Text()+selBeg;
++		int size = selEnd - selBeg;
++		int beg = 0;
++		int pos = -1;
++		int len;
+ 
+-		char *new_text = new char[size + 1];
+-		int ls = 0, li = 0, i = 0;
+-
+-		while (li &lt;= size)
++		while (++pos &lt;= size)
+ 		{
+-			if (li == size || ptr[li] == '\n')
++			if ((pos == size || txt[pos] == '\n'))
+ 			{
+-				new_text[i] = 0;
+-
+-				r = regexec(&amp;pb, new_text + ls, 0, NULL, 0);
+-
+-				if (r == 0)
+-				{
+-					new_text[i] = '\n';
+-					ls = i + 1;
++				if ((len = pos-beg) &gt; 0) {
++					line.SetTo(txt+beg, len);
++					if (regexec(&amp;pb, line.String(), 0, NULL, 0) == REG_NOERROR)
++					{
++						clip &lt;&lt; line &lt;&lt; '\n';
++					}
+ 				}
+-				else if (r == REG_NOMATCH)
+-					i = ls - 1;
+-				else
+-					break;
++				beg = pos + 1;
+ 			}
+-			else
+-				new_text[i] = ptr[li];
+-
+-			i++;
+-			li++;
+ 		}
+ 
+-		if (r &lt; 2)
++		if (be_clipboard-&gt;Lock())
+ 		{
+-			if (be_clipboard-&gt;Lock())
+-			{
+-				be_clipboard-&gt;Clear();
+-				be_clipboard-&gt;Data()-&gt;AddData(&quot;text/plain&quot;, B_MIME_DATA, new_text, ls);
+-				be_clipboard-&gt;Commit();
+-				be_clipboard-&gt;Unlock();
+-			}
++			be_clipboard-&gt;Clear();
++			be_clipboard-&gt;Data()-&gt;AddData(&quot;text/plain&quot;, B_MIME_DATA, clip.String(), clip.Length());
++			be_clipboard-&gt;Commit();
++			be_clipboard-&gt;Unlock();
+ 		}
+-
+-		delete[] new_text;
+ 	}
+-
+-	if (r != REG_NOERROR &amp;&amp; r != REG_NOMATCH)
++	else
+ 	{
+ 		char err[100];
+ 
+
+Modified: trunk/Extensions/CutContaining.cpp
+===================================================================
+--- trunk/Extensions/CutContaining.cpp	2009-05-05 21:10:46 UTC (rev 581)
++++ trunk/Extensions/CutContaining.cpp	2009-05-06 15:05:38 UTC (rev 582)
+@@ -131,89 +131,68 @@
+ {
+ 	//  error checking
+ 
+-	long	selStart;
++	long	selBeg;
+ 	long	selEnd;
+ 
+ 	if (sSelectionOnly)
+ 	{
+-		addon-&gt;GetSelection(&amp;selStart, &amp;selEnd);
+-		if (selEnd &lt;= selStart)
++		addon-&gt;GetSelection(&amp;selBeg, &amp;selEnd);
++		if (selEnd &lt;= selBeg)
+ 			return B_ERROR;
+ 	}
+ 	else
+ 	{
+-		selStart = 0;
++		selBeg = 0;
+ 		selEnd = addon-&gt;TextLength();
+ 	}
+ 
+ 	//  set-up
+ 
+-	const char *txt = addon-&gt;Text();
+-	int size = selEnd - selStart;
+-
+ 	regex_t pb;
+ 	memset(&amp;pb, 0, sizeof(pb));
+ 	int r = regcomp(&amp;pb, sText, REG_EXTENDED);
+ 
+ 	if (r == REG_NOERROR)
+ 	{
+-		char *new_text = new char[size + 1];
+-		int ns, ni, ts, ti;
++		BString clip;
++		BString line;
++		const char *txt = addon-&gt;Text()+selBeg;
++		int size = selEnd - selBeg;
++		int beg = 0;
++		int pos = -1;
++		int len;
+ 
+-		ns = ni = ts = ti = 0;
+-
+-		while (ti &lt;= size)
++		while (++pos &lt;= size)
+ 		{
+-			if (ti == size || txt[ti] == '\n')
++			if ((pos == size || txt[pos] == '\n'))
+ 			{
+-				int sl = ni - ns + 1;
++				if ((len = pos-beg) &gt; 0) {
++					line.SetTo(txt+beg, len);
++					if (regexec(&amp;pb, line.String(), 0, NULL, 0) == REG_NOERROR)
++					{
++						addon-&gt;Select(beg, pos + 1);
++						addon-&gt;Delete();
++						txt = addon-&gt;Text()+selBeg;
++						pos = beg - 1;
++						size -= len + 1;
+ 
+-				new_text[ni] = 0;
+-
+-				r = regexec(&amp;pb, new_text + ns, 0, NULL, 0);
+-
+-				if (r == 0)
+-				{
+-					addon-&gt;Select(ts, ti + 1);
+-					addon-&gt;Delete();
+-					txt = addon-&gt;Text();
+-
+-					ti -= sl;
+-					size -= sl;
+-
+-					new_text[ni] = '\n';
+-					ns = ni + 1;
++						clip &lt;&lt; line &lt;&lt; '\n';
++						continue;
++					}
+ 				}
+-				else if (r == REG_NOMATCH)
+-				{
+-					ni = ns - 1;
+-					ts = ti + 1;
+-				}
+-				else
+-					break;
++				beg = pos + 1;
+ 			}
+-			else
+-				new_text[ni] = txt[ti];
+-
+-			ni++;
+-			ti++;
+ 		}
+ 
+-		if (r &lt; 2)
++		if (be_clipboard-&gt;Lock())
+ 		{
+-			if (be_clipboard-&gt;Lock())
+-			{
+-				be_clipboard-&gt;Clear();
+-				be_clipboard-&gt;Data()-&gt;AddData(&quot;text/plain&quot;, B_MIME_DATA, new_text, ns);
+-				be_clipboard-&gt;Commit();
+-				be_clipboard-&gt;Unlock();
+-			}
++			be_clipboard-&gt;Clear();
++			be_clipboard-&gt;Data()-&gt;AddData(&quot;text/plain&quot;, B_MIME_DATA, clip.String(), clip.Length());
++			be_clipboard-&gt;Commit();
++			be_clipboard-&gt;Unlock();
+ 		}
+-
+-		delete[] new_text;
+ 	}
+-
+-	if (r != REG_NOERROR &amp;&amp; r != REG_NOMATCH)
++	else
+ 	{
+ 		char err[100];
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000182.html">[pe-commits] r581 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000184.html">[pe-commits] r583 - trunk/Extensions
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#183">[ date ]</a>
+              <a href="thread.html#183">[ thread ]</a>
+              <a href="subject.html#183">[ subject ]</a>
+              <a href="author.html#183">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

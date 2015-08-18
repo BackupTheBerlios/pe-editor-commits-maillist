@@ -1,0 +1,429 @@
+From mattmadia at gmail.com  Sun Mar  1 20:35:02 2009
+From: mattmadia at gmail.com (Matt Madia)
+Date: Sun, 1 Mar 2009 19:35:02 +0000
+Subject: [pe-commits] initial + incomplete gcc4 patch
+Message-ID: <1e42d8c50903011135u5c66fd35o987f28e546565c82@mail.gmail.com>
+
+Here's as much as I could figure out.
+
+I did however manage to build it in gcc2.
+
+For a public release, are there any settings that need to be defined
+in build/UserBuildConfig ?
+
+--mmadia
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: blah-03.patch
+Type: application/octet-stream
+Size: 5369 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/pe-editor-commits/attachments/20090301/4f395201/attachment.obj>
+
+From mattmadia at gmail.com  Fri Mar  6 14:21:56 2009
+From: mattmadia at gmail.com (Matt Madia)
+Date: Fri, 6 Mar 2009 13:21:56 +0000
+Subject: [pe-commits] question : packaging libs for pe-editior
+Message-ID: <1e42d8c50903060521g43f3fc02q4bbb11f0feb84ce7@mail.gmail.com>
+
+I've made a built-in-Haiku-gcc2 binary of Pe.
+Looking at objdump -p Pe/Pe,
+libpcre.so.0 is needed and it's included in Pe/lib
+This package is available at :
+http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3-gcc2-2009-03-05.zip
+
+A ticket has been made with a patch to update OptionalPackages:
+http://dev.haiku-os.org/ticket/3517
+
+In the current Pe package:
+http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3.zip
+It includes Pe/lib/libpcre.so and libpcreposix.so
+Looking at objump -p for it's Pe/Pe,  Pe/lib/libhekkel.so, and
+Pe/lib/libpcre.so,  I do not see mention of libpcreposix.so
+
+So, do I need to modify my haiku-gcc2 package to include
+Pe/lib/libpcreposix.so. ?
+Also looking at pcre-7.8/.libs,   there's a libpcrecpp.so  does that
+also need to be included?
+
+
+--mmadia
+
+
+From pecvs at hirschkaefer.de  Fri Mar  6 15:31:01 2009
+From: pecvs at hirschkaefer.de (pecvs at hirschkaefer.de)
+Date: Fri, 06 Mar 2009 15:31:01 +0100
+Subject: [pe-commits] question : packaging libs for pe-editior
+In-Reply-To: <1e42d8c50903060521g43f3fc02q4bbb11f0feb84ce7@mail.gmail.com>
+References: <1e42d8c50903060521g43f3fc02q4bbb11f0feb84ce7@mail.gmail.com>
+Message-ID: <20090306153101.26494.2@bee.hirschkaefer.site>
+
+
+On 2009-03-06 at 14:21:56 [+0100], Matt Madia <mattmadia at gmail.com> wrote:
+> I've made a built-in-Haiku-gcc2 binary of Pe.
+> Looking at objdump -p Pe/Pe,
+> libpcre.so.0 is needed and it's included in Pe/lib
+> This package is available at :
+> http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3-gcc2-2009-03-05.zip
+> 
+> A ticket has been made with a patch to update OptionalPackages:
+> http://dev.haiku-os.org/ticket/3517
+> 
+> In the current Pe package:
+> http://haiku-files.org/files/optional-packages/pe-2.4.1-x86-rc3.zip
+> It includes Pe/lib/libpcre.so and libpcreposix.so
+> Looking at objump -p for it's Pe/Pe,  Pe/lib/libhekkel.so, and
+> Pe/lib/libpcre.so,  I do not see mention of libpcreposix.so
+> 
+> So, do I need to modify my haiku-gcc2 package to include
+> Pe/lib/libpcreposix.so. ?
+
+No - libpcreposix.so contains a POSIX-compatible wrapper for PCRE, which is not 
+being used by Pe at all (I have checked all Extensions and Languages, too).
+
+> Also looking at pcre-7.8/.libs,   there's a libpcrecpp.so  does that
+> also need to be included?
+
+No, the version of pcre that was current when Pe started to use it (5.0, IIRC) did 
+not provide any C++-interface, which I think is what libpcrecpp.so contains. So Pe 
+uses the C-interface and does not need libpcrecpp.so.
+
+Summing it up: Pe just requires libpcre.so.
+
+cheers,
+    Oliver
+
+
+From pecvs at hirschkaefer.de  Fri Mar  6 15:16:57 2009
+From: pecvs at hirschkaefer.de (Oliver Tappe)
+Date: Fri, 06 Mar 2009 15:16:57 +0100
+Subject: [pe-commits] initial + incomplete gcc4 patch
+In-Reply-To: <1e42d8c50903011135u5c66fd35o987f28e546565c82@mail.gmail.com>
+References: <1e42d8c50903011135u5c66fd35o987f28e546565c82@mail.gmail.com>
+Message-ID: <20090306151657.26372.1@bee.hirschkaefer.site>
+
+Hi Matt,
+
+On 2009-03-01 at 20:35:02 [+0100], Matt Madia <mattmadia at gmail.com> wrote:
+> Here's as much as I could figure out.
+
+Thanks - before I am going to commit that: what problems remain with gcc4?
+
+> I did however manage to build it in gcc2.
+> 
+> For a public release, are there any settings that need to be defined
+> in build/UserBuildConfig ?
+
+No, I don't think so. The only thing I ever changed was the version number, 
+but I suppose this does not apply here, since this would still be Pe-2.4.1, 
+right?
+
+cheers,
+    Oliver
+
+
+From mattmadia at gmail.com  Sat Mar  7 16:10:01 2009
+From: mattmadia at gmail.com (Matt Madia)
+Date: Sat, 7 Mar 2009 10:10:01 -0500
+Subject: [pe-commits] error in Jamrules
+Message-ID: <1e42d8c50903070710g56b47477u90088d8e0d1e7ab2@mail.gmail.com>
+
+First, is there a better list to be sending Pe-related emails to?
+
+After jam runs successfully, i tried `jam distro` to see what it'd do..
+
+jam distro
+...found 1 target(s)...
+...updating 1 target(s)...
+MakeDistro distro
+making distro generated/distro
+/bin/sh: -c: line 9: syntax error near unexpected token `)'
+/bin/sh: -c: line 9: `if  -s) = "Haiku"; then'
+
+echo "making distro generated/distro" ;
+rm -rf generated/distro/Documentation ;
+mkdir generated/distro/Documentation ;
+cp -a ./doc/*.html generated/distro/Documentation/ ;
+mkdir generated/distro/Documentation/gifs ;
+cp -a ./doc/gifs/*.gif generated/distro/Documentation/gifs/ ;
+ln -sf Documentation/index.html generated/distro/Documentation.html ;
+if  -s) = "Haiku"; then
+ln -sf /boot/common/bin/ generated/distro/\(drag\ lpe\ here\ to\ install\) ;
+cp -a /boot/common/lib/libpcre*.so generated/distro/lib/ ;
+else
+ln -sf /boot/home/config/bin/ generated/distro/\(drag\ lpe\ here\ to\
+install\) ;
+cp -a /boot/home/config/lib/libpcre*.so generated/distro/lib/ ;
+fi
+
+...failed MakeDistro distro ...
+...failed updating 1 target(s)...
+
+
+
+Here's the offending line in Jamrules:
+	if $(uname -s) = "Haiku"; then
+
+
+Here's the patch:
+
+Index: Jamrules
+===================================================================
+--- Jamrules    (revision 549)
++++ Jamrules    (working copy)
+@@ -48,7 +48,7 @@
+        mkdir $(DISTRO_DIR)/Documentation/gifs ;
+        cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+        ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+-       if $(uname -s) = "Haiku"; then
++       if [ "$(OS)" = "HAIKU" ] ; then
+                ln -sf /boot/common/bin/ $(DISTRO_DIR)/\(drag\ lpe\
+here\ to\ install\) ;
+                cp -a /boot/common/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+        else
+
+
+From zooey at mail.berlios.de  Sat Mar  7 18:02:13 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sat, 7 Mar 2009 18:02:13 +0100
+Subject: [pe-commits] r550 - trunk/build
+Message-ID: <200903071702.n27H2DRe008260@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-03-07 18:02:13 +0100 (Sat, 07 Mar 2009)
+New Revision: 550
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=550&view=rev
+
+Modified:
+   trunk/build/BuildSettings
+Log:
+* setup variable COMMON_FOLDER which will point to /boot/home/config or
+  /boot/common, depending on whether or not we build for haiku.
+
+
+Modified: trunk/build/BuildSettings
+===================================================================
+--- trunk/build/BuildSettings	2008-11-08 10:54:11 UTC (rev 549)
++++ trunk/build/BuildSettings	2009-03-07 17:02:13 UTC (rev 550)
+@@ -7,9 +7,11 @@
+ 	CCFLAGS += -DBONE_BUILD ;
+ 	C++FLAGS += -DBONE_BUILD ;
+ 	LINKLIBS += -lnetwork ;
++	COMMON_FOLDER = /boot/common ;
+ } else {
+ 	# BeOS
+ 
++	COMMON_FOLDER = /boot/home/config ;
+ 	if $(OSPLAT) = PPC {
+ 		# filter out -nosyspath
+ 		CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
+
+
+
+From zooey at mail.berlios.de  Sat Mar  7 18:02:27 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sat, 7 Mar 2009 18:02:27 +0100
+Subject: [pe-commits] r551 - trunk
+Message-ID: <200903071702.n27H2RiG008303@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-03-07 18:02:26 +0100 (Sat, 07 Mar 2009)
+New Revision: 551
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=551&view=rev
+
+Modified:
+   trunk/Jamrules
+Log:
+* fixed syntax error in 'distro' target, reported by Matt Madia
+
+
+
+Modified: trunk/Jamrules
+===================================================================
+--- trunk/Jamrules	2009-03-07 17:02:13 UTC (rev 550)
++++ trunk/Jamrules	2009-03-07 17:02:26 UTC (rev 551)
+@@ -48,12 +48,7 @@
+ 	mkdir $(DISTRO_DIR)/Documentation/gifs ;
+ 	cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+ 	ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+-	if $(uname -s) = "Haiku"; then
+-		ln -sf /boot/common/bin/ $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
+-		cp -a /boot/common/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+-	else
+-		ln -sf /boot/home/config/bin/ $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
+-		cp -a /boot/home/config/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+-	fi
++	ln -sfn $(COMMON_FOLDER)/bin $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
++	cp -a $(COMMON_FOLDER)/lib/libpcre.so $(DISTRO_DIR)/lib/ ;
+ }
+ 
+
+
+
+From pecvs at hirschkaefer.de  Sat Mar  7 18:05:00 2009
+From: pecvs at hirschkaefer.de (Oliver Tappe)
+Date: Sat, 07 Mar 2009 18:05:00 +0100
+Subject: [pe-commits] error in Jamrules
+In-Reply-To: <1e42d8c50903070710g56b47477u90088d8e0d1e7ab2@mail.gmail.com>
+References: <1e42d8c50903070710g56b47477u90088d8e0d1e7ab2@mail.gmail.com>
+Message-ID: <20090307180500.20829.1@bee.hirschkaefer.site>
+
+Hi Matt,
+
+On 2009-03-07 at 16:10:01 [+0100], Matt Madia <mattmadia at gmail.com> wrote:
+> First, is there a better list to be sending Pe-related emails to?
+
+Yes, you can find Pe's discussion list here: pedevel at freelists.org
+Hope to see you there ;-)
+
+> After jam runs successfully, i tried `jam distro` to see what it'd do..
+> 
+> jam distro
+> ...found 1 target(s)...
+> ...updating 1 target(s)...
+> MakeDistro distro
+> making distro generated/distro
+> /bin/sh: -c: line 9: syntax error near unexpected token `)'
+> /bin/sh: -c: line 9: `if  -s) = "Haiku"; then'
+> 
+> echo "making distro generated/distro" ;
+> rm -rf generated/distro/Documentation ;
+> mkdir generated/distro/Documentation ;
+> cp -a ./doc/*.html generated/distro/Documentation/ ;
+> mkdir generated/distro/Documentation/gifs ;
+> cp -a ./doc/gifs/*.gif generated/distro/Documentation/gifs/ ;
+> ln -sf Documentation/index.html generated/distro/Documentation.html ;
+> if  -s) = "Haiku"; then
+> ln -sf /boot/common/bin/ generated/distro/\(drag\ lpe\ here\ to\ install\) ;
+> cp -a /boot/common/lib/libpcre*.so generated/distro/lib/ ;
+> else
+> ln -sf /boot/home/config/bin/ generated/distro/\(drag\ lpe\ here\ to\
+> install\) ;
+> cp -a /boot/home/config/lib/libpcre*.so generated/distro/lib/ ;
+> fi
+> 
+> ...failed MakeDistro distro ...
+> ...failed updating 1 target(s)...
+> 
+> 
+> 
+> Here's the offending line in Jamrules:
+>     if $(uname -s) = "Haiku"; then
+> 
+> 
+> Here's the patch:
+> 
+> Index: Jamrules
+> ===================================================================
+> --- Jamrules    (revision 549)
+> +++ Jamrules    (working copy)
+> @@ -48,7 +48,7 @@
+>         mkdir $(DISTRO_DIR)/Documentation/gifs ;
+>         cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+>         ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+> -       if $(uname -s) = "Haiku"; then
+> +       if [ "$(OS)" = "HAIKU" ] ; then
+>                 ln -sf /boot/common/bin/ $(DISTRO_DIR)/\(drag\ lpe\
+> here\ to\ install\) ;
+>                 cp -a /boot/common/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+>         else
+
+Many thanks for the note. I have fixed it a little bit differently though, by
+declaring COMMON_FOLDER in BuildSettings as appropriate and make use of it in
+the distro rule.
+
+cheers,
+    Oliver
+
+
+From zooey at mail.berlios.de  Sun Mar  8 14:38:32 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Sun, 8 Mar 2009 14:38:32 +0100
+Subject: [pe-commits] r552 - trunk
+Message-ID: <200903081338.n28DcW70000083@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-03-08 14:38:32 +0100 (Sun, 08 Mar 2009)
+New Revision: 552
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=552&view=rev
+
+Modified:
+   trunk/Jamrules
+Log:
+* instead of what I said yesterday - we do need libpcreposix, as there
+  are some extensions using it.
+Matt: sorry about that, must have had a knot in my brain yesterday :-/
+
+
+
+Modified: trunk/Jamrules
+===================================================================
+--- trunk/Jamrules	2009-03-07 17:02:26 UTC (rev 551)
++++ trunk/Jamrules	2009-03-08 13:38:32 UTC (rev 552)
+@@ -49,6 +49,6 @@
+ 	cp -a $(TOP)/doc/gifs/*.gif $(DISTRO_DIR)/Documentation/gifs/ ;
+ 	ln -sf Documentation/index.html $(DISTRO_DIR)/Documentation.html ;
+ 	ln -sfn $(COMMON_FOLDER)/bin $(DISTRO_DIR)/\(drag\ lpe\ here\ to\ install\) ;
+-	cp -a $(COMMON_FOLDER)/lib/libpcre.so $(DISTRO_DIR)/lib/ ;
++	cp -a $(COMMON_FOLDER)/lib/libpcre*.so $(DISTRO_DIR)/lib/ ;
+ }
+ 
+
+
+
+From axeld at mail.berlios.de  Thu Mar 12 11:25:22 2009
+From: axeld at mail.berlios.de (axeld at BerliOS)
+Date: Thu, 12 Mar 2009 11:25:22 +0100
+Subject: [pe-commits] r553 - trunk/rez/Sources
+Message-ID: <200903121025.n2CAPMpw027564@sheep.berlios.de>
+
+Author: axeld
+Date: 2009-03-12 11:25:22 +0100 (Thu, 12 Mar 2009)
+New Revision: 553
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=553&view=rev
+
+Modified:
+   trunk/rez/Sources/rez.cpp
+Log:
+* Made -o accept absolute pathes, based on a patch by Jonathan Yoder.
+
+
+Modified: trunk/rez/Sources/rez.cpp
+===================================================================
+--- trunk/rez/Sources/rez.cpp	2009-03-08 13:38:32 UTC (rev 552)
++++ trunk/rez/Sources/rez.cpp	2009-03-12 10:25:22 UTC (rev 553)
+@@ -57,7 +57,7 @@
+ int gResSize;
+ char *gIncludePaths[kMaxIncludePaths];
+ 
+-char out[NAME_MAX] = "rez.out";
++char out[PATH_MAX] = "rez.out";
+ char *in = NULL;
+ static FILE *gHeader;
+ 
+@@ -180,12 +180,17 @@
+ 	yyin = stdin;
+ 
+ 	int i = getoptions(argc, argv);
+-		
++
+ 	char buf[PATH_MAX];
+-	getcwd(buf, PATH_MAX);
+-	strcat(buf, "/");
+-	strcat(buf, out);
+-	
++	if (out[0] == '/')
++		strcpy(buf, out);
++	else
++	{
++		getcwd(buf, PATH_MAX);
++		strcat(buf, "/");
++		strcat(buf, out);
++	}
++
+ 	BEntry e;
+ 	if (e.SetTo(out)) error("entry set to %s", out);
+ 	
+
+
+

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r597 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r597%20-%20trunk/Sources&In-Reply-To=%3C201001202158.o0KLwGOU006312%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r597 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r597%20-%20trunk/Sources&In-Reply-To=%3C201001202158.o0KLwGOU006312%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r597 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 20 22:58:16 CET 2010</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#202">[ date ]</a>
+              <a href="thread.html#202">[ thread ]</a>
+              <a href="subject.html#202">[ subject ]</a>
+              <a href="author.html#202">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2010-01-20 22:58:16 +0100 (Wed, 20 Jan 2010)
+New Revision: 597
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=597&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=597&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.cpp
+Log:
+Fixing haiku-ticket #4352 (was a pe bug, though):
+* when determining the mimetype of a file, we need to traverse links,
+  as otherwise we will see the link type instead of the one of the real
+  file, which in turn will clobber the mimetype once we write the file.
+
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-11-09 16:05:41 UTC (rev 596)
++++ trunk/Sources/CDoc.cpp	2010-01-20 21:58:16 UTC (rev 597)
+@@ -64,7 +64,7 @@
+ 	if (doc)
+ 	{
+ 		BEntry e;
+-		FailOSErr(e.SetTo(doc));
++		FailOSErr(e.SetTo(doc, true));
+ 		FailOSErr(e.GetParent(&amp;gCWD));
+ 
+ 		BNode node;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#202">[ date ]</a>
+              <a href="thread.html#202">[ thread ]</a>
+              <a href="subject.html#202">[ subject ]</a>
+              <a href="author.html#202">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

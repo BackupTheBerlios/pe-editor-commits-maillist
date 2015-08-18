@@ -1,0 +1,296 @@
+From bonefish at berlios.de  Thu Dec  1 00:07:09 2005
+From: bonefish at berlios.de (bonefish at BerliOS)
+Date: Thu, 1 Dec 2005 00:07:09 +0100
+Subject: [pe-commits]r411 - in trunk: build rez/Sources
+Message-ID: <200511302307.jAUN797L003758@sheep.berlios.de>
+
+Author: bonefish
+Date: 2005-12-01 00:07:09 +0100 (Thu, 01 Dec 2005)
+New Revision: 411
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=411&view=rev
+
+Modified:
+   trunk/build/MainBuildRules
+   trunk/rez/Sources/Jamfile
+Log:
+* Got rid of the REZ variable. Targets are globally known in the build system,
+  so we can just use "rez".
+* Made the Rez rule the only one that invokes rez. It is now a bit more
+  flexible. One can specify flags as third parameter, and it uses the HDRS
+  variable set on the output file.
+* Reorganized the rules using rez a bit:
+  - Split up PreProcessRez into PreProcess and a Rez invocation and moved
+    that into RezObject, which was the only rule using it.
+  - We use a bit of grist in some places now.
+  - Added a missing Includes here, removed or changed dependencies there,...
+
+
+Modified: trunk/build/MainBuildRules
+===================================================================
+--- trunk/build/MainBuildRules	2005-11-29 06:01:21 UTC (rev 410)
++++ trunk/build/MainBuildRules	2005-11-30 23:07:09 UTC (rev 411)
+@@ -195,55 +195,81 @@
+ 
+ rule Rez
+ {
+-	Depends $(<) : $(>) ;	
++	# Rez <output> : <rezFile> [ : <flags> ] ;
++	#
++	local output = $(1) ;
++	local rezFile = $(2) ;
++	local flags = $(3) ;
++	
++	REZHDRS on $(output) = [ on $(output) FIncludes $(HDRS) ] ;
++	REZFLAGS on $(output) = [ on $(output) return $(REZFLAGS) ] $(flags) ;
++	Depends $(output) : rez $(rezFile) ;
++	Rez1 $(output) : rez $(rezFile) ;
+ }
+ 
+-actions Rez
++actions Rez1
+ {
+-	$(REZ) -o "$(<)" "$(>)" ;
++	$(2[1]) $(REZFLAGS) $(REZHDRS) -o "$(1)" "$(2[2-])" ;
+ }
+ 
+ rule RezObjects
+ {
+-	local rsrcs = $(1) ;
+-	local rsrc ;
+-	for rsrc in $(rsrcs) {
+-		SEARCH on $(rsrc) = $(SEARCH_SOURCE) ;
+-		RezObject $(rsrc:B) : $(rsrc) ;
++	local rezFiles = $(1) ;
++	local rezFile ;
++	for rezFile in $(rezFiles) {
++		local rsrcFile = $(rezFile:BS=.rsrc) ;
++		RezObject $(rsrcFile) : [ FGristFiles $(rezFile) ] ;
+ 	}
+ }
+ 
+ rule RezObject
+ {
+-	local _rsrc = $(1).rsrc ;
++	# RezObject <resource file> : <rez file> ;
++	#
++	local _rsrc = $(1) ;
+ 	local _r = $(2) ;
+-	HDRS on $(_r) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
+-	HDRS on $(_rsrc) = [ on $(_r) FIncludes $(HDRS) ] ;
++
++	local tmp = [ FGristFiles $(_rsrc)_tmp ] ;
++
++	SEARCH on $(_r) = $(SEARCH_SOURCE) ;
++
++	# include directories to by used
++	HDRS on $(_rsrc) $(tmp) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
++
++	# preprocess the rez file
++	PreProcess $(tmp) : $(_r) ;
++
++	# generate the resource file from the preprocessed rez file
+ 	MakeLocate $(_rsrc) : $(LOCATE_TARGET) ;
+-	PreProcessRez $(_rsrc) : $(_r) ;
++	Rez $(_rsrc) : $(tmp) : -t ;
++
++	RmTemps $(_rsrc) : $(tmp) ;
+ 	Clean clean : $(_rsrc) ;
+ }
+ 
+-rule PreProcessRez
++rule PreProcess
+ {
+-	local _tmp = $(<)_tmp ;
+-	MakeLocate $(_tmp) : $(LOCATE_TARGET) ;
+-	Depends $(_tmp) : $(>) ;
+-	Depends $(<) : $(_tmp) ;
+-	RmTemps $(<) : $(_tmp) ;
++	# PreProcess <target> : <source> ;
++	#
++	local target = $(1) ;
++	local source = $(2) ;
++
++	Depends $(target) : $(source) ;
++
++	CPPHDRS on $(target) = [ on $(target) FIncludes $(HDRS) ] ;
++
++	MakeLocate $(target) : $(LOCATE_SOURCE) ;
+ }
+ 
+ if $(OSPLAT) = PPC {
+-	actions PreProcessRez
++	actions PreProcess
+ 	{
+-		mwcc -preprocess -o "$(<)_tmp" $(HDRS) $(>) ;
+-		$(REZ) -t -o "$(<)" $(HDRS) "$(<)_tmp" ;
++		mwcc -preprocess $(CPPHDRS) -o "$(1)" $(2)
+ 	}
+ } else {
+-	actions PreProcessRez
++	actions PreProcess
+ 	{
+-		gcc -E -x c -o "$(<)_tmp" $(HDRS) $(>)  ;
+-		$(REZ) -o "$(<)" -t $(HDRS) "$(<)_tmp" ;
++		gcc -E -x c $(CPPHDRS) -o "$(1)" $(2)
+ 	}
+ }
+ 
+@@ -255,24 +281,15 @@
+ 	#
+ 	local _hdr = $(1) ;
+ 	local _rsrc = $(2) ;
++
+ 	SEARCH on $(_rsrc) = $(SEARCH_SOURCE) ;
+-	HDRS on $(_rsrc) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
+-	HDRS on $(_hdr) = [ FIncludes $(SEARCH_SOURCE) ] ;
+-	MakeLocate $(_hdr) : $(LOCATE_TARGET) ;
+-	RezH $(_hdr) : $(_rsrc) ;
++	HDRS on $(_hdr) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
++	MakeLocate $(_hdr) : $(LOCATE_SOURCE) ;
+ 	Clean clean : $(_hdr) ;
+-}
+ 
+-rule RezH
+-{
+-	Depends $(<) : $(>) ;
++	Rez $(_hdr) : $(_rsrc) : -h ;
+ }
+ 
+-actions RezH
+-{
+-	$(REZ) -h -o "$(<)" $(HDRS) "$(>)" ;
+-}
+-
+ rule PreCompile
+ {
+ 	# PreCompile <hdr> : <src>
+@@ -308,10 +325,8 @@
+ 	local libs = $(3) ;
+ 	local rsrc = $(4) ;		# contains keywords
+ 
+-	LOCATE_TARGET on $(lang) = [ FDirName $(DISTRO_DIR) Languages ] ;
+-	Depends $(rsrc:B).rsrc : $(REZ) ;
+ 	SharedLibrary $(lang) : $(srcs) : $(libs) ;
+-	XRes $(lang) :	$(rsrc) ;
++	XRes $(lang) : $(rsrc) ;
+ }
+ 
+ rule PeExtension
+@@ -321,22 +336,37 @@
+ 	# generates a SharedLib which extends Pe with a specific feature.
+ 	#
+ 	local ext = $(1) ;
+-	local srcs = $(2) ;
++	local srcs = [ FGristFiles $(2) ] ;
+ 	local libs = $(3) ;
+-	local rsrc = $(4) ;		# optional resource file
++	local rsrc = [ FGristFiles $(4) ] ;		# optional resource file
+ 
+ 	if $(rsrc) {
+-		Depends $(rsrc:B).r.h : $(REZ) ;
+-		Depends $(ext) : $(rsrc:B).r.h ;
+-		Depends $(srcs) : $(rsrc:B).r.h ;
+-		RezHeader $(rsrc:B).r.h : $(rsrc) ;
++		local header = $(rsrc:BS=.r.h) ;
++
++		Includes $(srcs) : $(header) ;
++		RezHeader $(header) : $(rsrc) ;
+ 	}
+ 	SharedLibrary $(ext) : $(srcs) : $(libs) ;
++
++	SymlinkDistroExtensionsLibDir $(ext) ;
+ }
+ 
+-actions PeExtension
++rule SymlinkDistroExtensionsLibDir
++{
++	# SymlinkDistroExtensionsLibDir <extension> ;
++	#
++	local extension = $(1) ;
++
++	Depends $(extension) : <distro_extensions_dir_symlink>lib ;
++	NoUpdate <distro_extensions_dir_symlink>lib ;
++	MakeLocate <distro_extensions_dir_symlink>lib : $(DISTRO_DIR)/Extensions ;
++
++	SymlinkDistroExtensionsLibDir1 <distro_extensions_dir_symlink>lib ;
++}
++
++actions together SymlinkDistroExtensionsLibDir1
+ {	# create a link to the folder where libhekkel.so lives
+-	ln -sfn ../lib $(DISTRO_DIR)/Extensions/lib ;
++	ln -sfn ../lib $(1) ;
+ }
+ 
+ rule SubDirSysHdrs
+
+Modified: trunk/rez/Sources/Jamfile
+===================================================================
+--- trunk/rez/Sources/Jamfile	2005-11-29 06:01:21 UTC (rev 410)
++++ trunk/rez/Sources/Jamfile	2005-11-30 23:07:09 UTC (rev 411)
+@@ -7,9 +7,6 @@
+ 	C++FLAGS += -Wno-uninitialized -Wno-unused ;
+ }
+ 
+-REZ = [ FDirName $(TOP) rez rez ] ;
+-Depends $(REZ) : rez ;
+-
+ # <pe-src>
+ Application rez 
+ 	:	rez_parser.y
+
+
+
+From pecvs at hirschkaefer.de  Sun Dec 18 22:02:35 2005
+From: pecvs at hirschkaefer.de (Oliver Tappe)
+Date: Sun, 18 Dec 2005 22:02:35 +0100
+Subject: [pe-commits]test
+Message-ID: <20051218220235.9391.1@bee.hirschkaefer.site>
+
+just testing if list is working, please ignore...
+
+
+From bonefish at berlios.de  Tue Dec 27 23:31:21 2005
+From: bonefish at berlios.de (bonefish at BerliOS)
+Date: Tue, 27 Dec 2005 23:31:21 +0100
+Subject: [pe-commits]r416 - trunk/Sources
+Message-ID: <200512272231.jBRMVLTx020887@sheep.berlios.de>
+
+Author: bonefish
+Date: 2005-12-27 23:31:20 +0100 (Tue, 27 Dec 2005)
+New Revision: 416
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=416&view=rev
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Fixed "smart braces" caret artifact. I had already fixed that, but must have
+accidently reverted it when merging with Axel's changes.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2005-12-13 21:56:00 UTC (rev 415)
++++ trunk/Sources/PText.cpp	2005-12-27 22:31:20 UTC (rev 416)
+@@ -3252,15 +3252,19 @@
+ 	{
+ 		fLastCommand = NULL;
+ 
++		HideCaret();
+ 		fAnchor = LineStart(closeLine);
+ 		fCaret = close;
++		ShowCaret();
+ 
+ 		if (openWhite || fCaret != close)
+ 			CharKeyDown(buf, openWhite);
+ 		else if (fAnchor < fCaret)
+ 			BackspaceKeyDown();
+ 
++		HideCaret();
+ 		fAnchor = ++fCaret;
++		ShowCaret();
+ 	}
+ } /* PText::SmartBrace */
+ 
+
+
+

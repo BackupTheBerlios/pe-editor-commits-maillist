@@ -1,0 +1,1083 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r459 - in trunk: Languages/Sources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r459%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611211812.kALICoaB006299%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000051.html">
+   <LINK REL="Next"  HREF="000053.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r459 - in trunk: Languages/Sources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r459%20-%20in%20trunk%3A%20Languages/Sources%20Sources&In-Reply-To=%3C200611211812.kALICoaB006299%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r459 - in trunk: Languages/Sources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 21 19:12:50 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000051.html">[pe-commits] r458 - in trunk: Languages/Sources Sources
+</A></li>
+        <LI>Next message: <A HREF="000053.html">[pe-commits] r460 - in trunk: Languages/Sources Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-21 19:12:48 +0100 (Tue, 21 Nov 2006)
+New Revision: 459
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=459&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=459&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+   trunk/Sources/CKeywords.cpp
+   trunk/Sources/CKeywords.h
+   trunk/Sources/CLanguageAddOn.cpp
+   trunk/Sources/CLanguageAddOn.h
+   trunk/Sources/CLanguageInterface.cpp
+   trunk/Sources/CLanguageInterface.h
+Log:
+* We now support keywords with the same name in different keyword sets
+* It is now possible to restrict CLanguageProxy::IsKeyword() to search
+  only in specified sets. See HtmlJsPhp_Language.cpp for example code.
+* Several changes and bugfixes in the HTML-JS-PHP addon
+
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-20 18:10:52 UTC (rev 458)
++++ trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-21 18:12:48 UTC (rev 459)
+@@ -39,103 +39,95 @@
+ #include &quot;CLanguageAddOn.h&quot;
+ #include &quot;HColorUtils.h&quot;
+ 
+-using namespace std;
++#define DEBUG_PHP 0
++const bool CASE_SENSITIVE_PHP  = true;
++const bool CASE_SENSITIVE_JS   = true;
++const bool CASE_SENSITIVE_TAG  = true;
++const bool CASE_SENSITIVE_ATTR = true;
+ 
++
+ enum Language {
+-	lang_HTML,
+-	lang_JavaScript,
+-	lang_PHP
++	kLanguageHtml,
++	kLanguageJs,
++	kLanguagePhp
+ };
+ 
+-//template &lt;class I1, class I2&gt;
+-//inline int strncasecmp(I1 a, I2 b, int l)
+-//{
+-//	int d = 0;
+-//
+-//	while (l-- &gt; 0 &amp;&amp; d == 0)
+-//		d = tolower(*a++) - tolower(*b++);
+-//	
+-//	return d;
+-//}
+-
+-_EXPORT const char kLanguageName[] = &quot;HTML-JS-PHP&quot;;
+-_EXPORT const char kLanguageExtensions[] = &quot;html;htm;php&quot;;
++_EXPORT const char kLanguageName[]         = &quot;HTML-JS-PHP&quot;;
++_EXPORT const char kLanguageExtensions[]   = &quot;html;htm;php&quot;;
+ _EXPORT const char kLanguageCommentStart[] = &quot;&lt;!&quot;;
+-_EXPORT const char kLanguageCommentEnd[] = &quot;&gt;&quot;;
+-_EXPORT const char kLanguageKeywordFile[] = &quot;keywords.html-js-php&quot;;
++_EXPORT const char kLanguageCommentEnd[]   = &quot;&gt;&quot;;
++_EXPORT const char kLanguageKeywordFile[]  = &quot;keywords.html-js-php&quot;;
+ 
+-//	--- Available Colors ---
+-//	kColorText
+-//	kColorKeyword1,				kColorKeyword2,
+-//	kColorComment1,				kColorComment2,
+-//	kColorString1,				kColorString2,
+-//	kColorCharConst,
+-//	kColorTag,
+-//	kColorIdentifierSystem,	kColorIdentifierUser,
+-//	kColorNumber1,				kColorNumber2,
+-//	kColorPreprocessor1,		kColorPreprocessor2,
+-//	kColorError1,				kColorError2,
+-//	kColorOperator1,			kColorOperator2,
+-//	kColorSeparator1,			kColorSeparator2,
+-//	kColorUserSet1, kColorUserSet2, kColorUserSet3, kColorUserSet4,
+-
+-// Translate from pepper-colors to pe-colors
+ enum {
+-	kLngColorHtmlKeyword	= kColorKeyword2,
+-	kLngColorHtmlAttribute	= kColorKeyword2,
+-	kLngColorJsKeyword		= kColorKeyword1,
+-	kLngColorPhpKeyword		= kColorKeyword1,
+-	kLngColorSpecialChar	= kColorUserSet4,
+-	kLngColorTagString		= kColorString1,
+-	kLngColorPhpFunction	= kColorUserSet4
+-};
+-
+-enum {
+ 	START = 0,
+-		TAGSTART,
+-		TAGSTARTKEYWORD,
+-		TAGENDKEYWORD,
++		TAG_START,
++		TAG_KEYWORD_START,
++		TAG_KEYWORD_END,
+ 		TAG,
+-		TAGSTRING1,
+-		TAGSTRING2,
+-		TAGATTRIBUTE,
++		TAG_STRING_DOUBLE_QUOTES,
++		TAG_STRING_SINGLE_QUOTES,
++		TAG_ATTRIBUTE,
+ 		SPECIAL,
+ 		COMMENT_DTD,
+ 		COMMENT,
+ 	JAVASCRIPT,
+-		JS_COMMENT,
+-		JS_LCOMMENT,
++		JS_COMMENT_MULTI_LINE,
++		JS_COMMENT_SINGLE_LINE,
+ 		JS_IDENTIFIER,
+-		JS_STRING1,
+-		JS_STRING2,
++		JS_STRING_SINGLE_QUOTES,
++		JS_STRING_DOUBLE_QUOTES,
+ 	PHP_SCRIPT,
+ 		PHP_IDENTIFIER,
+-		PHP_COMMENT,
+-		PHP_LCOMMENT,
+-		PHP_STRING1,
+-		PHP_STRING2
++		PHP_COMMENT_MULTI_LINE,
++		PHP_COMMENT_SINGLE_LINE,
++		PHP_STRING_DOUBLE_QUOTES,
++		PHP_STRING_SINGLE_QUOTES
+ };
+ 
+ enum {
+-	kKwHtmlTag			= 1,
+-	kKwHtmlAttribute	= 2,
+-	kKwJsLanguage		= 3,
+-	kKwJsConstants		= 4,	// TODO
+-	kKwPhpLanguage		= 5,
+-	kKwPhpFunctions		= 6,
+-	kKwPhpConstants		= 7,	// TODO
+-	kKwUserset1			= 8,
+-	kKwUserset2			= 9,
+-	kKwUserset3			= 10,
+-	kKwUserset4			= 11
++	kKwHtmlTag			= 1,	// Set 1
++	kKwHtmlAttribute	= 2,	// Set 2
++	kKwJsLanguage		= 4,	// Set 3
++	kKwJsConstants		= 8,	// Set 4
++	kKwPhpLanguage		= 16,	// Set 5
++	kKwPhpFunctions		= 32,	// Set 6
++	kKwPhpConstants		= 64,	// Set 7
++	kKwUserset1			= 128,	// Set 8
++	kKwUserset2			= 256,	// Set 9
++	kKwUserset3			= 512,	// Set 10
++	kKwUserset4			= 1024,	// Set 11
++	//
++	kKwUsersets			= kKwUserset1|kKwUserset2|kKwUserset3|kKwUserset4,
++	kKwJs				= kKwJsLanguage|kKwJsConstants,
++	kKwPhp				= kKwPhpLanguage|kKwPhpFunctions|kKwPhpConstants
+ };
+ 
++// Color configuration
++enum {
++	kColHtmlComment					= kColorComment1,
++	kColHtmlDtd						= kColorComment2,
++	kColHtmlEntity					= kColorCharConst,
++	kColHtmlAttribute				= kColorKeyword2,
++	kColHtmlTagStringDoubleQuotes	= kColorString1,
++	kColHtmlTagStringSingleQuotes	= kColorString2,
++	//
++	kColJsStringDoubleQuotes		= kColorString1,
++	kColJsStringSingleQuotes		= kColorString2,
++	kColJsComment					= kColorComment2,
++	kColJsCommentL					= kColorComment1,
++	//
++	kColPhpLanguage					= kColorKeyword1,
++	kColPhpFunction					= kColorKeyword2,
++	kColPhpConstants				= kColorCharConst,
++	kColPhpStringDoubleQuotes		= kColorString1,
++	kColPhpStringSingleQuotes		= kColorString2,
++	kColPhpComment					= kColorComment2,
++	kColPhpCommentL					= kColorComment1,
++};
+ 
+ #pragma mark Debug-Functions
+ 
+ 
+-#define DEBUG_PHP 0
+-
+ #if DEBUG_PHP
+ 
+ void DEB_PrintState(const int state, const char c, const char *sub=&quot;&quot;)
+@@ -143,29 +135,29 @@
+ 	const char* name = NULL;
+ 	switch (state)
+ 	{
+-		case START:				name = &quot;START&quot;; break;
+-		case TAGSTART:			name = &quot;TAGSTART&quot;; break;
+-		case TAGSTARTKEYWORD:	name = &quot;TAGSTARTKEYWORD&quot;; break;
+-		case TAGENDKEYWORD:		name = &quot;TAGENDKEYWORD&quot;; break;
+-		case TAG:				name = &quot;TAG&quot;; break;
+-		case TAGSTRING1:		name = &quot;TAGSTRING1&quot;; break;
+-		case TAGSTRING2:		name = &quot;TAGSTRING2&quot;; break;
+-		case TAGATTRIBUTE:		name = &quot;TAGATTRIBUTE&quot;; break;
+-		case SPECIAL:			name = &quot;SPECIAL&quot;; break;
+-		case COMMENT_DTD:		name = &quot;COMMENT_DTD&quot;; break;
+-		case COMMENT:			name = &quot;COMMENT&quot;; break;
+-		case JAVASCRIPT:		name = &quot;JAVASCRIPT&quot;; break;
+-		case JS_COMMENT:		name = &quot;JS_COMMENT&quot;; break;
+-		case JS_LCOMMENT:		name = &quot;JS_LCOMMENT&quot;; break;
+-		case JS_IDENTIFIER:		name = &quot;JS_IDENTIFIER&quot;; break;
+-		case JS_STRING1:		name = &quot;JS_STRING1&quot;; break;
+-		case JS_STRING2:		name = &quot;JS_STRING2&quot;; break;
+-		case PHP_SCRIPT:		name = &quot;PHP_SCRIPT&quot;; break;
+-		case PHP_IDENTIFIER:	name = &quot;PHP_IDENTIFIER&quot;; break;
+-		case PHP_COMMENT:		name = &quot;PHP_COMMENT&quot;; break;
+-		case PHP_LCOMMENT:		name = &quot;PHP_LCOMMENT&quot;; break;
+-		case PHP_STRING1:		name = &quot;PHP_STRING1&quot;; break;
+-		case PHP_STRING2:		name = &quot;PHP_STRING2&quot;; break;
++		case START:						name = &quot;START&quot;; break;
++		case TAG_START:					name = &quot;TAG_START&quot;; break;
++		case TAG_KEYWORD_START:			name = &quot;TAG_KEYWORD_START&quot;; break;
++		case TAG_KEYWORD_END:			name = &quot;TAG_KEYWORD_END&quot;; break;
++		case TAG:						name = &quot;TAG&quot;; break;
++		case TAG_STRING_DOUBLE_QUOTES:	name = &quot;TAG_STRING_DOUBLE_QUOTES&quot;; break;
++		case TAG_STRING_SINGLE_QUOTES:	name = &quot;TAG_STRING_SINGLE_QUOTES&quot;; break;
++		case TAG_ATTRIBUTE:				name = &quot;TAG_ATTRIBUTE&quot;; break;
++		case SPECIAL:					name = &quot;SPECIAL&quot;; break;
++		case COMMENT_DTD:				name = &quot;COMMENT_DTD&quot;; break;
++		case COMMENT:					name = &quot;COMMENT&quot;; break;
++		case JAVASCRIPT:				name = &quot;JAVASCRIPT&quot;; break;
++		case JS_COMMENT_MULTI_LINE:		name = &quot;JS_COMMENT_MULTI_LINE&quot;; break;
++		case JS_COMMENT_SINGLE_LINE:	name = &quot;JS_COMMENT_SINGLE_LINE&quot;; break;
++		case JS_IDENTIFIER:				name = &quot;JS_IDENTIFIER&quot;; break;
++		case JS_STRING_SINGLE_QUOTES:	name = &quot;JS_STRING_SINGLE_QUOTES&quot;; break;
++		case JS_STRING_DOUBLE_QUOTES:	name = &quot;JS_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_SCRIPT:				name = &quot;PHP_SCRIPT&quot;; break;
++		case PHP_IDENTIFIER:			name = &quot;PHP_IDENTIFIER&quot;; break;
++		case PHP_COMMENT_MULTI_LINE:	name = &quot;PHP_COMMENT_MULTI_LINE&quot;; break;
++		case PHP_COMMENT_SINGLE_LINE:	name = &quot;PHP_COMMENT_SINGLE_LINE&quot;; break;
++		case PHP_STRING_DOUBLE_QUOTES:	name = &quot;PHP_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_STRING_SINGLE_QUOTES:	name = &quot;PHP_STRING_SINGLE_QUOTES&quot;; break;
+ 	}
+ 	if (name)
+ 	{
+@@ -180,29 +172,29 @@
+ 	const char* name = NULL;
+ 	switch (state)
+ 	{
+-		case START:				name = &quot;START&quot;; break;
+-		case TAGSTART:			name = &quot;TAGSTART&quot;; break;
+-		case TAGSTARTKEYWORD:	name = &quot;TAGSTARTKEYWORD&quot;; break;
+-		case TAGENDKEYWORD:		name = &quot;TAGENDKEYWORD&quot;; break;
+-		case TAG:				name = &quot;TAG&quot;; break;
+-		case TAGSTRING1:		name = &quot;TAGSTRING1&quot;; break;
+-		case TAGSTRING2:		name = &quot;TAGSTRING2&quot;; break;
+-		case TAGATTRIBUTE:		name = &quot;TAGATTRIBUTE&quot;; break;
+-		case SPECIAL:			name = &quot;SPECIAL&quot;; break;
+-		case COMMENT_DTD:		name = &quot;COMMENT_DTD&quot;; break;
+-		case COMMENT:			name = &quot;COMMENT&quot;; break;
+-		case JAVASCRIPT:		name = &quot;JAVASCRIPT&quot;; break;
+-		case JS_COMMENT:		name = &quot;JS_COMMENT&quot;; break;
+-		case JS_LCOMMENT:		name = &quot;JS_LCOMMENT&quot;; break;
+-		case JS_IDENTIFIER:		name = &quot;JS_IDENTIFIER&quot;; break;
+-		case JS_STRING1:		name = &quot;JS_STRING1&quot;; break;
+-		case JS_STRING2:		name = &quot;JS_STRING2&quot;; break;
+-		case PHP_SCRIPT:		name = &quot;PHP_SCRIPT&quot;; break;
+-		case PHP_IDENTIFIER:	name = &quot;PHP_IDENTIFIER&quot;; break;
+-		case PHP_COMMENT:		name = &quot;PHP_COMMENT&quot;; break;
+-		case PHP_LCOMMENT:		name = &quot;PHP_LCOMMENT&quot;; break;
+-		case PHP_STRING1:		name = &quot;PHP_STRING1&quot;; break;
+-		case PHP_STRING2:		name = &quot;PHP_STRING2&quot;; break;
++		case START:						name = &quot;START&quot;; break;
++		case TAG_START:					name = &quot;TAG_START&quot;; break;
++		case TAG_KEYWORD_START:			name = &quot;TAG_KEYWORD_START&quot;; break;
++		case TAG_KEYWORD_END:			name = &quot;TAG_KEYWORD_END&quot;; break;
++		case TAG:						name = &quot;TAG&quot;; break;
++		case TAG_STRING_DOUBLE_QUOTES:	name = &quot;TAG_STRING_DOUBLE_QUOTES&quot;; break;
++		case TAG_STRING_SINGLE_QUOTES:	name = &quot;TAG_STRING_SINGLE_QUOTES&quot;; break;
++		case TAG_ATTRIBUTE:				name = &quot;TAG_ATTRIBUTE&quot;; break;
++		case SPECIAL:					name = &quot;SPECIAL&quot;; break;
++		case COMMENT_DTD:				name = &quot;COMMENT_DTD&quot;; break;
++		case COMMENT:					name = &quot;COMMENT&quot;; break;
++		case JAVASCRIPT:				name = &quot;JAVASCRIPT&quot;; break;
++		case JS_COMMENT_MULTI_LINE:		name = &quot;JS_COMMENT_MULTI_LINE&quot;; break;
++		case JS_COMMENT_SINGLE_LINE:	name = &quot;JS_COMMENT_SINGLE_LINE&quot;; break;
++		case JS_IDENTIFIER:				name = &quot;JS_IDENTIFIER&quot;; break;
++		case JS_STRING_SINGLE_QUOTES:	name = &quot;JS_STRING_SINGLE_QUOTES&quot;; break;
++		case JS_STRING_DOUBLE_QUOTES:	name = &quot;JS_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_SCRIPT:				name = &quot;PHP_SCRIPT&quot;; break;
++		case PHP_IDENTIFIER:			name = &quot;PHP_IDENTIFIER&quot;; break;
++		case PHP_COMMENT_MULTI_LINE:	name = &quot;PHP_COMMENT_MULTI_LINE&quot;; break;
++		case PHP_COMMENT_SINGLE_LINE:	name = &quot;PHP_COMMENT_SINGLE_LINE&quot;; break;
++		case PHP_STRING_DOUBLE_QUOTES:	name = &quot;PHP_STRING_DOUBLE_QUOTES&quot;; break;
++		case PHP_STRING_SINGLE_QUOTES:	name = &quot;PHP_STRING_SINGLE_QUOTES&quot;; break;
+ 	}
+ 	const char* kwname = NULL;
+ 	switch (keyword)
+@@ -237,30 +229,30 @@
+ {
+ 	switch (state)
+ 	{
+-		case START:				return &quot;START&quot;;
+-		case TAGSTART:			return &quot;TAGSTART&quot;;
+-		case TAGSTARTKEYWORD:	return &quot;TAGSTARTKEYWORD&quot;;
+-		case TAGENDKEYWORD:		return &quot;TAGENDKEYWORD&quot;;
+-		case TAG:				return &quot;TAG&quot;;
+-		case TAGSTRING1:		return &quot;TAGSTRING1&quot;;
+-		case TAGSTRING2:		return &quot;TAGSTRING2&quot;;
+-		case TAGATTRIBUTE:		return &quot;TAGATTRIBUTE&quot;;
+-		case SPECIAL:			return &quot;SPECIAL&quot;;
+-		case COMMENT_DTD:		return &quot;COMMENT_DTD&quot;;
+-		case COMMENT:			return &quot;COMMENT&quot;;
+-		case JAVASCRIPT:		return &quot;JAVASCRIPT&quot;;
+-		case JS_COMMENT:		return &quot;JS_COMMENT&quot;;
+-		case JS_LCOMMENT:		return &quot;JS_LCOMMENT&quot;;
+-		case JS_IDENTIFIER:		return &quot;JS_IDENTIFIER&quot;;
+-		case JS_STRING1:		return &quot;JS_STRING1&quot;;
+-		case JS_STRING2:		return &quot;JS_STRING2&quot;;
+-		case PHP_SCRIPT:		return &quot;PHP_SCRIPT&quot;;
+-		case PHP_IDENTIFIER:	return &quot;PHP_IDENTIFIER&quot;;
+-		case PHP_COMMENT:		return &quot;PHP_COMMENT&quot;;
+-		case PHP_LCOMMENT:		return &quot;PHP_LCOMMENT&quot;;
+-		case PHP_STRING1:		return &quot;PHP_STRING1&quot;;
+-		case PHP_STRING2:		return &quot;PHP_STRING2&quot;;
+-		default:				return &quot;UNKOWN&quot;;
++		case START:						return &quot;START&quot;;
++		case TAG_START:					return &quot;TAG_START&quot;;
++		case TAG_KEYWORD_START:			return &quot;TAG_KEYWORD_START&quot;;
++		case TAG_KEYWORD_END:			return &quot;TAG_KEYWORD_END&quot;;
++		case TAG:						return &quot;TAG&quot;;
++		case TAG_STRING_DOUBLE_QUOTES:	return &quot;TAG_STRING_DOUBLE_QUOTES&quot;;
++		case TAG_STRING_SINGLE_QUOTES:	return &quot;TAG_STRING_SINGLE_QUOTES&quot;;
++		case TAG_ATTRIBUTE:				return &quot;TAG_ATTRIBUTE&quot;;
++		case SPECIAL:					return &quot;SPECIAL&quot;;
++		case COMMENT_DTD:				return &quot;COMMENT_DTD&quot;;
++		case COMMENT:					return &quot;COMMENT&quot;;
++		case JAVASCRIPT:				return &quot;JAVASCRIPT&quot;;
++		case JS_COMMENT_MULTI_LINE:		return &quot;JS_COMMENT_MULTI_LINE&quot;;
++		case JS_COMMENT_SINGLE_LINE:	return &quot;JS_COMMENT_SINGLE_LINE&quot;;
++		case JS_IDENTIFIER:				return &quot;JS_IDENTIFIER&quot;;
++		case JS_STRING_SINGLE_QUOTES:	return &quot;JS_STRING_SINGLE_QUOTES&quot;;
++		case JS_STRING_DOUBLE_QUOTES:	return &quot;JS_STRING_DOUBLE_QUOTES&quot;;
++		case PHP_SCRIPT:				return &quot;PHP_SCRIPT&quot;;
++		case PHP_IDENTIFIER:			return &quot;PHP_IDENTIFIER&quot;;
++		case PHP_COMMENT_MULTI_LINE:	return &quot;PHP_COMMENT_MULTI_LINE&quot;;
++		case PHP_COMMENT_SINGLE_LINE:	return &quot;PHP_COMMENT_SINGLE_LINE&quot;;
++		case PHP_STRING_DOUBLE_QUOTES:	return &quot;PHP_STRING_DOUBLE_QUOTES&quot;;
++		case PHP_STRING_SINGLE_QUOTES:	return &quot;PHP_STRING_SINGLE_QUOTES&quot;;
++		default:						return &quot;UNKOWN&quot;;
+ 	}
+ }
+ 
+@@ -308,7 +300,7 @@
+ 			case START:
+ 				DEB_PrintState(state, c);
+ 				if (c == '&lt;')
+-					state = TAGSTART;
++					state = TAG_START;
+ 				else if (c == '&amp;')
+ 					state = SPECIAL;
+ 				else if (c == 0 || c == '\n')
+@@ -321,10 +313,10 @@
+ 				}
+ 				break;
+ 			
+-			case TAGSTART:
++			case TAG_START:
+ 				DEB_PrintState(state, c);
+ 				if (c == '/')
+-					state = TAGENDKEYWORD;
++					state = TAG_KEYWORD_END;
+ 				else if (c == '!')
+ 				{
+ 					state = COMMENT_DTD;
+@@ -337,7 +329,7 @@
+ 					
+ 					if (strncasecmp(text + s, &quot;php&quot;, 3) == 0)
+ 					{
+-						proxy.SetColor(s, kLngColorHtmlKeyword);
++						proxy.SetColor(s, kColorTag);
+ 						s = (i += 3);
+ 					}
+ 					
+@@ -348,8 +340,8 @@
+ 				{
+ 					proxy.SetColor(s, kColorTag);
+ 					s = i - 1;
+-					kws = proxy.Move(tolower(c), 1);
+-					state = TAGSTARTKEYWORD;
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), 1);
++					state = TAG_KEYWORD_START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+@@ -363,14 +355,14 @@
+ 				}
+ 				break;
+ 			
+-			case TAGENDKEYWORD:
++			case TAG_KEYWORD_END:
+ 				DEB_PrintState(state, c);
+ 				if (isalpha(c))
+ 				{
+ 					proxy.SetColor(s, kColorTag);
+ 					s = i - 1;
+-					kws = proxy.Move(tolower(c), 1);
+-					state = TAGSTARTKEYWORD;
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), 1);
++					state = TAG_KEYWORD_START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+@@ -384,18 +376,18 @@
+ 				}
+ 				break;
+ 			
+-			case TAGSTARTKEYWORD:
++			case TAG_KEYWORD_START:
+ 				DEB_PrintState(state, c);
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+-					switch (kwc = proxy.IsKeyword(kws))
++					switch (kwc = proxy.IsKeyword(kws, kKwHtmlTag|kKwUsersets))
+ 					{
+-						case kKwHtmlTag:  color = kColorKeyword1; break;
++						case kKwHtmlTag:  color = kColorTag;      break;
+ 						case kKwUserset1: color = kColorUserSet1; break;
+ 						case kKwUserset2: color = kColorUserSet2; break;
+ 						case kKwUserset3: color = kColorUserSet3; break;
+ 						case kKwUserset4: color = kColorUserSet4; break;
+-						default:          color = kColorTag;      break;
++						default:          color = kColorText;     break;
+ 					}
+ 					proxy.SetColor(s, color);
+ 					DEB_PrintSetKw(state, kwc);
+@@ -407,7 +399,7 @@
+ 					s = --i;
+ 				}
+ 				else if (kws)
+-					kws = proxy.Move(tolower(c), kws);
++					kws = proxy.Move(CASE_SENSITIVE_TAG ? c : tolower(c), kws);
+ 				break;
+ 			
+ 			case TAG:
+@@ -431,12 +423,12 @@
+ 					case '&quot;':
+ 						proxy.SetColor(s, kColorTag);
+ 						s = i - 1;
+-						state = TAGSTRING1;
++						state = TAG_STRING_DOUBLE_QUOTES;
+ 						break;
+ 					case '\'':
+ 						proxy.SetColor(s, kColorTag);
+ 						s = i - 1;
+-						state = TAGSTRING2;
++						state = TAG_STRING_SINGLE_QUOTES;
+ 						break;
+ 					case '!':
+ 						if (i == s + 2)
+@@ -451,55 +443,55 @@
+ 						{
+ 							proxy.SetColor(s, kColorTag);
+ 							s = i - 1;
+-							kws = proxy.Move(tolower(c), 1);
+-							state = TAGATTRIBUTE;
++							kws = proxy.Move(CASE_SENSITIVE_ATTR ? c : tolower(c), 1);
++							state = TAG_ATTRIBUTE;
+ 						}
+ 						break;
+ 				}
+ 				break;
+ 			
+-			case TAGSTRING1:
++			case TAG_STRING_DOUBLE_QUOTES:
+ 				DEB_PrintState(state, c);
+ 				if (c == '&quot;')
+ 				{
+-					proxy.SetColor(s, kLngColorTagString);
++					proxy.SetColor(s, kColHtmlTagStringDoubleQuotes);
+ 					s = i;
+ 					state = TAG;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLngColorTagString);
++					proxy.SetColor(s, kColHtmlTagStringDoubleQuotes);
+ 					leave = true;
+ 				}
+ 				break;
+ 			
+-			case TAGSTRING2:
++			case TAG_STRING_SINGLE_QUOTES:
+ 				DEB_PrintState(state, c);
+ 				if (c == '\'')
+ 				{
+-					proxy.SetColor(s, kLngColorTagString);
++					proxy.SetColor(s, kColHtmlTagStringSingleQuotes);
+ 					s = i;
+ 					state = TAG;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kLngColorTagString);
++					proxy.SetColor(s, kColHtmlTagStringSingleQuotes);
+ 					leave = true;
+ 				}
+ 				break;
+ 			
+-			case TAGATTRIBUTE:
++			case TAG_ATTRIBUTE:
+ 				DEB_PrintState(state, c);
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+-					switch (kwc = proxy.IsKeyword(kws))
++					switch (kwc = proxy.IsKeyword(kws, kKwHtmlAttribute|kKwUsersets))
+ 					{
+-						case kKwHtmlAttribute: color = kLngColorHtmlAttribute; break;
+-						case kKwUserset1:      color = kColorUserSet1;         break;
+-						case kKwUserset2:      color = kColorUserSet2;         break;
+-						case kKwUserset3:      color = kColorUserSet3;         break;
+-						case kKwUserset4:      color = kColorUserSet4;         break;
+-						default:               color = kColorText;             break;
++						case kKwHtmlAttribute: color = kColHtmlAttribute; break;
++						case kKwUserset1:      color = kColorUserSet1;    break;
++						case kKwUserset2:      color = kColorUserSet2;    break;
++						case kKwUserset3:      color = kColorUserSet3;    break;
++						case kKwUserset4:      color = kColorUserSet4;    break;
++						default:               color = kColorText;        break;
+ 					}
+ 					proxy.SetColor(s, color);
+ 					DEB_PrintSetKw(state, kwc);
+@@ -508,7 +500,7 @@
+ 					state = TAG;
+ 				}
+ 				else if (kws)
+-					kws = proxy.Move(tolower(c), kws);
++					kws = proxy.Move(CASE_SENSITIVE_ATTR ? c : tolower(c), kws);
+ 				break;
+ 			
+ 			case SPECIAL:
+@@ -521,7 +513,7 @@
+ 				}
+ 				else if (c == ';')
+ 				{
+-					proxy.SetColor(s, kLngColorSpecialChar);
++					proxy.SetColor(s, kColHtmlEntity);
+ 					s = i;
+ 					state = START;
+ 				}
+@@ -533,19 +525,19 @@
+ 				DEB_PrintState(state, c);
+ 				if (c == '-' &amp;&amp; text[i] == '-' &amp;&amp; i == s + 3 &amp;&amp; text[i - 2] == '!' &amp;&amp; text[i - 3] == '&lt;')
+ 				{
+-					proxy.SetColor(s, kColorTag);
++					proxy.SetColor(s, kColHtmlDtd);
+ 					s = i - 1;
+ 					state = COMMENT;
+ 				}
+ 				else if (c == '&gt;')
+ 				{
+-					proxy.SetColor(s, kColorTag);
++					proxy.SetColor(s, kColHtmlDtd);
+ 					s = i;
+ 					state = forceState;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kColorTag);
++					proxy.SetColor(s, kColHtmlDtd);
+ 					leave = true;
+ 				}
+ 				break;
+@@ -561,13 +553,13 @@
+ 				}
+ 				else if (c == '-' &amp;&amp; text[i] == '-')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColHtmlComment);
+ 					s = ++i;
+ 					state = COMMENT_DTD;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColHtmlComment);
+ 					leave = true;
+ 				}
+ 				break;
+@@ -588,22 +580,22 @@
+ 					if (strncasecmp(text + i + 1, &quot;script&quot;, 6) == 0)
+ 					{
+ 						++i;
+-						state = TAGSTART;
++						state = TAG_START;
+ 					}
+ 				}
+ 				else if (c == '/' &amp;&amp; text[i] == '*')
+-					state = JS_COMMENT;
++					state = JS_COMMENT_MULTI_LINE;
+ 				else if (c == '/' &amp;&amp; text[i] == '/')
+-					state = JS_LCOMMENT;
++					state = JS_COMMENT_SINGLE_LINE;
+ 				else if (isalpha(c))
+ 				{
+-					kws = proxy.Move(tolower(c), 1);
++					kws = proxy.Move(CASE_SENSITIVE_JS ? c : tolower(c), 1);
+ 					state = JS_IDENTIFIER;
+ 				}
+ 				else if (c == '\'')
+-					state = JS_STRING1;
++					state = JS_STRING_SINGLE_QUOTES;
+ 				else if (c == '&quot;')
+-					state = JS_STRING2;
++					state = JS_STRING_DOUBLE_QUOTES;
+ 				else if (c == 0 || c == '\n')
+ 					leave = true;
+ 					
+@@ -614,32 +606,32 @@
+ 				}
+ 				break;
+ 				
+-			case JS_COMMENT:
++			case JS_COMMENT_MULTI_LINE:
+ 				DEB_PrintState(state, c);
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColJsComment);
+ 					s = i + 1;
+ 					state = JAVASCRIPT;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColJsComment);
+ 					leave = true;
+ 				}
+ 				break;
+ 
+-			case JS_LCOMMENT:
++			case JS_COMMENT_SINGLE_LINE:
+ 				DEB_PrintState(state, c);
+ 				if (c == '-' &amp;&amp; text[i] == '-')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColJsCommentL);
+ 					s = i + 1;
+ 					state = TAG;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColJsCommentL);
+ 					state = JAVASCRIPT;
+ 					leave = true;
+ 				}
+@@ -649,16 +641,17 @@
+ 				DEB_PrintState(state, c);
+ 				if (!isalnum(c) &amp;&amp; c != '_')
+ 				{
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws, kKwJs|kKwUsersets)) != 0)
+ 					{
+ 						switch (kwc)
+ 						{
+-							case kKwJsLanguage:  color = kLngColorJsKeyword; break;
+-							case kKwUserset1:    color = kColorUserSet1; break;
+-							case kKwUserset2:    color = kColorUserSet2; break;
+-							case kKwUserset3:    color = kColorUserSet3; break;
+-							case kKwUserset4:    color = kColorUserSet4; break;
+-							default:             color = kColorText; break;
++							case kKwJsLanguage:  color = kColorKeyword1;  break;
++							case kKwJsConstants: color = kColorCharConst; break;
++							case kKwUserset1:    color = kColorUserSet1;  break;
++							case kKwUserset2:    color = kColorUserSet2;  break;
++							case kKwUserset3:    color = kColorUserSet3;  break;
++							case kKwUserset4:    color = kColorUserSet4;  break;
++							default:             color = kColorText;      break;
+ 						}
+ 						proxy.SetColor(s, color);
+ 						DEB_PrintSetKw(state, kwc);
+@@ -672,17 +665,17 @@
+ 					state = JAVASCRIPT;
+ 				}
+ 				else if (kws)
+-					kws = proxy.Move((int)(unsigned char)c, kws);
++					kws = proxy.Move(CASE_SENSITIVE_JS ? c : tolower(c), kws);
+ 				break;
+ 			
+-			case JS_STRING1:
+-			case JS_STRING2:
++			case JS_STRING_SINGLE_QUOTES:
++			case JS_STRING_DOUBLE_QUOTES:
+ 				DEB_PrintState(state, c);
+ 				if (!esc &amp;&amp;
+-					((state == JS_STRING1 &amp;&amp; c == '\'') ||
+-					(state == JS_STRING2 &amp;&amp; c == '&quot;')))
++					((state == JS_STRING_SINGLE_QUOTES &amp;&amp; c == '\'') ||
++					(state == JS_STRING_DOUBLE_QUOTES &amp;&amp; c == '&quot;')))
+ 				{
+-					proxy.SetColor(s, kColorString1);
++					proxy.SetColor(s, (state == JS_STRING_SINGLE_QUOTES) ? kColJsStringSingleQuotes : kColJsStringDoubleQuotes);
+ 					s = i;
+ 					state = JAVASCRIPT;
+ 				}
+@@ -690,7 +683,7 @@
+ 				{
+ 					if (text[i - 2] == '\\' &amp;&amp; text[i - 3] != '\\')
+ 					{
+-						proxy.SetColor(s, kColorString1);
++						proxy.SetColor(s, (state == JS_STRING_SINGLE_QUOTES) ? kColJsStringSingleQuotes : kColJsStringDoubleQuotes);
+ 					}
+ 					else
+ 					{
+@@ -715,17 +708,17 @@
+ 				}
+ 				else if (isalpha(c))
+ 				{
+-					kws = proxy.Move(tolower(c), 1);
++					kws = proxy.Move(CASE_SENSITIVE_PHP ? c : tolower(c), 1);
+ 					state = PHP_IDENTIFIER;
+ 				}
+ 				else if (c == '&quot;')
+-					state = PHP_STRING1;
++					state = PHP_STRING_DOUBLE_QUOTES;
+ 				else if (c == '\'')
+-					state = PHP_STRING2;
++					state = PHP_STRING_SINGLE_QUOTES;
+ 				else if (c == '#' || (c == '/' &amp;&amp; text[i] == '/'))
+-					state = PHP_LCOMMENT;
++					state = PHP_COMMENT_SINGLE_LINE;
+ 				else if (c == '/' &amp;&amp; text[i] == '*')
+-					state = PHP_COMMENT;
++					state = PHP_COMMENT_MULTI_LINE;
+ 				else if (c == 0 || c == '\n')
+ 					leave = true;
+ 
+@@ -739,18 +732,19 @@
+ 			case PHP_IDENTIFIER:
+ 				if (!isalnum(c) &amp;&amp; c != '_')
+ 				{
+-					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws)) != 0)
++					if (i &gt; s + 1 &amp;&amp; (kwc = proxy.IsKeyword(kws, kKwPhp|kKwUsersets)))
+ 					{
+ 						DEB_PrintState(state, c, &quot;KWD&quot;);
+ 						switch (kwc)
+ 						{
+-							case kKwPhpLanguage:   color = kColorKeyword1; break;
+-							case kKwPhpFunctions:  color = kColorKeyword2; break;
+-							case kKwUserset1:      color = kColorUserSet1; break;
+-							case kKwUserset2:      color = kColorUserSet2; break;
+-							case kKwUserset3:      color = kColorUserSet3; break;
+-							case kKwUserset4:      color = kColorUserSet4; break;
+-							default:               color = kColorText;     break;
++							case kKwPhpLanguage:   color = kColPhpLanguage;  break;
++							case kKwPhpFunctions:  color = kColPhpFunction;  break;
++							case kKwPhpConstants:  color = kColPhpConstants; break;
++							case kKwUserset1:      color = kColorUserSet1;   break;
++							case kKwUserset2:      color = kColorUserSet2;   break;
++							case kKwUserset3:      color = kColorUserSet3;   break;
++							case kKwUserset4:      color = kColorUserSet4;   break;
++							default:               color = kColorText;       break;
+ 						}
+ 						proxy.SetColor(s, color);
+ 						DEB_PrintSetKw(state, kwc);
+@@ -766,20 +760,20 @@
+ 				}
+ 				else if (kws)
+ 					DEB_PrintState(state, c, &quot;MOV&quot;);
+-					kws = proxy.Move(tolower(c), kws);
++					kws = proxy.Move(CASE_SENSITIVE_PHP ? c : tolower(c), kws);
+ 				break;
+ 
+-			case PHP_STRING1:
++			case PHP_STRING_DOUBLE_QUOTES:
+ 				DEB_PrintState(state, c);
+ 				if (!esc &amp;&amp; c == '&quot;')
+ 				{
+-					proxy.SetColor(s, kColorString1);
++					proxy.SetColor(s, kColPhpStringDoubleQuotes);
+ 					s = i;
+ 					state = PHP_SCRIPT;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kColorString1);
++					proxy.SetColor(s, kColPhpStringDoubleQuotes);
+ 					s = size;
+ 					leave = true;
+ 				}
+@@ -787,17 +781,17 @@
+ 					esc = !esc &amp;&amp; (c == '\\');
+ 				break;
+ 
+-			case PHP_STRING2:
++			case PHP_STRING_SINGLE_QUOTES:
+ 				DEB_PrintState(state, c);
+ 				if (!esc &amp;&amp; c == '\'')
+ 				{
+-					proxy.SetColor(s, kColorString2);
++					proxy.SetColor(s, kColPhpStringSingleQuotes);
+ 					s = i;
+ 					state = PHP_SCRIPT;
+ 				}
+ 				else if (c == '\n' || c == 0)
+ 				{
+-					proxy.SetColor(s, kColorString2);
++					proxy.SetColor(s, kColPhpStringSingleQuotes);
+ 					s = size;
+ 					leave = true;
+ 				}
+@@ -805,23 +799,23 @@
+ 					esc = !esc &amp;&amp; (c == '\\');
+ 				break;
+ 
+-			case PHP_COMMENT:
++			case PHP_COMMENT_MULTI_LINE:
+ 				DEB_PrintState(state, c);
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+-					proxy.SetColor(s, kColorComment2);
++					proxy.SetColor(s, kColPhpComment);
+ 					s = i + 1;
+ 					state = PHP_SCRIPT;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kColorComment2);
++					proxy.SetColor(s, kColPhpComment);
+ 					leave = true;
+ 				}
+ 				else if (((percent &amp;&amp; c == '%') || (!percent &amp;&amp; c == '?')) &amp;&amp;
+ 					text[i] == '&gt;')
+ 				{
+-					proxy.SetColor(s, kColorComment2);
++					proxy.SetColor(s, kColPhpComment);
+ 					s = i - 1;
+ 					proxy.SetColor(s, kColorTag);
+ 					s = ++i;
+@@ -829,18 +823,18 @@
+ 				}
+ 				break;
+ 
+-			case PHP_LCOMMENT:
++			case PHP_COMMENT_SINGLE_LINE:
+ 				DEB_PrintState(state, c);
+ 				if (c == 0 || c == '\n')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColPhpCommentL);
+ 					state = PHP_SCRIPT;
+ 					leave = true;
+ 				}
+ 				else if (((percent &amp;&amp; c == '%') || (!percent &amp;&amp; c == '?')) &amp;&amp;
+ 					text[i] == '&gt;')
+ 				{
+-					proxy.SetColor(s, kColorComment1);
++					proxy.SetColor(s, kColPhpCommentL);
+ 					s = i - 1;
+ 					proxy.SetColor(s, kColorTag);
+ 					s = ++i;
+@@ -961,7 +955,7 @@
+ 		{
+ 			case START:
+ 				if (c == '&lt;')
+-					state = TAGSTART;
++					state = TAG_START;
+ 				else if (c == '&amp;')
+ 					state = SPECIAL;
+ 				else if (c == 0 || c == '\n')
+@@ -971,9 +965,9 @@
+ 					s = i - 1;
+ 				break;
+ 			
+-			case TAGSTART:
++			case TAG_START:
+ 				if (c == '/')
+-					state = TAGENDKEYWORD;
++					state = TAG_KEYWORD_END;
+ 				else if (c == '!')
+ 				{
+ 					state = COMMENT_DTD;
+@@ -993,7 +987,7 @@
+ 				else if (isalpha(c))
+ 				{
+ 					s = i - 1;
+-					state = TAGSTARTKEYWORD;
++					state = TAG_KEYWORD_START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+@@ -1006,11 +1000,11 @@
+ 				}
+ 				break;
+ 			
+-			case TAGENDKEYWORD:
++			case TAG_KEYWORD_END:
+ 				if (isalpha(c))
+ 				{
+ 					s = i - 1;
+-					state = TAGSTARTKEYWORD;
++					state = TAG_KEYWORD_START;
+ 				}
+ 				else if (c == 0 || c == '\n')
+ 				{
+@@ -1023,7 +1017,7 @@
+ 				}
+ 				break;
+ 			
+-			case TAGSTARTKEYWORD:
++			case TAG_KEYWORD_START:
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+ 					if (strncasecmp(text + s, &quot;script&quot;, 6) == 0 &amp;&amp; text[s - 1] != '/')
+@@ -1053,11 +1047,11 @@
+ 						break;
+ 					case '&quot;':
+ 						s = i - 1;
+-						state = TAGSTRING1;
++						state = TAG_STRING_DOUBLE_QUOTES;
+ 						break;
+ 					case '\'':
+ 						s = i - 1;
+-						state = TAGSTRING2;
++						state = TAG_STRING_SINGLE_QUOTES;
+ 						break;
+ 					case '!':
+ 						if (i == s + 2)
+@@ -1070,13 +1064,13 @@
+ 						if (isalpha(c))
+ 						{
+ 							s = i - 1;
+-							state = TAGATTRIBUTE;
++							state = TAG_ATTRIBUTE;
+ 						}
+ 						break;
+ 				}
+ 				break;
+ 			
+-			case TAGSTRING1:
++			case TAG_STRING_DOUBLE_QUOTES:
+ 				if (c == '&quot;')
+ 				{
+ 					s = i;
+@@ -1086,7 +1080,7 @@
+ 					leave = true;
+ 				break;
+ 			
+-			case TAGSTRING2:
++			case TAG_STRING_SINGLE_QUOTES:
+ 				if (c == '\'')
+ 				{
+ 					s = i;
+@@ -1096,7 +1090,7 @@
+ 					leave = true;
+ 				break;
+ 			
+-			case TAGATTRIBUTE:
++			case TAG_ATTRIBUTE:
+ 				if (!isalnum(c) &amp;&amp; c != '-')
+ 				{
+ 					s = --i;
+@@ -1169,20 +1163,20 @@
+ 					if (strncasecmp(text + i + 1, &quot;script&quot;, 6) == 0)
+ 					{
+ 						++i;
+-						state = TAGSTART;
++						state = TAG_START;
+ 						outLangStart = i - 1;
+ 					}
+ 				}
+ 				else if (c == '/' &amp;&amp; text[i] == '*')
+-					state = JS_COMMENT;
++					state = JS_COMMENT_MULTI_LINE;
+ 				else if (c == '/' &amp;&amp; text[i] == '/')
+-					state = JS_LCOMMENT;
++					state = JS_COMMENT_SINGLE_LINE;
+ 				else if (isalpha(c))
+ 					state = JS_IDENTIFIER;
+ 				else if (c == '\'')
+-					state = JS_STRING1;
++					state = JS_STRING_SINGLE_QUOTES;
+ 				else if (c == '&quot;')
+-					state = JS_STRING2;
++					state = JS_STRING_DOUBLE_QUOTES;
+ 				else if (c == 0 || c == '\n')
+ 					leave = true;
+ 					
+@@ -1190,7 +1184,7 @@
+ 					s = i - 1;
+ 				break;
+ 				
+-			case JS_COMMENT:
++			case JS_COMMENT_MULTI_LINE:
+ 				if ((s == 0 || i &gt; s + 1) &amp;&amp; c == '*' &amp;&amp; text[i] == '/')
+ 				{
+ 					s = i + 1;
+@@ -1200,7 +1194,7 @@
+ 					leave = true;
+ 				break;
+ 
+-			case JS_LCOMMENT:
++			case JS_COMMENT_SINGLE_LINE:
+ 				if (c == '-' &amp;&amp; text[i] == '-')
+ 				{
+ 					s = i + 1;
+@@ -1222,11 +1216,11 @@
+ 				}
+ 				break;
+ 			
+-			case JS_STRING1:
+-			case JS_STRING2:
++			case JS_STRING_SINGLE_QUOTES:
++			case JS_STRING_DOUBLE_QUOTES:
+ 				if (!esc &amp;&amp;
+-					((state == JS_STRING1 &amp;&amp; c == '\'') ||
+-					(state == JS_STRING2 &amp;&amp; c == '&quot;')))
++					((state == JS_STRING_SINGLE_QUOTES &amp;&amp; c == '\'') ||
++					(state == JS_STRING_DOUBLE_QUOTES &amp;&amp; c == '&quot;')))
+
+[... truncated: 288 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000051.html">[pe-commits] r458 - in trunk: Languages/Sources Sources
+</A></li>
+	<LI>Next message: <A HREF="000053.html">[pe-commits] r460 - in trunk: Languages/Sources Resources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

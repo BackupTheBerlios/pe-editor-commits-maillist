@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r547 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-October/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r547%20-%20trunk/Sources&In-Reply-To=%3C200810162311.m9GNBkIj000804%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000136.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r547 - trunk/Sources</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r547%20-%20trunk/Sources&In-Reply-To=%3C200810162311.m9GNBkIj000804%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r547 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 17 01:11:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000136.html">[pe-commits] r546 - trunk/Extensions
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2008-10-17 01:11:45 +0200 (Fri, 17 Oct 2008)
+New Revision: 547
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=547&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=547&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+When the GroupWindow was showing, Pe crashed in PDoc::MenusBeginning(). Reported
+by Alexandre Deckner.
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2008-10-15 14:06:25 UTC (rev 546)
++++ trunk/Sources/PDoc.cpp	2008-10-16 23:11:45 UTC (rev 547)
+@@ -1570,7 +1570,7 @@
+ 		if ((doc &amp;&amp; doc-&gt;IsWorksheet()) || !w)
+ 			continue;
+ 		// Count files to be saved
+-		if (doc-&gt;IsDirty() || !doc-&gt;EntryRef())
++		if (doc &amp;&amp; (doc-&gt;IsDirty() || !doc-&gt;EntryRef()))
+ 			unsavedDocs++;
+ 		BMessage *msg = new BMessage(msg_SelectWindow);
+ 		msg-&gt;AddPointer(&quot;window&quot;, w);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000136.html">[pe-commits] r546 - trunk/Extensions
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

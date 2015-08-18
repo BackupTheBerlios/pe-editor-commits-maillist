@@ -1,0 +1,329 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r504 - in trunk: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r504%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200804081753.m38Hrlkp019704%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000097.html">
+   <LINK REL="Next"  HREF="000099.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r504 - in trunk: Resources Sources</H1>
+    <B>mmu_man at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r504%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200804081753.m38Hrlkp019704%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r504 - in trunk: Resources Sources">mmu_man at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr  8 19:53:47 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000097.html">[pe-commits] r503 - trunk/Extensions
+</A></li>
+        <LI>Next message: <A HREF="000099.html">[pe-commits] r505 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#98">[ date ]</a>
+              <a href="thread.html#98">[ thread ]</a>
+              <a href="subject.html#98">[ subject ]</a>
+              <a href="author.html#98">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mmu_man
+Date: 2008-04-08 19:53:46 +0200 (Tue, 08 Apr 2008)
+New Revision: 504
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=504&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=504&amp;view=rev</A>
+
+Modified:
+   trunk/Resources/Menus.r
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PMessages.h
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+Preliminary support for printing. One goal is to be able to print to a PDF file and generate bookmarks from the function list.
+
+
+Modified: trunk/Resources/Menus.r
+===================================================================
+--- trunk/Resources/Menus.r	2008-04-08 14:54:05 UTC (rev 503)
++++ trunk/Resources/Menus.r	2008-04-08 17:53:46 UTC (rev 504)
+@@ -55,9 +55,9 @@
+ 		Item		{ &quot;Save All&quot;,				msg_SaveAll,					none,	noKey	},
+ 		Item		{ &quot;Revert&#8230;&quot;,				msg_Revert,						none,	noKey	},
+ 		Separator	{																			},
+-//		Item		{ &quot;Page Setup&#8230;&quot;,			msg_PageSetup,					none,	noKey	},
+-//		Item		{ &quot;Print&#8230;&quot;,					msg_Print,						none,	'P'		},
+-//		Separator	{																			},
++		Item		{ &quot;Page Setup&#8230;&quot;,			msg_PageSetup,					none,	noKey	},
++		Item		{ &quot;Print&#8230;&quot;,					msg_Print,						none,	'P'		},
++		Separator	{																			},
+ 		Item		{ &quot;Quit&quot;,					msg_Quit,						none,	'Q'		}
+ 	}
+ };
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2008-04-08 14:54:05 UTC (rev 503)
++++ trunk/Sources/PDoc.cpp	2008-04-08 17:53:46 UTC (rev 504)
+@@ -1487,6 +1487,18 @@
+ 				break;
+ 			}
+ 
++			case msg_PageSetup:
++			{
++				fText-&gt;PageSetup();
++				break;
++			}
++
++			case msg_Print:
++			{
++				fText-&gt;Print();
++				break;
++			}
++
+ 			default:
+ 			{
+ 				if ((msg-&gt;what &amp; 0xffff0000) == 0x65780000)	// that's 'ex..'
+
+Modified: trunk/Sources/PMessages.h
+===================================================================
+--- trunk/Sources/PMessages.h	2008-04-08 14:54:05 UTC (rev 503)
++++ trunk/Sources/PMessages.h	2008-04-08 17:53:46 UTC (rev 504)
+@@ -47,6 +47,8 @@
+ #define msg_Save						'Save'
+ #define msg_SaveAs						'SvAs'
+ #define msg_Revert						'Rvrt'
++#define msg_PageSetup					'PagS'
++#define msg_Print						'Prin'
+ #define msg_Close						'Clse'
+ #define msg_Quit						'Quit'
+ #define msg_Undo						'Undo'
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2008-04-08 14:54:05 UTC (rev 503)
++++ trunk/Sources/PText.cpp	2008-04-08 17:53:46 UTC (rev 504)
+@@ -36,6 +36,7 @@
+ #include &quot;pe.h&quot;
+ 
+ #include &lt;signal.h&gt;
++#include &lt;PrintJob.h&gt;
+ #include &lt;String.h&gt;
+ 
+ #include &quot;PText.h&quot;
+@@ -201,6 +202,7 @@
+ 	fAppendNextCut = false;
+ 	fLastKillPoint = -1;
+ 	fLastSavedStateCmd = NULL;
++	fPrintSettings = NULL;
+ 
+ 	fSoftWrap = gPrefs-&gt;GetPrefInt(prf_I_SoftWrap, false);
+ 	fWrapType = gPrefs-&gt;GetPrefInt(prf_I_WrapType, 3);
+@@ -273,6 +275,7 @@
+ 	free(fCWD);
+ 	delete fMainPopUp;
+ 	delete fLineMap;
++	delete fPrintSettings;
+ } /* PText::~PText */
+ 
+ void PText::SetDefaultLanguageByExtension(const char *extension)
+@@ -5418,6 +5421,130 @@
+ 		Draw(b);
+ } /* PText::ShiftLinesPart2 */
+ 
++#pragma mark - Printing
++
++status_t PText::PageSetup()
++{
++	BPrintJob printJob(Window()-&gt;Title());
++
++	if (fPrintSettings) {
++		printJob.SetSettings(new BMessage(*fPrintSettings));
++	}
++
++	status_t result = printJob.ConfigPage();
++	if (result &gt;= B_OK) {
++		delete fPrintSettings;
++		fPrintSettings = printJob.Settings();
++		//fPrintSettings-&gt;PrintToStream();
++	} else
++		FailOSErr(result);
++	return result;
++} /* PText::PageSetup */
++
++status_t PText::Print()
++{
++	status_t result;
++
++	if (fPrintSettings == NULL) {
++		result = PageSetup();
++		if (result &lt; B_OK)
++			return result;
++	}
++
++	BPrintJob printJob(Window()-&gt;Title());
++	
++	// 
++	//fPrintSettings-&gt;PrintToStream();
++
++	printJob.SetSettings(new BMessage(*fPrintSettings));
++	result = printJob.ConfigJob();
++	FailOSErr(result);
++
++	// information from printJob
++	BRect printableRect = printJob.PrintableRect();	
++	int32 firstPage = printJob.FirstPage();
++	int32 lastPage = printJob.LastPage();
++   
++	// lines eventually to be used to compute pages to print
++	int32 firstLine = 0;
++	int32 lastLine = LineCount();
++
++	// values to be computed
++	int32 pagesInDocument = 1;
++	int32 linesInDocument = LineCount();
++
++	if (!printableRect.IsValid()) {
++		//FailOSErr(B_INVALID_PRINT_SETTINGS);
++		FailOSErr(B_BAD_VALUE);
++	}
++
++fprintf(stderr, &quot;printableRect = {%f, %f, %f, %f}\n&quot;, printableRect.left, printableRect.top, printableRect.right, printableRect.bottom);
++fprintf(stderr, &quot;firstLine = %d\n&quot;, firstLine);
++fprintf(stderr, &quot;lastLine = %d\n&quot;, lastLine);
++fprintf(stderr, &quot;pagesInDocument = %d\n&quot;, pagesInDocument);
++fprintf(stderr, &quot;linesInDocument = %d\n&quot;, linesInDocument);
++
++	int32 currentLine = 0;
++	while (currentLine &lt; linesInDocument) {
++		float currentHeight = 0;
++//fprintf(stderr, &quot;currentLine = %d\n&quot;, currentLine);
++		while (currentHeight &lt; printableRect.Height() &amp;&amp; currentLine &lt; linesInDocument) {
++fprintf(stderr, &quot;currentHeight = %d\n&quot;, currentHeight);
++			currentHeight += fLineHeight;
++			if (currentHeight &lt; printableRect.Height())
++				currentLine++;
++		}
++		if (pagesInDocument == lastPage)
++			lastLine = currentLine;
++
++		if (currentHeight &gt;= printableRect.Height()) {
++			pagesInDocument++;
++			if (pagesInDocument == firstPage)
++				firstLine = currentLine;
++		}
++	}
++
++	if (lastPage &gt; pagesInDocument - 1) {
++		lastPage = pagesInDocument - 1;
++		lastLine = currentLine - 1;
++	}
++
++	
++fprintf(stderr, &quot;pagesInDocument = %d\n&quot;, pagesInDocument);
++fprintf(stderr, &quot;linesInDocument = %d\n&quot;, linesInDocument);
++	printJob.BeginJob();
++	if (LineCount() &gt; 0 &amp;&amp; Size() &gt; 0) {
++		int32 printLine = firstLine;
++		while (printLine &lt;= lastLine) {
++fprintf(stderr, &quot;printLine = %d\n&quot;, printLine);
++			float currentHeight = 0;
++			int32 firstLineOnPage = printLine;
++			while (currentHeight &lt; printableRect.Height() &amp;&amp; printLine &lt;= lastLine) {
++fprintf(stderr, &quot;currentHeight = %d\n&quot;, currentHeight);
++				currentHeight += fLineHeight;
++				if (currentHeight &lt; printableRect.Height())
++					printLine++;
++			}
++
++			float top = 0;
++			if (firstLineOnPage != 0)
++				top = fLineHeight * firstLineOnPage;
++
++#define TEXT_INSET 3.0
++			float bottom = fLineHeight * printLine;
++			BRect textRect(0.0, top + TEXT_INSET, printableRect.Width(), bottom + TEXT_INSET);
++			printJob.DrawView(this, textRect, B_ORIGIN);
++			printJob.SpoolPage();
++		}
++	}
++	
++
++	printJob.CommitJob();
++
++	//FailOSErr(B_UNSUPPORTED);
++	return B_OK;
++} /* PText::Print */
++
+ #pragma mark - Commands
+ 
+ BFilePanel *gCwdPanel = NULL;
+@@ -5959,6 +6086,13 @@
+ 				break;
+ 			}
+ 
++			case msg_PageSetup:
++				PageSetup();
++				break;
++			case msg_Print:
++				Print();
++				break;
++
+ 			case 'test':
+ 				ASSERT(false);
+ 				break;
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2008-04-08 14:54:05 UTC (rev 503)
++++ trunk/Sources/PText.h	2008-04-08 17:53:46 UTC (rev 504)
+@@ -163,6 +163,9 @@
+ 			void HideCaret();
+ 			void ShowCaret();
+ 			
++			status_t PageSetup();
++			status_t Print();
++
+ 			int FindWord(int key, bool subWord = false);
+ 			int FindWord(int indx, int key, bool mouseSelect = false, bool subWord = false);
+ 			int FindNextWord(int offset);
+@@ -345,6 +348,7 @@
+ 			bool fAppendNextCut;
+ 			PCmd* fLastSavedStateCmd;
+ 			float fDefaultCharWidth;
++			BMessage *fPrintSettings;
+ 		
+ static		PText *sfDragSource;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000097.html">[pe-commits] r503 - trunk/Extensions
+</A></li>
+	<LI>Next message: <A HREF="000099.html">[pe-commits] r505 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#98">[ date ]</a>
+              <a href="thread.html#98">[ thread ]</a>
+              <a href="subject.html#98">[ subject ]</a>
+              <a href="author.html#98">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

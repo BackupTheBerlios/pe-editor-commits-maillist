@@ -1,0 +1,1096 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r461 - in trunk: Extensions Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r461%20-%20in%20trunk%3A%20Extensions%20Sources&In-Reply-To=%3C200611221156.kAMBuRgb025103%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000053.html">
+   <LINK REL="Next"  HREF="000055.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r461 - in trunk: Extensions Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r461%20-%20in%20trunk%3A%20Extensions%20Sources&In-Reply-To=%3C200611221156.kAMBuRgb025103%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r461 - in trunk: Extensions Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 22 12:56:27 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000053.html">[pe-commits] r460 - in trunk: Languages/Sources Resources Sources
+</A></li>
+        <LI>Next message: <A HREF="000055.html">[pe-commits] r462 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#54">[ date ]</a>
+              <a href="thread.html#54">[ thread ]</a>
+              <a href="subject.html#54">[ subject ]</a>
+              <a href="author.html#54">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-22 12:56:16 +0100 (Wed, 22 Nov 2006)
+New Revision: 461
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=461&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=461&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/CopyContaining.cpp
+   trunk/Extensions/CutContaining.cpp
+   trunk/Extensions/HTMLAnchor.cpp
+   trunk/Extensions/HTMLImage.cpp
+   trunk/Extensions/Pipe.cpp
+   trunk/Extensions/PrefixLines.cpp
+   trunk/Sources/CFtpDialog.cpp
+   trunk/Sources/CFtpDialog.h
+   trunk/Sources/CGoToLine.cpp
+   trunk/Sources/CGoToLine.h
+   trunk/Sources/CInfoDialog.cpp
+   trunk/Sources/CInfoDialog.h
+   trunk/Sources/CLogin.cpp
+   trunk/Sources/CLogin.h
+   trunk/Sources/COpenSelection.cpp
+   trunk/Sources/COpenSelection.h
+   trunk/Sources/HColorPicker2.cpp
+   trunk/Sources/HColorPicker2.h
+   trunk/Sources/HColorUtils.h
+   trunk/Sources/HDialog.cpp
+   trunk/Sources/HDialog.h
+Log:
+* (Hopefully) fixed a bug intruduced with the last commit:
+  Saving prefs should work now again
+* While touching those files removed some unnecessary white space
+
+
+Modified: trunk/Extensions/CopyContaining.cpp
+===================================================================
+--- trunk/Extensions/CopyContaining.cpp	2006-11-21 20:24:34 UTC (rev 460)
++++ trunk/Extensions/CopyContaining.cpp	2006-11-22 11:56:16 UTC (rev 461)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,8 +28,8 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+-	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
+ 	Created: 09/15/97 02:33:13
+ */
+ 
+@@ -67,11 +67,11 @@
+ class CCopyContainingDialog : public HDialog {
+ public:
+ 		enum { sResID = 1 };
+-		
++
+ 		CCopyContainingDialog(BRect frame, const char *name, window_type type, int flags,
+ 			BWindow *owner, BPositionIO* data);
+ 
+-virtual bool OKClicked();
++virtual bool OkClicked();
+ virtual bool CancelClicked();
+ };
+ 
+@@ -83,13 +83,13 @@
+ 	FindView(&quot;text&quot;)-&gt;MakeFocus(true);
+ } /* CCopyContainingDialog::CCopyContainingDialog */
+ 
+-bool CCopyContainingDialog::OKClicked()
++bool CCopyContainingDialog::OkClicked()
+ {
+ 	sOK = true;
+ 	sText = strdup(GetText(&quot;text&quot;));
+ 	sSelectionOnly = IsOn(&quot;sel&quot;);
+ 	return true;
+-} /* CCopyContainingDialog::OKClicked */
++} /* CCopyContainingDialog::OkClicked */
+ 
+ bool CCopyContainingDialog::CancelClicked()
+ {
+@@ -100,21 +100,21 @@
+ long perform_edit(MTextAddOn *addon)
+ {
+ 	long result = B_NO_ERROR;
+-	
++
+ 	try
+ 	{
+ 		long s, e, l;
+ 		addon-&gt;GetSelection(&amp;s, &amp;e);
+ 		sSelectionOnly = (s != e);
+-		
++
+ 		BMemoryIO tmpl(kDLOG1, kDLOG1Size);
+ 		CCopyContainingDialog *p = DialogCreator&lt;CCopyContainingDialog&gt;::CreateDialog(addon-&gt;Window(), tmpl);
+ 		p-&gt;Show();
+-		
++
+ 		wait_for_thread(p-&gt;Thread(), &amp;l);
+ 		if (sOK)
+ 			result = CopyContaining(addon);
+-		
++
+ 		if (sText)
+ 			free(sText);
+ 	}
+@@ -123,14 +123,14 @@
+ 		e.DoError();
+ 		result = B_ERROR;
+ 	}
+-	
++
+ 	return result;
+ } /* perform_edit */
+ 
+ long CopyContaining(MTextAddOn *addon)
+ {
+ 	//  error checking
+-	
++
+ 	long	selStart;
+ 	long	selEnd;
+ 
+@@ -145,9 +145,9 @@
+ 		selStart = 0;
+ 		selEnd = addon-&gt;TextLength();
+ 	}
+-	
++
+ 	//  set-up
+-	
++
+ 	const char *txt = addon-&gt;Text(), *ptr = txt + selStart;
+ 	int size = selEnd - selStart;
+ 
+@@ -156,20 +156,20 @@
+ 	int r = regcomp(&amp;pb, sText, REG_EXTENDED);
+ 
+ 	if (r == REG_NOERROR)
+-	{	
++	{
+ 		//  perform operation into temporary buffer
+-		
++
+ 		char *new_text = new char[size + 1];
+ 		int ls = 0, li = 0, i = 0;
+-		
++
+ 		while (li &lt;= size)
+ 		{
+ 			if (li == size || ptr[li] == '\n')
+ 			{
+ 				new_text[i] = 0;
+-				
++
+ 				r = regexec(&amp;pb, new_text + ls, 0, NULL, 0);
+-				
++
+ 				if (r == 0)
+ 				{
+ 					new_text[i] = '\n';
+@@ -182,11 +182,11 @@
+ 			}
+ 			else
+ 				new_text[i] = ptr[li];
+-			
++
+ 			i++;
+ 			li++;
+ 		}
+-		
++
+ 		if (r &lt; 2)
+ 		{
+ 			if (be_clipboard-&gt;Lock())
+@@ -200,7 +200,7 @@
+ 
+ 		delete[] new_text;
+ 	}
+-	
++
+ 	if (r != REG_NOERROR &amp;&amp; r != REG_NOMATCH)
+ 	{
+ 		char err[100];
+@@ -210,8 +210,8 @@
+ 		MAlert *a = new MWarningAlert(err);
+ 		a-&gt;Go();
+ 	}
+-	
++
+ 	regfree(&amp;pb);
+-	
++
+ 	return B_NO_ERROR;
+ } /* CopyContaining */
+
+Modified: trunk/Extensions/CutContaining.cpp
+===================================================================
+--- trunk/Extensions/CutContaining.cpp	2006-11-21 20:24:34 UTC (rev 460)
++++ trunk/Extensions/CutContaining.cpp	2006-11-22 11:56:16 UTC (rev 461)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,8 +28,8 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+-	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
+ 	Created: 09/15/97 02:33:13
+ */
+ 
+@@ -67,11 +67,11 @@
+ class CCutContainingDialog : public HDialog {
+ public:
+ 		enum { sResID = 1 };
+-		
++
+ 		CCutContainingDialog(BRect frame, const char *name, window_type type, int flags,
+ 			BWindow *owner, BPositionIO* data);
+ 
+-virtual bool OKClicked();
++virtual bool OkClicked();
+ virtual bool CancelClicked();
+ };
+ 
+@@ -83,13 +83,13 @@
+ 	FindView(&quot;text&quot;)-&gt;MakeFocus(true);
+ } /* CCutContainingDialog::CCutContainingDialog */
+ 
+-bool CCutContainingDialog::OKClicked()
++bool CCutContainingDialog::OkClicked()
+ {
+ 	sOK = true;
+ 	sText = strdup(GetText(&quot;text&quot;));
+ 	sSelectionOnly = IsOn(&quot;sel&quot;);
+ 	return true;
+-} /* CCutContainingDialog::OKClicked */
++} /* CCutContainingDialog::OkClicked */
+ 
+ bool CCutContainingDialog::CancelClicked()
+ {
+@@ -100,21 +100,21 @@
+ long perform_edit(MTextAddOn *addon)
+ {
+ 	long result = B_NO_ERROR;
+-	
++
+ 	try
+ 	{
+ 		long s, e, l;
+ 		addon-&gt;GetSelection(&amp;s, &amp;e);
+ 		sSelectionOnly = (s != e);
+-		
++
+ 		BMemoryIO tmpl(kDLOG1, kDLOG1Size);
+ 		CCutContainingDialog *p = DialogCreator&lt;CCutContainingDialog&gt;::CreateDialog(addon-&gt;Window(), tmpl);
+ 		p-&gt;Show();
+-		
++
+ 		wait_for_thread(p-&gt;Thread(), &amp;l);
+ 		if (sOK)
+ 			result = CutContaining(addon);
+-		
++
+ 		if (sText)
+ 			free(sText);
+ 	}
+@@ -123,14 +123,14 @@
+ 		e.DoError();
+ 		result = B_ERROR;
+ 	}
+-	
++
+ 	return result;
+ } /* perform_edit */
+ 
+ long CutContaining(MTextAddOn *addon)
+ {
+ 	//  error checking
+-	
++
+ 	long	selStart;
+ 	long	selEnd;
+ 
+@@ -145,9 +145,9 @@
+ 		selStart = 0;
+ 		selEnd = addon-&gt;TextLength();
+ 	}
+-	
++
+ 	//  set-up
+-	
++
+ 	const char *txt = addon-&gt;Text();
+ 	int size = selEnd - selStart;
+ 
+@@ -156,12 +156,12 @@
+ 	int r = regcomp(&amp;pb, sText, REG_EXTENDED);
+ 
+ 	if (r == REG_NOERROR)
+-	{	
++	{
+ 		char *new_text = new char[size + 1];
+ 		int ns, ni, ts, ti;
+-		
++
+ 		ns = ni = ts = ti = 0;
+-		
++
+ 		while (ti &lt;= size)
+ 		{
+ 			if (ti == size || txt[ti] == '\n')
+@@ -169,9 +169,9 @@
+ 				int sl = ni - ns + 1;
+ 
+ 				new_text[ni] = 0;
+-				
++
+ 				r = regexec(&amp;pb, new_text + ns, 0, NULL, 0);
+-				
++
+ 				if (r == 0)
+ 				{
+ 					addon-&gt;Select(ts, ti + 1);
+@@ -198,7 +198,7 @@
+ 			ni++;
+ 			ti++;
+ 		}
+-		
++
+ 		if (r &lt; 2)
+ 		{
+ 			if (be_clipboard-&gt;Lock())
+@@ -212,7 +212,7 @@
+ 
+ 		delete[] new_text;
+ 	}
+-	
++
+ 	if (r != REG_NOERROR &amp;&amp; r != REG_NOMATCH)
+ 	{
+ 		char err[100];
+@@ -222,8 +222,8 @@
+ 		MAlert *a = new MWarningAlert(err);
+ 		a-&gt;Go();
+ 	}
+-	
++
+ 	regfree(&amp;pb);
+-	
++
+ 	return B_NO_ERROR;
+ } /* CutContaining */
+
+Modified: trunk/Extensions/HTMLAnchor.cpp
+===================================================================
+--- trunk/Extensions/HTMLAnchor.cpp	2006-11-21 20:24:34 UTC (rev 460)
++++ trunk/Extensions/HTMLAnchor.cpp	2006-11-22 11:56:16 UTC (rev 461)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,8 +28,8 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
+-	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
+ 	Created: 09/15/97 02:33:13
+ */
+ 
+@@ -67,11 +67,11 @@
+ class CAnchorDialog : public HDialog {
+ public:
+ 		enum { sResID = 1 };
+-		
++
+ 		CAnchorDialog(BRect frame, const char *name, window_type type, int flags,
+ 			BWindow *owner, BPositionIO* data);
+ 
+-virtual bool OKClicked();
++virtual bool OkClicked();
+ virtual bool CancelClicked();
+ virtual void MessageReceived(BMessage *msg);
+ };
+@@ -83,13 +83,13 @@
+ 	FindView(&quot;path&quot;)-&gt;MakeFocus(true);
+ } /* CAnchorDialog::CAnchorDialog */
+ 
+-bool CAnchorDialog::OKClicked()
++bool CAnchorDialog::OkClicked()
+ {
+ 	sOK = true;
+ 	sPath = strdup(GetText(&quot;path&quot;));
+ 
+ 	return true;
+-} /* CAnchorDialog::OKClicked */
++} /* CAnchorDialog::OkClicked */
+ 
+ bool CAnchorDialog::CancelClicked()
+ {
+@@ -104,9 +104,9 @@
+ 		try
+ 		{
+ 			entry_ref ref, doc;
+-			
++
+ 			FailOSErr(msg-&gt;FindRef(&quot;refs&quot;, &amp;ref));
+-			
++
+ 			if (sAddon-&gt;GetRef(doc) == B_OK)
+ 			{
+ 				char *sp = RelativePath(doc, ref);
+@@ -128,15 +128,15 @@
+ long perform_edit(MTextAddOn *addon)
+ {
+ 	long result = B_NO_ERROR;
+-	
++
+ 	try
+ 	{
+ 		sAddon = addon;
+-		
++
+ 		BMemoryIO tmpl(kDLOG1, kDLOG1Size);
+ 		CAnchorDialog *p = DialogCreator&lt;CAnchorDialog&gt;::CreateDialog(addon-&gt;Window(), tmpl);
+ 		p-&gt;Show();
+-		
++
+ 		long l;
+ 		wait_for_thread(p-&gt;Thread(), &amp;l);
+ 
+@@ -151,23 +151,23 @@
+ 		e.DoError();
+ 		result = B_ERROR;
+ 	}
+-	
++
+ 	return result;
+ } /* perform_edit */
+ 
+ long Anchor(MTextAddOn *addon)
+ {
+ 	char s[2048];
+-	
++
+ 	long st, end, len;
+ 	addon-&gt;GetSelection(&amp;st, &amp;end);
+ 	len = end - st;
+-	
++
+ 	if (*sPath)
+ 		sprintf(s, &quot;&lt;a href=\&quot;%s\&quot;&gt;&quot;, sPath);
+ 	else
+ 		strcpy(s, &quot;&lt;a href=\&quot;\&quot;&gt;&quot;);
+-	
++
+ 	addon-&gt;Select(st, st);
+ 	addon-&gt;Insert(s);
+ 
+@@ -180,32 +180,32 @@
+ char *RelativePath(entry_ref&amp; a, entry_ref&amp; b)
+ {
+ 	BEntry e;
+-	
++
+ 	BPath pa, pb;
+-	
++
+ 	FailOSErr(e.SetTo(&amp;a));
+ 	FailOSErr(e.GetPath(&amp;pa));
+-	
++
+ 	FailOSErr(e.SetTo(&amp;b));
+ 	FailOSErr(e.GetPath(&amp;pb));
+-	
++
+ 	char result[PATH_MAX];
+ 	const char *s, *sa, *sb;
+-	
++
+ 	s = sa = pa.Path();
+ 	sb = pb.Path();
+-	
++
+ 	int ma, mb;
+-	
++
+ 	ma = strrchr(sa, '/') - sa;
+ 	mb = strrchr(sb, '/') - sb;
+-	
++
+ 	while (*sa == *sb)
+ 	{
+ 		sa++;
+ 		sb++;
+ 	}
+-	
++
+ 	if (sa &gt; s &amp;&amp; (sa[-1] != '/' || sb[-1] != '/'))
+ 	{
+ 		while (sa &gt; s &amp;&amp; sa[-1] != '/')
+@@ -214,7 +214,7 @@
+ 			sb--;
+ 		}
+ 	}
+-	
++
+ 	if (strchr(sa, '/') == NULL)
+ 	{
+ 		strcpy(result, &quot;./&quot;);
+@@ -224,15 +224,15 @@
+ 	{
+ 		result[0] = 0;
+ 		char *t;
+-		
++
+ 		while ((t = strchr(sa, '/')) != NULL)
+ 		{
+ 			strcat(result, &quot;../&quot;);
+ 			sa = t + 1;
+ 		}
+-		
++
+ 		strcat(result, sb);
+ 	}
+-	
++
+ 	return strdup(result);
+ } /* RelativePath */
+
+Modified: trunk/Extensions/HTMLImage.cpp
+===================================================================
+--- trunk/Extensions/HTMLImage.cpp	2006-11-21 20:24:34 UTC (rev 460)
++++ trunk/Extensions/HTMLImage.cpp	2006-11-22 11:56:16 UTC (rev 461)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 09/15/97 02:33:13
+ */
+@@ -67,11 +67,11 @@
+ class CImageDialog : public HDialog {
+ public:
+ 		enum { sResID = 1 };
+-		
++
+ 		CImageDialog(BRect frame, const char *name, window_type type, int flags,
+ 			BWindow *owner, BPositionIO* data);
+ 
+-virtual bool OKClicked();
++virtual bool OkClicked();
+ virtual bool CancelClicked();
+ virtual void MessageReceived(BMessage *msg);
+ };
+@@ -83,7 +83,7 @@
+ 	FindView(&quot;path&quot;)-&gt;MakeFocus(true);
+ } /* CImageDialog::CImageDialog */
+ 
+-bool CImageDialog::OKClicked()
++bool CImageDialog::OkClicked()
+ {
+ 	sOK = true;
+ 	sPath = strdup(GetText(&quot;path&quot;));
+@@ -95,7 +95,7 @@
+ 	sAlign = strdup(GetText(&quot;align&quot;));
+ 
+ 	return true;
+-} /* CImageDialog::OKClicked */
++} /* CImageDialog::OkClicked */
+ 
+ bool CImageDialog::CancelClicked()
+ {
+@@ -110,20 +110,20 @@
+ 		try
+ 		{
+ 			short width, height;
+-			
++
+ 			entry_ref ref;
+-			
++
+ 			FailOSErr(msg-&gt;FindRef(&quot;refs&quot;, &amp;ref));
+-			
++
+ 			try
+ 			{
+ 				GetGIFSize(ref, width, height);
+ 
+ 				char s[32];
+-				
++
+ 				sprintf(s, &quot;%d&quot;, width);
+ 				SetText(&quot;width&quot;, s);
+-				
++
+ 				sprintf(s, &quot;%d&quot;, height);
+ 				SetText(&quot;height&quot;, s);
+ 			}
+@@ -131,25 +131,25 @@
+ 			{
+ 				e.DoError();
+ 			}
+-			
++
+ 			entry_ref doc;
+ 			sAddon-&gt;GetRef(doc);
+-			
++
+ 			char *sp = RelativePath(doc, ref);
+-			
++
+ 			SetText(&quot;path&quot;, sp);
+-			
++
+ 			char *np = strrchr(sp, '/');
+-			
++
+ 			if (np == NULL) np = sp;
+ 			else np++;
+-			
++
+ 			int l = max_c(strlen(np) - 4, 0);
+ 			if (strcasecmp(np + l, &quot;.gif&quot;) == 0)
+ 				np[l] = 0;
+-			
++
+ 			SetText(&quot;alt&quot;, np);
+-			
++
+ 			free(sp);
+ 		}
+ 		catch (HErr&amp; err)
+@@ -164,15 +164,15 @@
+ long perform_edit(MTextAddOn *addon)
+ {
+ 	long result = B_NO_ERROR;
+-	
++
+ 	try
+ 	{
+ 		sAddon = addon;
+-		
++
+ 		BMemoryIO tmpl(kDLOG1, kDLOG1Size);
+ 		CImageDialog *p = DialogCreator&lt;CImageDialog&gt;::CreateDialog(addon-&gt;Window(), tmpl);
+ 		p-&gt;Show();
+-		
++
+ 		long l;
+ 		wait_for_thread(p-&gt;Thread(), &amp;l);
+ 
+@@ -184,41 +184,41 @@
+ 		e.DoError();
+ 		result = B_ERROR;
+ 	}
+-	
++
+ 	return result;
+ } /* perform_edit */
+ 
+ long Image(MTextAddOn *addon)
+ {
+ 	char s[2048], *sp;
+-	
++
+ 	strcpy(s, &quot;&lt;img&quot;);
+ 	sp = s + strlen(s);
+-	
++
+ 	if (*sPath)
+ 	{
+ 		sprintf(sp, &quot; src=\&quot;%s\&quot;&quot;, sPath);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	if (*sWidth)
+ 	{
+ 		sprintf(sp, &quot; width=%s&quot;, sWidth);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	if (*sHeight)
+ 	{
+ 		sprintf(sp, &quot; height=%s&quot;, sHeight);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	if (*sBorder)
+ 	{
+ 		sprintf(sp, &quot; border=%s&quot;, sBorder);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	if (*sAlign)
+ 	{
+ 		sprintf(sp, &quot; align=%s&quot;, sAlign);
+@@ -230,15 +230,15 @@
+ 		sprintf(sp, &quot; alt=\&quot;%s\&quot;&quot;, sAlt);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	if (*sMap)
+ 	{
+ 		sprintf(sp, &quot; ismap map=%s&quot;, sMap);
+ 		sp += strlen(sp);
+ 	}
+-	
++
+ 	strcat(sp, &quot;&gt;&quot;);
+-	
++
+ 	long st, end;
+ 	addon-&gt;GetSelection(&amp;st, &amp;end);
+ 	addon-&gt;Insert(s);
+@@ -252,39 +252,39 @@
+ {
+ 	BFile file;
+ 	BPositionIO&amp; data = file;
+-	
++
+ 	FailOSErr(file.SetTo(&amp;ref, B_READ_ONLY));
+-	
++
+ 	char buf[256];
+-	
++
+ 	CheckedRead(file, buf, 3);
+ 	buf[3] = 0;
+ 
+ 	if (strcmp(buf, &quot;GIF&quot;))
+ 		throw HErr(&quot;Not a gif file&quot;);
+-	
++
+ 	CheckedRead(file, buf, 3);
+-	
++
+ 	if (strcmp(buf, &quot;87a&quot;) &amp;&amp; strcmp(buf, &quot;89a&quot;))
+ 		throw HErr(&quot;Not a known gif file&quot;);
+ 
+ 	CheckedRead(file, buf, 7);
+-	
++
+ 	int bitPixel = 2 &lt;&lt; (buf[4] &amp; 0x07);
+ 	file.Seek(bitPixel * 3, SEEK_CUR);
+ 
+ 	while (true)
+ 	{
+ 		unsigned char c;
+-		
++
+ 		data &gt;&gt; c;
+-		
++
+ 		if (c == ';')
+ 		{
+ 			// huh?
+ 			throw HErr(&quot;Not a valid GIF file&quot;);
+ 		}
+-		
++
+ 		if (c == '!')
+ 		{
+ 			data &gt;&gt; c;
+@@ -292,12 +292,12 @@
+ 				;
+ 			continue;
+ 		}
+-		
++
+ 		if (c != ',')
+ 			continue;
+-		
++
+ 		CheckedRead(file, buf, 9);
+-		
++
+ 		width = B_LENDIAN_TO_HOST_INT16(*(short *)(buf + 4));
+ 		height = B_LENDIAN_TO_HOST_INT16(*(short *)(buf + 6));
+ 		return;
+@@ -315,39 +315,39 @@
+ 		char buf[256];
+ 		CheckedRead(data, buf, count);
+ 	}
+-	
++
+ 	return count;
+ } /* GetGIFDataBlock */
+ 
+ char *RelativePath(entry_ref&amp; a, entry_ref&amp; b)
+ {
+ 	BEntry e;
+-	
++
+ 	BPath pa, pb;
+-	
++
+ 	FailOSErr(e.SetTo(&amp;a));
+ 	FailOSErr(e.GetPath(&amp;pa));
+-	
++
+ 	FailOSErr(e.SetTo(&amp;b));
+ 	FailOSErr(e.GetPath(&amp;pb));
+-	
++
+ 	char result[PATH_MAX];
+ 	const char *s, *sa, *sb;
+-	
++
+ 	s = sa = pa.Path();
+ 	sb = pb.Path();
+-	
++
+ 	int ma, mb;
+-	
++
+ 	ma = strrchr(sa, '/') - sa;
+ 	mb = strrchr(sb, '/') - sb;
+-	
++
+ 	while (*sa == *sb)
+ 	{
+ 		sa++;
+ 		sb++;
+ 	}
+-	
++
+ 	if (sa &gt; s &amp;&amp; (sa[-1] != '/' || sb[-1] != '/'))
+ 	{
+ 		while (sa &gt; s &amp;&amp; sa[-1] != '/')
+@@ -356,7 +356,7 @@
+ 			sb--;
+ 		}
+ 	}
+-	
++
+ 	if (strchr(sa, '/') == NULL)
+ 	{
+ 		strcpy(result, &quot;./&quot;);
+@@ -367,15 +367,15 @@
+ 		result[0] = 0;
+ 
+ 		char *t;
+-		
++
+ 		while ((t = strchr(sa, '/')) != NULL)
+ 		{
+ 			strcat(result, &quot;../&quot;);
+ 			sa = t + 1;
+ 		}
+-		
++
+ 		strcat(result, sb);
+ 	}
+-	
++
+ 	return strdup(result);
+ } /* RelativePath */
+
+Modified: trunk/Extensions/Pipe.cpp
+===================================================================
+--- trunk/Extensions/Pipe.cpp	2006-11-21 20:24:34 UTC (rev 460)
++++ trunk/Extensions/Pipe.cpp	2006-11-22 11:56:16 UTC (rev 461)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 09/15/97 02:33:13
+ */
+@@ -66,11 +66,11 @@
+ class CPipeDialog : public HDialog {
+ public:
+ 		enum { sResID = 1 };
+-		
++
+ 		CPipeDialog(BRect frame, const char *name, window_type type, int flags,
+ 			BWindow *owner, BPositionIO* data);
+ 
+-virtual bool OKClicked();
++virtual bool OkClicked();
+ virtual bool CancelClicked();
+ };
+ 
+@@ -81,12 +81,12 @@
+ 	FindView(&quot;command&quot;)-&gt;MakeFocus(true);
+ } /* CPipeDialog::CPipeDialog */
+
+[... truncated: 2702 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000053.html">[pe-commits] r460 - in trunk: Languages/Sources Resources Sources
+</A></li>
+	<LI>Next message: <A HREF="000055.html">[pe-commits] r462 - trunk/Languages/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#54">[ date ]</a>
+              <a href="thread.html#54">[ thread ]</a>
+              <a href="subject.html#54">[ subject ]</a>
+              <a href="author.html#54">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

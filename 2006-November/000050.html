@@ -1,0 +1,1096 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r457 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r457%20-%20trunk/Sources&In-Reply-To=%3C200611201745.kAKHjYk5027750%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000049.html">
+   <LINK REL="Next"  HREF="000051.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r457 - trunk/Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r457%20-%20trunk/Sources&In-Reply-To=%3C200611201745.kAKHjYk5027750%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r457 - trunk/Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 20 18:45:34 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000049.html">[pe-commits] r456 - in trunk: Languages/Sources Sources
+</A></li>
+        <LI>Next message: <A HREF="000051.html">[pe-commits] r458 - in trunk: Languages/Sources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#50">[ date ]</a>
+              <a href="thread.html#50">[ thread ]</a>
+              <a href="subject.html#50">[ subject ]</a>
+              <a href="author.html#50">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-20 18:45:29 +0100 (Mon, 20 Nov 2006)
+New Revision: 457
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=457&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=457&amp;view=rev</A>
+
+Added:
+   trunk/Sources/CHtmlBar.cpp
+   trunk/Sources/CHtmlBar.h
+   trunk/Sources/CLanguageInterface.cpp
+   trunk/Sources/CLanguageInterface.h
+   trunk/Sources/PIdeCompat.h
+Removed:
+   trunk/Sources/CHTMLBar.cpp
+   trunk/Sources/CHTMLBar.h
+   trunk/Sources/CLangIntf.cpp
+   trunk/Sources/CLangIntf.h
+   trunk/Sources/PIDECompat.h
+Modified:
+   trunk/Sources/CInfoDialog.cpp
+   trunk/Sources/CLanguageAddOn.cpp
+   trunk/Sources/CLanguageAddOn.h
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/Jamfile
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PFindFunctionDialog.h
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+* CLangIntf renamed to CLanguageInterface
+* PIDECompat.h renamed to PIdeCompat.h
+* CHTML[Bar,Button,ButtonPane,CmdButton,Dialog,Menu,SimpleButton] -&gt; CHtml...
+
+
+Deleted: trunk/Sources/CHTMLBar.cpp
+
+Deleted: trunk/Sources/CHTMLBar.h
+
+Copied: trunk/Sources/CHtmlBar.cpp (from rev 456, trunk/Sources/CHTMLBar.cpp)
+===================================================================
+--- trunk/Sources/CHTMLBar.cpp	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CHtmlBar.cpp	2006-11-20 17:45:29 UTC (rev 457)
+@@ -0,0 +1,465 @@
++/*	$Id$
++	
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++
++	Created: 03/09/98 23:14:35
++*/
++
++#include &quot;pe.h&quot;
++#include &quot;CHtmlBar.h&quot;
++#include &quot;PApp.h&quot;
++#include &quot;HPreferences.h&quot;
++#include &quot;PDoc.h&quot;
++#include &quot;PText.h&quot;
++#include &quot;PMessages.h&quot;
++#include &quot;HAppResFile.h&quot;
++#include &quot;HStream.h&quot;
++#include &quot;HDefines.h&quot;
++#include &quot;ResourcesMisc.h&quot;
++#include &quot;Prefs.h&quot;
++
++CHtmlBar *CHtmlBar::sfInstance;
++
++CHtmlBar* CHtmlBar::Instance()
++{
++	if (sfInstance == NULL)
++		sfInstance = new CHtmlBar();
++
++	return sfInstance;
++} /* CHtmlBar::Instance */
++
++void CHtmlBar::Close()
++{
++	if (sfInstance)
++	{
++		sfInstance-&gt;Lock();
++	
++		gPrefs-&gt;SetPrefRect(prf_R_HtmlPalettePos, sfInstance-&gt;Frame());
++
++		sfInstance-&gt;Quit();
++	}
++} /* CHtmlBar::Close */
++
++CHtmlBar::CHtmlBar()
++	: BWindow(gPrefs-&gt;GetPrefRect(prf_R_HtmlPalettePos, BRect(20, 20, 120, 120)),
++		&quot;HTML Palette&quot;,
++		B_FLOATING_WINDOW,
++		B_AVOID_FRONT | B_AVOID_FOCUS | B_WILL_ACCEPT_FIRST_CLICK | B_NOT_RESIZABLE | B_NOT_ZOOMABLE)
++{
++	const void *p;
++	size_t size;
++	
++	if (gPrefsDir.Contains(&quot;HTML Palette&quot;))
++	{
++		try
++		{
++			BEntry e;
++			BFile f;
++			BResources r;
++			
++			FailOSErr(gPrefsDir.FindEntry(&quot;HTML Palette&quot;, &amp;e, true));
++			FailOSErr(f.SetTo(&amp;e, B_READ_ONLY));
++			FailOSErr(r.SetTo(&amp;f));
++			
++			size_t size;
++			p = r.FindResource(rtyp_Htmp, (int32)rid_Htmp_HtmlPalette, &amp;size);
++			if (p == NULL) THROW((&quot;The custom HTML Palette file does not contain a valid palette resource&quot;));
++		}
++		catch (HErr&amp; e)
++		{
++			e.DoError();
++			p = HResources::GetResource(rtyp_Htmp, rid_Htmp_HtmlPalette, size);
++		}
++	}
++	else
++		p = HResources::GetResource(rtyp_Htmp, rid_Htmp_HtmlPalette, size);
++	
++	if (p == NULL) THROW((&quot;Could not find a palette resource&quot;));
++	
++	BMemoryIO data(p, size);
++	BPositionIO&amp; buf = data;
++	
++	char barname[256];
++	long flags, width;
++	
++	buf &gt;&gt; barname &gt;&gt; flags &gt;&gt; width;
++	
++	BRect frame(Bounds());
++	frame.right = width;
++	
++	AddChild(fButtonPane = new CHtmlButtonPane(frame, &quot;buttonpane&quot;, data));
++
++	SetTitle(barname);
++	ResizeTo(width, fButtonPane-&gt;Bounds().Height() - 2);
++	
++	BRect screenR;
++	do { screenR = BScreen().Frame(); } while (false);
++	
++	frame = Frame();
++	if (frame.left &lt; screenR.left)			frame.OffsetBy(screenR.left - frame.left, 0);
++	if (frame.top &lt; screenR.top)			frame.OffsetBy(0, screenR.top - frame.top);
++	if (frame.right &gt; screenR.right)			frame.OffsetBy(screenR.right - frame.right, 0);
++	if (frame.bottom &gt; screenR.bottom)	frame.OffsetBy(0, screenR.bottom - frame.bottom);
++	
++	if (Frame() != frame)
++		MoveTo(frame.left, frame.top);
++} /* CHtmlBar::CHtmlBar */
++			
++void CHtmlBar::MessageReceived(BMessage *msg)
++{
++	BWindow::MessageReceived(msg);
++} /* CHtmlBar::MessageReceived */
++
++bool CHtmlBar::QuitRequested()
++{
++	Hide();
++	return false;
++} /* CHtmlBar::QuitRequested */
++
++#pragma mark - Pane
++
++CHtmlButtonPane::CHtmlButtonPane(BRect frame, const char *name, BPositionIO&amp; data)
++	: BView(frame, name, 0, B_WILL_DRAW)
++{
++	long bCnt;
++	
++	data &gt;&gt; bCnt;
++	
++	be_plain_font-&gt;GetHeight(&amp;fFH);
++
++	BRect r;
++	r = Bounds();
++	r.bottom = r.top + ButtonHeight();
++
++	while (bCnt--)
++	{
++		long type;
++		
++		data &gt;&gt; type;
++		
++		switch (type)
++		{
++			case 'btn ':
++				fButtons.push_back(new CHtmlSimpleButton(r, data, this));
++				break;
++			case 'menu':
++				fButtons.push_back(new CHtmlMenu(r, data, this));
++				break;
++			case 'cmnd':
++				fButtons.push_back(new CHtmlCmdButton(r, data, this));
++				break;
++			case 'dlog':
++				fButtons.push_back(new CHtmlDialog(r, data, this));
++				break;
++		}
++		
++		r.OffsetBy(0, ButtonHeight());
++	}
++	
++	ResizeTo(r.Width(), r.top);
++} /* CHtmlButtonPane::CHtmlButtonPane */
++			
++void CHtmlButtonPane::Draw(BRect /*update*/)
++{
++	for (int i = 0; i &lt; fButtons.size(); i++)
++		fButtons[i]-&gt;Draw();
++} /* CHtmlButtonPane::Draw */
++
++void CHtmlButtonPane::MouseDown(BPoint where)
++{
++	for (int i = 0; i &lt; fButtons.size(); i++)
++		if (fButtons[i]-&gt;Frame().Contains(where))
++		{
++			fButtons[i]-&gt;Click(where);
++			break;
++		}
++} /* CHtmlButtonPane::MouseDown */
++
++#pragma mark - Button
++
++CHtmlButton::CHtmlButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane)
++{
++	fFrame = frame;
++	fPane = pane;
++	
++	char label[256];
++	data &gt;&gt; label;
++	fLabel = strdup(label);
++} /* CHtmlButton::CHtmlButton */
++
++CHtmlButton::~CHtmlButton()
++{
++	free(fLabel);
++} /* CHtmlButton::~CHtmlButton */
++
++void CHtmlButton::Draw()
++{
++	fPane-&gt;SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++	fPane-&gt;SetFont(be_plain_font);
++	
++	fPane-&gt;FillRect(fFrame, B_SOLID_LOW);
++
++	BRect r = fFrame;
++
++	r.bottom -= 1;
++	
++	fPane-&gt;BeginLineArray(9);
++	
++	fPane-&gt;AddLine(r.LeftBottom(), r.RightBottom(), tint_color(ui_color(B_PANEL_BACKGROUND_COLOR), B_DARKEN_4_TINT));
++	
++	r.bottom -= 1;
++	
++	fPane-&gt;AddLine(BPoint(r.left + 1, r.bottom), r.RightBottom(), tint_color(ui_color(B_PANEL_BACKGROUND_COLOR), B_DARKEN_2_TINT));
++	fPane-&gt;AddLine(r.RightBottom(), BPoint(r.right, r.top + 1), tint_color(ui_color(B_PANEL_BACKGROUND_COLOR), B_DARKEN_2_TINT));
++
++	r.InsetBy(1, 1);
++
++	fPane-&gt;AddLine(r.LeftBottom(), r.RightBottom(), tint_color(ui_color(B_PANEL_BACKGROUND_COLOR), B_DARKEN_1_TINT));
++	fPane-&gt;AddLine(r.RightBottom(), r.RightTop(), tint_color(ui_color(B_PANEL_BACKGROUND_COLOR), B_DARKEN_1_TINT));
++	fPane-&gt;AddLine(r.LeftTop(), r.RightTop(), kWhite);
++	fPane-&gt;AddLine(r.LeftTop(), r.LeftBottom(), kWhite);
++
++	r.InsetBy(1, 1);
++
++	fPane-&gt;AddLine(r.LeftTop(), r.RightTop(), kWhite);
++	fPane-&gt;AddLine(r.LeftTop(), r.LeftBottom(), kWhite);
++	
++	fPane-&gt;EndLineArray();	
++	
++	fPane-&gt;SetHighColor(kBlack);
++	
++	fPane-&gt;MovePenTo(r.left + 5, r.bottom - fPane-&gt;BaseLine());
++	fPane-&gt;DrawString(fLabel);
++} /* CHtmlButton::Draw */
++
++bool CHtmlButton::TrackClick()
++{
++	BPoint p;
++	unsigned long btns;
++	bool in = false;
++	
++	do
++	{
++		fPane-&gt;GetMouse(&amp;p, &amp;btns);
++		
++		if (fFrame.Contains(p))
++		{
++			if (! in)
++			{
++				in = true;
++				
++				BRect r(fFrame);
++				r.bottom -= 2;
++				
++				r.InsetBy(1, 1);
++
++				fPane-&gt;SetHighColor(kWhite);
++				fPane-&gt;SetLowColor(kBlack);
++
++				fPane-&gt;FillRect(r, B_SOLID_LOW);
++				
++				fPane-&gt;MovePenTo(r.left + 6, r.bottom - fPane-&gt;BaseLine() - 1);
++				fPane-&gt;DrawString(fLabel);
++			}
++		}
++		else
++		{
++			if (in)
++			{
++				in = false;
++				Draw();
++			}
++		}
++		
++		snooze(10000);
++	}
++	while (btns);
++	
++	if (in)
++		Draw();
++
++	return in;
++} /* CHtmlButton::TrackClick */
++			
++CHtmlSimpleButton::CHtmlSimpleButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane)
++	: CHtmlButton(frame, data, pane)
++{
++	char glos[256];
++	data &gt;&gt; glos;
++	fGlossary = strdup(glos);
++} /* CHtmlSimpleButton::CHtmlSimpleButton */
++
++CHtmlSimpleButton::~CHtmlSimpleButton()
++{
++	free(fGlossary);
++} /* CHtmlSimpleButton::~CHtmlSimpleButton */
++			
++void CHtmlSimpleButton::Draw()
++{
++	CHtmlButton::Draw();
++} /* CHtmlSimpleButton::Draw */
++
++void CHtmlSimpleButton::Click(BPoint /*where*/)
++{
++	if (TrackClick())
++	{
++		PDoc *doc = PDoc::TopWindow();
++		if (doc)
++		{
++			BMessage msg(msg_HtmlButton);
++			
++			msg.AddString(&quot;glossy&quot;, fGlossary);
++			
++			doc-&gt;PostMessage(&amp;msg, doc-&gt;TextView());
++		}
++	}
++} /* CHtmlSimpleButton::Click */
++			
++CHtmlMenu::CHtmlMenu(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane)
++	: CHtmlButton(frame, data, pane)
++{
++	fMenu = new BPopUpMenu(&quot;mymenu&quot;);
++	fMenu-&gt;SetFont(be_plain_font);
++	
++	char label[256], glos[256];
++	
++	while (true)
++	{
++		data &gt;&gt; label;
++		
++		if (label[0] == 0)
++			break;
++		
++		data &gt;&gt; glos;
++		
++		fMenu-&gt;AddItem(new CItem(label, glos));
++	}
++} /* CHtmlMenu::CHtmlMenu */
++
++CHtmlMenu::~CHtmlMenu()
++{
++	delete fMenu;
++} /* CHtmlMenu::~CHtmlMenu */
++
++void CHtmlMenu::Draw()
++{
++	CHtmlButton::Draw();
++	
++	float x = fFrame.right - 10;
++	float y = fFrame.top + 7;
++	
++	fPane-&gt;BeginLineArray(3);
++	fPane-&gt;AddLine(BPoint(x, y), BPoint(x + 4, y), kBlack);
++	y += 1; x += 1;
++	fPane-&gt;AddLine(BPoint(x, y), BPoint(x + 2, y), kBlack);
++	y += 1; x += 1;
++	fPane-&gt;AddLine(BPoint(x, y), BPoint(x, y), kBlack);
++	fPane-&gt;EndLineArray();
++} /* CHtmlMenu::Draw */
++
++void CHtmlMenu::Click(BPoint /*where*/)
++{
++	BRect r(fFrame);
++	r.bottom -= 2;
++	
++	r.InsetBy(1, 1);
++
++	fPane-&gt;SetHighColor(kWhite);
++	fPane-&gt;SetLowColor(kBlack);
++
++	fPane-&gt;FillRect(r, B_SOLID_LOW);
++	
++	fPane-&gt;MovePenTo(r.left + 6, r.bottom - 3);
++	fPane-&gt;DrawString(fLabel);
++
++	CItem *item = dynamic_cast&lt;CItem*&gt;(fMenu-&gt;Go(fPane-&gt;ConvertToScreen(fFrame.LeftBottom()), false, true, fPane-&gt;ConvertToScreen(fFrame)));
++
++	if (item)
++	{
++		PDoc *doc = PDoc::TopWindow();
++		if (doc)
++		{
++			BMessage msg(msg_HtmlButton);
++			
++			msg.AddString(&quot;glossy&quot;, item-&gt;fGlossy);
++			
++			doc-&gt;PostMessage(&amp;msg, doc-&gt;TextView());
++		}
++	}
++	
++	Draw();
++} /* CHtmlMenu::Click */
++
++CHtmlCmdButton::CHtmlCmdButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane)
++	: CHtmlButton(frame, data, pane)
++{
++	data &gt;&gt; fCmd;
++} /* CHtmlCmdButton::CHtmlCmdButton */
++			
++void CHtmlCmdButton::Click(BPoint /*where*/)
++{
++	if (TrackClick())
++	{
++		PDoc *doc = PDoc::TopWindow();
++		if (doc)
++			doc-&gt;PostMessage(fCmd, doc-&gt;TextView());
++	}
++} /* CHtmlCmdButton::Click */
++
++CHtmlDialog::CHtmlDialog(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane)
++	: CHtmlButton(frame, data, pane)
++{
++	char s[512];
++	data &gt;&gt; s;
++	
++	fExt = strdup(s);
++} /* CHtmlDialog::CHtmlDialog */
++
++CHtmlDialog::~CHtmlDialog()
++{
++	free(fExt);
++} /* CHtmlDialog::~CHtmlDialog */
++
++void CHtmlDialog::Click(BPoint /*where*/)
++{
++	if (TrackClick())
++	{
++		PDoc *doc = PDoc::TopWindow();
++		if (doc)
++		{
++			BMessage msg(msg_HtmlExtension);
++			
++			msg.AddString(&quot;ext&quot;, fExt);
++			
++			doc-&gt;PostMessage(&amp;msg, doc-&gt;TextView());
++		}
++	}
++} /* CHtmlDialog::Click */
+
+Copied: trunk/Sources/CHtmlBar.h (from rev 456, trunk/Sources/CHTMLBar.h)
+===================================================================
+--- trunk/Sources/CHTMLBar.h	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CHtmlBar.h	2006-11-20 17:45:29 UTC (rev 457)
+@@ -0,0 +1,173 @@
++/*	$Id$
++	
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++
++	Created: 03/09/98 22:53:28
++*/
++
++#ifndef CHTMLBAR_H
++#define CHTMLBAR_H
++
++
++class CHtmlBar;
++class CHtmlButtonPane;
++class CHtmlButton;
++
++class CHtmlBar : public BWindow {
++public:
++
++virtual	void MessageReceived(BMessage *msg);
++
++static		CHtmlBar* Instance();
++static		void Close();
++			
++private:
++			CHtmlBar();
++virtual	bool QuitRequested();
++
++static		CHtmlBar *sfInstance;
++			CHtmlButtonPane *fButtonPane;
++};
++
++#pragma mark - Pane
++
++class CHtmlButtonPane : public BView {
++public:
++			CHtmlButtonPane(BRect frame, const char *name, BPositionIO&amp; data);
++			
++virtual	void Draw(BRect update);
++virtual	void MouseDown(BPoint where);
++
++			float BaseLine() const;
++			float ButtonHeight() const;
++			
++private:
++			vector&lt;CHtmlButton*&gt; fButtons;
++			font_height fFH;
++};
++
++inline float CHtmlButtonPane::BaseLine() const
++{
++	return fFH.descent;
++} /* CHtmlButtonPane::BaseLine */
++
++inline float CHtmlButtonPane::ButtonHeight() const
++{
++	return fFH.ascent + fFH.descent + fFH.leading + 7;
++} /* CHtmlButtonPane::ButtonHeight */
++
++#pragma mark - Button
++
++class CHtmlButton {
++public:
++			CHtmlButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane);
++virtual	~CHtmlButton();
++			
++			BRect Frame() const;
++			
++virtual	void Draw();
++virtual	void Click(BPoint where) = 0;
++			
++protected:
++			
++			bool TrackClick();
++			
++			BRect fFrame;
++			CHtmlButtonPane *fPane;
++			char *fLabel;
++};
++
++class CHtmlSimpleButton : public CHtmlButton {
++public:
++			CHtmlSimpleButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane);
++			~CHtmlSimpleButton();
++			
++virtual	void Draw();
++virtual	void Click(BPoint where);
++			
++private:
++			char *fGlossary;
++};
++
++class CHtmlMenu : public CHtmlButton {
++public:
++			CHtmlMenu(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane);
++			~CHtmlMenu();
++
++virtual	void Draw();
++virtual	void Click(BPoint where);
++
++private:
++			class CItem : public BMenuItem {
++			public:
++				CItem(const char *label, const char *glossy)
++					: BMenuItem(label, NULL)
++				{
++					fGlossy = strdup(glossy);
++				};
++				~CItem()
++				{
++					free(fGlossy);
++				};
++					
++				char *fGlossy;
++			};
++			
++			BPopUpMenu *fMenu;
++};
++
++class CHtmlCmdButton : public CHtmlButton {
++public:
++			CHtmlCmdButton(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane);
++			
++virtual	void Click(BPoint where);
++			
++private:
++			unsigned long fCmd;
++};
++
++class CHtmlDialog : public CHtmlButton {
++public:
++			CHtmlDialog(BRect frame, BPositionIO&amp; data, CHtmlButtonPane *pane);
++			~CHtmlDialog();
++
++virtual	void Click(BPoint where);
++
++private:
++			char *fExt;
++};
++
++inline BRect CHtmlButton::Frame() const
++{
++	return fFrame;
++} /* CHtmlButton::Frame */
++
++#endif // CHTMLBAR_H
+
+Modified: trunk/Sources/CInfoDialog.cpp
+===================================================================
+--- trunk/Sources/CInfoDialog.cpp	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CInfoDialog.cpp	2006-11-20 17:45:29 UTC (rev 457)
+@@ -40,7 +40,7 @@
+ #include &quot;PText.h&quot;
+ #include &quot;PMessages.h&quot;
+ #include &quot;PToolBar.h&quot;
+-#include &quot;CLangIntf.h&quot;
++#include &quot;CLanguageInterface.h&quot;
+ #include &quot;HPreferences.h&quot;
+ #include &quot;HDefines.h&quot;
+ #include &quot;HTabSheet.h&quot;
+@@ -180,9 +180,9 @@
+ 	FailNil(mf);
+ 	lang = mf-&gt;Menu();
+ 	
+-	CLangIntf *intf;
++	CLanguageInterface *intf;
+ 	int cookie = 0;
+-	while ((intf = CLangIntf::NextIntf(cookie)) != NULL)
++	while ((intf = CLanguageInterface::NextIntf(cookie)) != NULL)
+ 		lang-&gt;AddItem(new BMenuItem(intf-&gt;Name(), new BMessage(msg_FieldChanged)));
+ 
+ 	lang-&gt;SetRadioMode(true);
+
+Deleted: trunk/Sources/CLangIntf.cpp
+
+Deleted: trunk/Sources/CLangIntf.h
+
+Modified: trunk/Sources/CLanguageAddOn.cpp
+===================================================================
+--- trunk/Sources/CLanguageAddOn.cpp	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CLanguageAddOn.cpp	2006-11-20 17:45:29 UTC (rev 457)
+@@ -37,7 +37,7 @@
+ #include &quot;PText.h&quot;
+ #include &quot;PApp.h&quot;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &quot;CLangIntf.h&quot;
++#include &quot;CLanguageInterface.h&quot;
+ #include &quot;PMessages.h&quot;
+ #include &quot;PItalicMenuItem.h&quot;
+ #include &quot;utf-support.h&quot;
+@@ -46,7 +46,7 @@
+ #include &quot;HError.h&quot;
+ #include &quot;HColorUtils.h&quot;
+ 
+-CLanguageProxy::CLanguageProxy(CLangIntf&amp; intf, const char *text, int size,
++CLanguageProxy::CLanguageProxy(CLanguageInterface&amp; intf, const char *text, int size,
+ 	int *starts, rgb_color *colors)
+ 	: fText(text)
+ 	, fSize(size)
+@@ -60,7 +60,7 @@
+ {
+ } /* CLanguageProxy::CLanguageProxy */
+ 
+-CLanguageProxy::CLanguageProxy(CLangIntf&amp; intf, PText&amp; text,
++CLanguageProxy::CLanguageProxy(CLanguageInterface&amp; intf, PText&amp; text,
+ 	CFunctionScanHandler* handler)
+ 	: fText(text.Text())
+ 	, fSize(text.Size())
+
+Modified: trunk/Sources/CLanguageAddOn.h
+===================================================================
+--- trunk/Sources/CLanguageAddOn.h	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CLanguageAddOn.h	2006-11-20 17:45:29 UTC (rev 457)
+@@ -47,7 +47,7 @@
+ };
+ 
+ class CFunctionScanHandler;
+-class CLangIntf;
++class CLanguageInterface;
+ class PText;
+ 
+ /*
+@@ -60,8 +60,8 @@
+ 
+ class CLanguageProxy {
+ public:
+-		CLanguageProxy(CLangIntf&amp; intf, const char *text, int size, int *starts = NULL, rgb_color *colors = NULL);
+-		CLanguageProxy(CLangIntf&amp; intf, PText&amp; text, CFunctionScanHandler* handler = NULL);
++		CLanguageProxy(CLanguageInterface&amp; intf, const char *text, int size, int *starts = NULL, rgb_color *colors = NULL);
++		CLanguageProxy(CLanguageInterface&amp; intf, PText&amp; text, CFunctionScanHandler* handler = NULL);
+ 		
+ /*
+ 	Use the next two methods to recognize keywords in the text.
+@@ -134,7 +134,7 @@
+ 		const char *fText;
+ 		int fSize;
+ 		int fDeprecated_was_Encoding;		// deprecated, is always set to 0
+-		CLangIntf&amp; fInterface;
++		CLanguageInterface&amp; fInterface;
+ 		int fCIndx;
+ 		int *fStarts;
+ 		rgb_color *fColors;
+
+Copied: trunk/Sources/CLanguageInterface.cpp (from rev 456, trunk/Sources/CLangIntf.cpp)
+===================================================================
+--- trunk/Sources/CLangIntf.cpp	2006-11-20 16:24:27 UTC (rev 456)
++++ trunk/Sources/CLanguageInterface.cpp	2006-11-20 17:45:29 UTC (rev 457)
+@@ -0,0 +1,683 @@
++/*	$Id$
++	
++	Copyright 1996, 1997, 1998, 2002
++	        Hekkelman Programmatuur B.V.  All rights reserved.
++	
++	Redistribution and use in source and binary forms, with or without
++	modification, are permitted provided that the following conditions are met:
++	1. Redistributions of source code must retain the above copyright notice,
++	   this list of conditions and the following disclaimer.
++	2. Redistributions in binary form must reproduce the above copyright notice,
++	   this list of conditions and the following disclaimer in the documentation
++	   and/or other materials provided with the distribution.
++	3. All advertising materials mentioning features or use of this software
++	   must display the following acknowledgement:
++	   
++	    This product includes software developed by Hekkelman Programmatuur B.V.
++	
++	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
++	   promote products derived from this software without specific prior
++	   written permission.
++	
++	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++	AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	
++	Created: 09/19/97 10:49:36
++*/
++
++#include &quot;pe.h&quot;
++#include &quot;PText.h&quot;
++#include &quot;CLanguageInterface.h&quot;
++#include &quot;CKeywords.h&quot;
++#include &quot;PApp.h&quot;
++#include &quot;CLanguageAddOn.h&quot;
++#include &quot;CAlloca.h&quot;
++#include &quot;Utils.h&quot;
++#include &quot;HError.h&quot;
++#include &quot;HAppResFile.h&quot;
++#include &quot;HPreferences.h&quot;
++#include &quot;HColorUtils.h&quot;
++#include &quot;ResourcesMisc.h&quot;
++#include &quot;Prefs.h&quot;
++#include &lt;algorithm&gt;
++
++unsigned char *CLanguageInterface::sfWordBreakTable = NULL;
++
++class ext {
++public:
++	ext();
++	ext(const char *e);
++	
++	bool operator&lt;(const ext&amp; e) const;
++	bool operator==(const ext&amp; e) const;
++	
++	char t[12];
++};
++		
++static map&lt;ext, CLanguageInterface*&gt; sInterfaces;
++static CLanguageInterface *sDefault;
++vector&lt;CLanguageInterface*&gt; CLanguageInterface::fInterfaces;
++
++ext::ext()
++{
++	t[0] = 0;
++} /* CLanguageInterface::ext::ext */
++
++ext::ext(const char *e)
++{
++	if (strlen(e) &gt; 11) THROW((&quot;Extension `%s' is too long&quot;, e));
++	
++	strcpy(t, e);
++} /* CLanguageInterface::ext::ext */
++
++bool ext::operator&lt;(const ext&amp; e) const
++{
++	return strcmp(t, e.t) &lt; 0;
++} /* CLanguageInterface::ext::operator&lt; */
++
++bool ext::operator==(const ext&amp; e) const
++{
++	return strcmp(t, e.t) == 0;
++} /* CLanguageInterface::ext::operator== */
++
++#pragma mark -
++
++CLanguageInterface::CLanguageInterface()
++	:	fHaveParsedKeywords(false)
++{
++	if (sfWordBreakTable == NULL)
++	{
++		sfWordBreakTable = (unsigned char *)HResources::GetResource(rtyp_Wbrt, rid_Wbrt_WordbreakTable);
++		if (sfWordBreakTable == NULL) THROW((&quot;Missing Resource!&quot;));
++	}
++	
++//	fImage = -1;
++
++	fBalance = NULL;
++	fScanForFunctions = NULL;
++	fColorLine = NULL;
++	fFindNextWord = NULL;
++	fLanguage = &quot;None&quot;;
++	fExtensions = &quot;&quot;;
++	fKeywordFile = NULL;
++	fLineCommentStart = fLineCommentEnd = &quot;&quot;;
++	fInterfaceVersion = 1;
++} /* CLanguageInterface::CLanguageInterface */
++
++CLanguageInterface::CLanguageInterface(const char *path, image_id image)
++	:	fHaveParsedKeywords(false)
++{
++	if (sfWordBreakTable == NULL)
++	{
++		sfWordBreakTable = (unsigned char *)HResources::GetResource(rtyp_Wbrt, rid_Wbrt_WordbreakTable);
++		if (sfWordBreakTable == NULL) THROW((&quot;Missing Resource!&quot;));
++	}
++	
++	fImage = image;
++	if (fImage &lt; 0) THROW((&quot;Error loading language extension: %s&quot;, strerror(fImage)));
++
++	if (get_image_symbol(fImage, &quot;Balance&quot;, B_SYMBOL_TYPE_TEXT, (void**)&amp;fBalance) != B_OK)
++		fBalance = NULL;
++	if (get_image_symbol(fImage, &quot;ScanForFunctions&quot;, B_SYMBOL_TYPE_TEXT, (void**)&amp;fScanForFunctions) != B_OK)
++		fScanForFunctions = NULL;
++	if (get_image_symbol(fImage, &quot;ColorLine&quot;, B_SYMBOL_TYPE_TEXT, (void**)&amp;fColorLine) != B_OK)
++		fColorLine = NULL;
++	if (get_image_symbol(fImage, &quot;FindNextWord&quot;, B_SYMBOL_TYPE_TEXT, (void**)&amp;fFindNextWord) != B_OK)
++		fFindNextWord = NULL;
++	FailOSErr(get_image_symbol(fImage, &quot;kLanguageName&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;fLanguage));
++	FailOSErr(get_image_symbol(fImage, &quot;kLanguageExtensions&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;fExtensions));
++	FailOSErr(get_image_symbol(fImage, &quot;kLanguageCommentStart&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;fLineCommentStart));
++	FailOSErr(get_image_symbol(fImage, &quot;kLanguageCommentEnd&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;fLineCommentEnd));
++	FailOSErr(get_image_symbol(fImage, &quot;kLanguageKeywordFile&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;fKeywordFile));
++	int16* versionPtr = NULL;
++	get_image_symbol(fImage, &quot;kInterfaceVersion&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;versionPtr);
++	fInterfaceVersion = versionPtr ? *versionPtr : 1;
++	if (fInterfaceVersion == 1) {
++		if (strlen(fKeywordFile))
++			GenerateKWTables(fKeywordFile, path, ec, accept, base, nxt, chk);
++	}
++} /* CLanguageInterface::CLanguageInterface */
++
++CLanguageInterface::~CLanguageInterface()
++{
++} /* CLanguageInterface::~CLanguageInterface */
++
++template &lt;class T&gt;
++void AddInterface(char *s, T* i)
++{
++	char *e = strtok(s, &quot;;&quot;);
++	
++	while (e)
++	{
++		sInterfaces[e] = i;
++		e = strtok(NULL, &quot;;&quot;);
++	}
++	
++	free(s);
++} /* AddInterface */
++
++void CLanguageInterface::SetupLanguageInterfaces()
++{
++	sDefault = new CLanguageInterface();
++	AddInterface(strdup(&quot;&quot;), sDefault);
++
++	char path[PATH_MAX];
++	
++	BPath p;
++	BEntry e;
++	gAppDir.GetEntry(&amp;e);
++	e.GetPath(&amp;p);
++	strcpy(path, p.Path());
++
++	strcat(path, &quot;/Languages/&quot;);
++	
++	char plug[PATH_MAX];
++	DIR *dir = opendir(path);
++
++	if (!dir)
++		return;
++	
++	struct dirent *dent;
++	struct stat stbuf;
++
++	while ((dent = readdir(dir)) != NULL)
++	{
++		strcpy(plug, path);
++		strcat(plug, dent-&gt;d_name);
++		status_t err = stat(plug, &amp;stbuf);
++		if (!err &amp;&amp; S_ISREG(stbuf.st_mode) &amp;&amp;
++			strcmp(dent-&gt;d_name, &quot;.&quot;) &amp;&amp; strcmp(dent-&gt;d_name, &quot;..&quot;))
++		{
++			image_id next;
++			char *l;
++
++			next = load_add_on(plug);
++			if (next &gt; B_ERROR &amp;&amp;
++				(err = get_image_symbol(next, &quot;kLanguageName&quot;, B_SYMBOL_TYPE_DATA, (void**)&amp;l)) == B_OK)
++			{
++				if (strlen(l) &gt; 28) THROW((&quot;Language name too long&quot;));
++				CLanguageInterface *intf = new CLanguageInterface(plug, next);
++				fInterfaces.push_back(intf);
++				
++				const char *s = intf-&gt;Extensions();
++				AddInterface(strdup(s), intf);
++			}
++		}
++	}
++
++	ChooseDefault();
++} /* CLanguageInterface::SetupLanguageInterfaces */
++
++CLanguageInterface* CLanguageInterface::FindByExtension(const char *filename)
++{
++	char *e;
++	
++	if (filename)
++	{
++		try
++		{
++			if ((e = strrchr(filename, '.')) != NULL &amp;&amp; sInterfaces.count(e + 1))
++				return sInterfaces[e + 1];
++			
++			if (strlen(filename) &lt; 11 &amp;&amp; sInterfaces.count(filename))
++				return sInterfaces[filename];
++		}
++		catch (...) {}
++	}
++
++	return sDefault;
++} /* CLanguageInterface::FindIntf */
++
++static const char *skip(const char *txt)
++{
++	while (*txt)
++	{
++		switch (*txt)
++		{
++			case '\'':
+
+[... truncated: 839 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000049.html">[pe-commits] r456 - in trunk: Languages/Sources Sources
+</A></li>
+	<LI>Next message: <A HREF="000051.html">[pe-commits] r458 - in trunk: Languages/Sources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#50">[ date ]</a>
+              <a href="thread.html#50">[ thread ]</a>
+              <a href="subject.html#50">[ subject ]</a>
+              <a href="author.html#50">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

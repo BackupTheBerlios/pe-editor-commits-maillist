@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r576 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r576%20-%20trunk/Sources&In-Reply-To=%3C200905050811.n458BfMc022035%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000172.html">
+   <LINK REL="Next"  HREF="000175.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r576 - trunk/Sources</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r576%20-%20trunk/Sources&In-Reply-To=%3C200905050811.n458BfMc022035%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r576 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Tue May  5 10:11:41 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000172.html">[pe-commits] r575 - in trunk: Resources Sources
+</A></li>
+        <LI>Next message: <A HREF="000175.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#173">[ date ]</a>
+              <a href="thread.html#173">[ thread ]</a>
+              <a href="subject.html#173">[ subject ]</a>
+              <a href="author.html#173">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2009-05-05 10:11:41 +0200 (Tue, 05 May 2009)
+New Revision: 576
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=576&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=576&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Use B_OP_OVER for text rendering within a line that has highlights. This avoids
+having to track the low color for the highlights as well, as is already done
+for the selection.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-05-05 01:34:24 UTC (rev 575)
++++ trunk/Sources/PText.cpp	2009-05-05 08:11:41 UTC (rev 576)
+@@ -4886,7 +4886,10 @@
+ 	}
+ 
+ 	if (highlightsDrawn)
++	{
++		vw-&gt;SetDrawingMode(B_OP_OVER);
+ 		vw-&gt;SetLowColor(gColor[kColorLow]);
++	}
+ 
+ 	int a, c;
+ 	a = min(fAnchor, fCaret);
+@@ -5168,6 +5171,10 @@
+ 		vw-&gt;SetHighColor(kBlack);
+ 	}
+ 
++	// restore B_OP_COPY if necessary
++	if (highlightsDrawn)
++		vw-&gt;SetDrawingMode(B_OP_COPY);
++
+ 	if (buffer)
+ 	{
+ 		fLineView-&gt;Sync();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000172.html">[pe-commits] r575 - in trunk: Resources Sources
+</A></li>
+	<LI>Next message: <A HREF="000175.html">[pe-commits] r576 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#173">[ date ]</a>
+              <a href="thread.html#173">[ thread ]</a>
+              <a href="subject.html#173">[ subject ]</a>
+              <a href="author.html#173">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

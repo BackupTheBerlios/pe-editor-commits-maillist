@@ -1,0 +1,504 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r571 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r571%20-%20trunk/Sources&In-Reply-To=%3C200905041247.n44ClBs9009752%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000167.html">
+   <LINK REL="Next"  HREF="000169.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r571 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r571%20-%20trunk/Sources&In-Reply-To=%3C200905041247.n44ClBs9009752%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r571 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Mon May  4 14:47:11 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000167.html">[pe-commits] r570 - in trunk: Resources Sources
+</A></li>
+        <LI>Next message: <A HREF="000169.html">[pe-commits] r572 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#168">[ date ]</a>
+              <a href="thread.html#168">[ thread ]</a>
+              <a href="subject.html#168">[ subject ]</a>
+              <a href="author.html#168">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-04 14:47:10 +0200 (Mon, 04 May 2009)
+New Revision: 571
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=571&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=571&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+   trunk/Sources/CDocWindow.cpp
+   trunk/Sources/PCmd.cpp
+   trunk/Sources/PCmd.h
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PDoc.h
+Log:
+* Removed PDiscardTrailingSpaceCmd and CDoc::DoSavePreparations() again.
+* Introduced CDocIO::PrepareTextForSaving(), which removes the trailing white
+  space, if enabled. It also adjusts the given settings message (i.e. the
+  stored anchor and caret position).
+* CDocIO::DoPostEditTextConversions() and CDocWindow::WriteState() use
+  CDocIO::PrepareTextForSaving() now. This implements the &quot;discard trailing
+  white space&quot; feature without the drawback of losing the redo stack. After
+  saving the in-memory version of the text is potentially no longer the same as
+  in the file, though.
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/CDoc.cpp	2009-05-04 12:47:10 UTC (rev 571)
+@@ -417,10 +417,6 @@
+ {
+ }
+ 
+-void CDoc::DoSavePreparations()
+-{
+-}
+-
+ void CDoc::HighlightErrorPos(int errorPos)
+ {
+ }
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/CDoc.h	2009-05-04 12:47:10 UTC (rev 571)
+@@ -126,7 +126,6 @@
+ 	// hook methods
+ 	virtual void NameChanged();
+ 	virtual void HasBeenSaved();
+-	virtual	void DoSavePreparations();
+ 
+ protected:
+ 
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/CDocIO.cpp	2009-05-04 12:47:10 UTC (rev 571)
+@@ -263,6 +263,81 @@
+ 	return false;
+ }
+ 
++void CDocIO::PrepareTextForSaving(BString&amp; docText, BMessage&amp; settingsMsg)
++{
++	// ATM we only remove trailing white space. If disabled, get out.
++	if (gPrefs-&gt;GetPrefInt(prf_I_DiscardTrailingSpace, 0) == 0)
++		return;
++
++	// If we actually remove white space, we'll have to adjust anchor and
++	// caret, too. So get them now.
++	int32 anchor = 0;
++	int32 caret = 0;
++	bool hasAnchor = settingsMsg.FindInt32(&quot;anchor&quot;, &amp;anchor) == B_OK;
++	bool hasCaret = settingsMsg.FindInt32(&quot;caret&quot;, &amp;caret) == B_OK;
++
++	int textSize = docText.Length();
++	char* text = docText.LockBuffer(textSize);
++
++	int lastOffset = 0;
++	int offset = 0;
++	int moveBy = 0;
++	while (offset &lt; textSize)
++	{
++		// find the next newline
++		const char* foundNL = strchr(text + offset, '\n');
++		offset = foundNL != NULL ? foundNL - text : textSize;
++
++		// count the spaces before the newline
++		int spaceStart = offset;
++		while (spaceStart &gt; 0
++			&amp;&amp; (text[spaceStart - 1] == ' ' || text[spaceStart - 1] == '\t'))
++		{
++			spaceStart--;
++		}
++
++		// If there were any spaces, we want to skip them.
++		if (spaceStart &lt; offset)
++		{
++			int32 spaceCount = offset - spaceStart;
++
++			// move the text before the spaces, if necessary
++			if (moveBy &gt; 0)
++			{
++				memmove(text + lastOffset - moveBy, text + lastOffset,
++					spaceStart - lastOffset);
++			}
++
++			// update anchor and caret
++			if (anchor + moveBy &gt; spaceStart)
++				anchor -= std::min(anchor + moveBy - spaceStart, spaceCount);
++			if (caret + moveBy &gt; spaceStart)
++				caret -= std::min(caret + moveBy - spaceStart, spaceCount);
++
++			// the newline and the following chars need to be moved
++			lastOffset = offset;
++			moveBy += spaceCount;
++		}
++
++		offset++;
++	}
++
++	// move the text after the last spaces to remove
++	if (moveBy &gt; 0 &amp;&amp; lastOffset &lt; textSize)
++	{
++		memmove(text + lastOffset - moveBy, text + lastOffset,
++			textSize - lastOffset);
++	}
++
++	docText.UnlockBuffer(textSize - moveBy);
++
++	// update anchor and caret settings
++	if (hasAnchor)
++		settingsMsg.ReplaceInt32(&quot;anchor&quot;, anchor);
++	if (hasCaret)
++		settingsMsg.ReplaceInt32(&quot;caret&quot;, caret);
++}
++
+ bool CDocIO::DoPreEditTextConversions(BString&amp; docText)
+ {
+ 	// convert from document's native encoding to internal type (UTF-8):
+@@ -293,8 +368,10 @@
+ 	return true;
+ }
+ 
+-bool CDocIO::DoPostEditTextConversions(BString&amp; docText)
++bool CDocIO::DoPostEditTextConversions(BString&amp; docText, BMessage&amp; settingsMsg)
+ {
++	PrepareTextForSaving(docText, settingsMsg);
++
+ 	if (fDoc-&gt;Encoding() != B_UNICODE_UTF8)
+ 	{
+ 		// convert from internal encoding (UTF-8) to native type:
+@@ -433,12 +510,11 @@
+ 
+ 	try
+ 	{
+-		fDoc-&gt;DoSavePreparations();
+ 		BMessage settingsMsg;
+ 		fDoc-&gt;CollectSettings(settingsMsg);
+ 		BString docText;
+ 		fDoc-&gt;GetText(docText);
+-		if (!DoPostEditTextConversions(docText))
++		if (!DoPostEditTextConversions(docText, settingsMsg))
+ 			return false;
+ 
+ 		FailOSErr(e.GetName(name));
+@@ -769,12 +845,11 @@
+ {
+ 	try
+ 	{
+-		fDoc-&gt;DoSavePreparations();
+ 		BMessage settingsMsg;
+ 		fDoc-&gt;CollectSettings(settingsMsg);
+ 		BString docText;
+ 		fDoc-&gt;GetText(docText);
+-		if (!DoPostEditTextConversions(docText))
++		if (!DoPostEditTextConversions(docText, settingsMsg))
+ 			return false;
+ 
+ 		CFtpStream ftp(*fURL, false,
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/CDocIO.h	2009-05-04 12:47:10 UTC (rev 571)
+@@ -39,10 +39,14 @@
+ 	virtual bool VerifyFile();
+ 	virtual void SetEntryRef(const entry_ref* ref);
+ 	virtual BLooper* Target();
++
++			void PrepareTextForSaving(BString&amp; docText, BMessage&amp; settingsMsg);
++
+ protected:
+ 			bool ReadDocFromStream(BPositionIO&amp; stream, bool readAttributes);
+ 			bool DoPreEditTextConversions(BString&amp; docText);
+-			bool DoPostEditTextConversions(BString&amp; docText);
++			bool DoPostEditTextConversions(BString&amp; docText,
++				BMessage&amp; settingsMsg);
+ 
+ 			CDoc* fDoc;
+ 			CTextEncodingConverter fConv;
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/CDocWindow.cpp	2009-05-04 12:47:10 UTC (rev 571)
+@@ -125,8 +125,17 @@
+ 		status_t res = file.SetTo(EntryRef(), B_READ_WRITE);
+ 		if (res != B_OK)
+ 			return res;
++
+ 		BMessage settingsMsg;
+ 		CollectSettings(settingsMsg);
++
++		// We need to prepare the settings for saving. We also prepare the text
++		// which is unnecessary, but ATM we don't have the interface to avoid
++		// that.
++		BString text;
++		GetText(text);
++		fDocIO-&gt;PrepareTextForSaving(text, settingsMsg);
++
+ 		WriteAttr(file, settingsMsg);
+ 		return file.Sync();
+ 	}
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/PCmd.cpp	2009-05-04 12:47:10 UTC (rev 571)
+@@ -1640,134 +1640,3 @@
+ {
+ 	fText-&gt;Doc()-&gt;SetEncoding(fSourceEncoding);
+ } /* PEncodingCmd::Undo */
+-
+-
+-#pragma mark --- Discard Trailing Space Command ---
+-
+-PDiscardTrailingSpaceCmd::PDiscardTrailingSpaceCmd(PText *txt)
+-	: PCmd(&quot;Discard Trailing Space&quot;, txt)
+-{
+-	fAnchor = txt-&gt;Anchor();
+-	fCaret = txt-&gt;Caret();
+-
+-	std::vector&lt;int&gt; spaceOffsets;
+-
+-	// analyze the lines
+-	int spacesToRemove = 0;
+-	const char* text = txt-&gt;Text();
+-	int textSize = txt-&gt;Size();
+-	int offset = 0;
+-	while (offset &lt; textSize)
+-	{
+-		const char* foundNL = strchr(text + offset, '\n');
+-		offset = foundNL != NULL ? foundNL - text : textSize;
+-		int spaceStart = offset;
+-		while (spaceStart &gt; 0
+-			&amp;&amp; (text[spaceStart - 1] == ' ' || text[spaceStart - 1] == '\t'))
+-		{
+-			spaceStart--;
+-		}
+-
+-		if (spaceStart &lt; offset)
+-		{
+-			int spaceCount = offset - spaceStart;
+-			spaceOffsets.push_back(spaceStart);
+-			spaceOffsets.push_back(spaceCount);
+-
+-			spacesToRemove += spaceCount;
+-		}
+-
+-		offset++;
+-	}
+-
+-	fLineCount = spaceOffsets.size() / 2;
+-	fTotalSpaceCount = spacesToRemove;
+-	if (fLineCount == 0)
+-	{
+-		fSpaceOffsets = NULL;
+-		fSpaces = NULL;
+-		return;
+-	}
+-
+-	fSpaceOffsets = (int*)malloc(2 * fLineCount * sizeof(int));
+-	fSpaces = (char*)malloc(spacesToRemove);
+-
+-	try
+-	{
+-		FailNil(fSpaceOffsets);
+-		FailNil(fSpaces);
+-	}
+-	catch (...)
+-	{
+-		free(fSpaceOffsets);
+-		free(fSpaces);
+-		throw;
+-	}
+-
+-	fSpaceCounts = fSpaceOffsets + fLineCount;
+-
+-	// copy space offsets, counts, and the spaces themselves into the
+-	// allocated structures
+-	int spaceArrayOffset = 0;
+-	for (int i = 0; i &lt; fLineCount; i++) {
+-		fSpaceOffsets[i] = spaceOffsets[2 * i];
+-		fSpaceCounts[i] = spaceOffsets[2 * i + 1];
+-		memcpy(fSpaces + spaceArrayOffset, text + fSpaceOffsets[i],
+-			fSpaceCounts[i]);
+-		spaceArrayOffset += fSpaceCounts[i];
+-	}
+-}
+-
+-PDiscardTrailingSpaceCmd::~PDiscardTrailingSpaceCmd()
+-{
+-	free(fSpaceOffsets);
+-	free(fSpaces);
+-}
+-
+-bool PDiscardTrailingSpaceCmd::IsNoOp() const
+-{
+-	return fLineCount == 0;
+-}
+-
+-void PDiscardTrailingSpaceCmd::Do()
+-{
+-	if (IsNoOp())
+-		return;
+-
+-	// remove the spaces -- do that backwards, so we don't need to bother with
+-	// adjusting our offsets
+-	int anchor = fAnchor;
+-	int caret = fCaret;
+-	for (int i = fLineCount - 1; i &gt;= 0; i--)
+-	{
+-		fText-&gt;Delete(fSpaceOffsets[i], fSpaceOffsets[i] + fSpaceCounts[i]);
+-
+-		// update anchor and caret
+-		if (anchor &gt; fSpaceOffsets[i])
+-			anchor -= std::min(anchor - fSpaceOffsets[i], fSpaceCounts[i]);
+-		if (caret &gt; fSpaceOffsets[i])
+-			caret -= std::min(caret - fSpaceOffsets[i], fSpaceCounts[i]);
+-	}
+-
+-	fText-&gt;Select(anchor, caret, true, false);
+-
+-	Update();
+-}
+-
+-void PDiscardTrailingSpaceCmd::Undo()
+-{
+-	if (IsNoOp())
+-		return;
+-
+-	// re-insert the spaces
+-	int spaceIndex = 0;
+-	for (int i = 0; i &lt; fLineCount; i++)
+-	{
+-		fText-&gt;Insert(fSpaces + spaceIndex, fSpaceCounts[i], fSpaceOffsets[i]);
+-		spaceIndex += fSpaceCounts[i];
+-	}
+-
+-	fText-&gt;Select(fAnchor, fCaret, true, false);
+-
+-	Update();
+-}
+
+Modified: trunk/Sources/PCmd.h
+===================================================================
+--- trunk/Sources/PCmd.h	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/PCmd.h	2009-05-04 12:47:10 UTC (rev 571)
+@@ -398,24 +398,4 @@
+ 		long fAnchor, fCaret, fSrcLen, fDstLen;
+ };
+ 
+-class PDiscardTrailingSpaceCmd : public PCmd {
+-public:
+-		PDiscardTrailingSpaceCmd(PText *txt);
+-		~PDiscardTrailingSpaceCmd();
+-
+-		bool IsNoOp() const;
+-
+-virtual	void Do();
+-virtual	void Undo();
+-
+-private:
+-		int fAnchor, fCaret;
+-		int fLineCount;
+-		int	fTotalSpaceCount;
+-		int *fSpaceOffsets;
+-		int *fSpaceCounts;
+-		char *fSpaces;
+-};
+-
+-
+ #endif // PCMD_H
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/PDoc.cpp	2009-05-04 12:47:10 UTC (rev 571)
+@@ -457,27 +457,6 @@
+ 	fText-&gt;ResetUndo();
+ }
+ 
+-void PDoc::DoSavePreparations()
+-{
+-	// If enabled we remove trailing white space.
+-	if (gPrefs-&gt;GetPrefInt(prf_I_DiscardTrailingSpace, 0) == 0)
+-		return;
+-
+-	try
+-	{
+-		PDiscardTrailingSpaceCmd *cmd = new PDiscardTrailingSpaceCmd(fText);
+-		if (!cmd-&gt;IsNoOp())
+-			fText-&gt;RegisterCommand(cmd);
+-	}
+-	catch (HErr&amp; e)
+-	{
+-		e.DoError();
+-	}
+-	catch (...)
+-	{
+-	}
+-}
+-
+ void PDoc::WindowActivated(bool active)
+ {
+ 	inherited::WindowActivated(active);
+
+Modified: trunk/Sources/PDoc.h
+===================================================================
+--- trunk/Sources/PDoc.h	2009-05-03 15:07:44 UTC (rev 570)
++++ trunk/Sources/PDoc.h	2009-05-04 12:47:10 UTC (rev 571)
+@@ -142,7 +142,6 @@
+ 
+ virtual 	void NameChanged();
+ virtual 	void HasBeenSaved();
+-virtual		void DoSavePreparations();
+ virtual		void HighlightErrorPos(int errorPos);
+ 
+ private:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000167.html">[pe-commits] r570 - in trunk: Resources Sources
+</A></li>
+	<LI>Next message: <A HREF="000169.html">[pe-commits] r572 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#168">[ date ]</a>
+              <a href="thread.html#168">[ thread ]</a>
+              <a href="subject.html#168">[ subject ]</a>
+              <a href="author.html#168">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

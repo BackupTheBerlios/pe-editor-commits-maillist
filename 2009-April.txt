@@ -1,0 +1,487 @@
+From zooey at mail.berlios.de  Mon Apr 13 14:19:20 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 13 Apr 2009 14:19:20 +0200
+Subject: [pe-commits] r554 - trunk/build
+Message-ID: <200904131219.n3DCJKBh004384@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-04-13 14:19:19 +0200 (Mon, 13 Apr 2009)
+New Revision: 554
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=554&view=rev
+
+Modified:
+   trunk/build/MainBuildRules
+Log:
+* Removed RmTemps and Clean invocations from RezObject rule, as they do not
+  work as intended, but cause jam to fail once for each resource file.
+  I do not grok why it does fail, but this change makes it work (for the
+  cost of leaving temporary files in the generated folder)
+
+
+
+Modified: trunk/build/MainBuildRules
+===================================================================
+--- trunk/build/MainBuildRules	2009-03-12 10:25:22 UTC (rev 553)
++++ trunk/build/MainBuildRules	2009-04-13 12:19:19 UTC (rev 554)
+@@ -241,7 +241,7 @@
+ 
+ 	SEARCH on $(_r) = $(SEARCH_SOURCE) ;
+ 
+-	# include directories to by used
++	# include directories to be used
+ 	HDRS on $(_rsrc) $(tmp) = $(SEARCH_SOURCE) $(SUBDIRHDRS) $(HDRS) ;
+ 
+ 	# preprocess the rez file
+@@ -250,9 +250,6 @@
+ 	# generate the resource file from the preprocessed rez file
+ 	MakeLocate $(_rsrc) : $(LOCATE_TARGET) ;
+ 	Rez $(_rsrc) : $(tmp) : -t ;
+-
+-	RmTemps $(_rsrc) : $(tmp) ;
+-	Clean clean : $(_rsrc) ;
+ }
+ 
+ rule PreProcess
+
+
+
+From zooey at mail.berlios.de  Mon Apr 13 19:15:43 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Mon, 13 Apr 2009 19:15:43 +0200
+Subject: [pe-commits] r555 - trunk/Sources
+Message-ID: <200904131715.n3DHFh9C008380@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-04-13 19:15:41 +0200 (Mon, 13 Apr 2009)
+New Revision: 555
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=555&view=rev
+
+Modified:
+   trunk/Sources/CDoc.cpp
+   trunk/Sources/PDoc.cpp
+Log:
+* Applied a patch for haiku-bug#2827 by Maxime Simon that fixes layout problems
+  in the save panel. Only slightly modified by myself, such that it works on R5,
+  too (which actually meant adding a line to initialize the font height variable
+  before it is being used)
+
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-04-13 12:19:19 UTC (rev 554)
++++ trunk/Sources/CDoc.cpp	2009-04-13 17:15:41 UTC (rev 555)
+@@ -261,10 +261,8 @@
+ void CDoc::SaveACopy()
+ {
+ 	if (!fSavePanel)
+-		fSavePanel = new BFilePanel(B_SAVE_PANEL);
++		CreateFilePanel();
+ 
+-	FailNil(fSavePanel);
+-
+ 	BWindow *w = fSavePanel->Window();
+ 	w->Lock();
+ 
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-04-13 12:19:19 UTC (rev 554)
++++ trunk/Sources/PDoc.cpp	2009-04-13 17:15:41 UTC (rev 555)
+@@ -866,41 +866,78 @@
+ {
+ 	inherited::CreateFilePanel();
+ 
+-	BWindow *w = fSavePanel->Window();
+-	BAutolock lock(w);
++	BWindow *savePanel = fSavePanel->Window();
++	BAutolock lock(savePanel);
+ 
+ 	if (lock.IsLocked())
+ 	{
+-		BView *vw = w->ChildAt(0);
+-		FailNilMsg(vw, "Error building FilePanel");
++		BView *background = savePanel->ChildAt(0);
++		FailNilMsg(background, "Error building FilePanel");
++		
++		BButton *cancel = dynamic_cast<BButton*>(background->FindView("cancel button"));
++		FailNilMsg(cancel, "Error building FilePanel");
++		
++		BView *textview = background->FindView("text view");
++		FailNilMsg(textview, "Error building FilePanel");
+ 
+-		BMenu *m = HResources::GetMenu(rid_Menu_FpMimetypes, true);
+-		FailNilMsg(m, "Error building FilePanel");
+-		m->SetFont(be_plain_font);
+-		m->SetRadioMode(true);
++		BMenu *menu = HResources::GetMenu(rid_Menu_FpMimetypes, true);
++		FailNilMsg(menu, "Error building FilePanel");
++		menu->SetFont(be_plain_font);
++		menu->SetRadioMode(true);
+ 
+-		BView *v = vw->FindView("text view");
+-		FailNilMsg(v, "Error building FilePanel");
+-		BRect r = v->Frame();
+-		v->ResizeTo(r.Width() - 50, r.Height());
++		BRect rect = textview->Frame();
++		rect.top = cancel->Frame().top;
++		font_height fh;
++		be_plain_font->GetHeight(&fh);
++		rect.bottom = rect.top + fh.descent + fh.ascent + 5.0;
+ 
+-		r.left = r.right - 45;
+-		r.right = r.left + 100;
+-		r.top += (r.Height() - 20) / 2;
++		BMenuField *menuField = new BMenuField(rect, "mime", "Type:",
++			menu, B_FOLLOW_BOTTOM | B_FOLLOW_LEFT);
++		FailNilMsg(menuField, "Error building FilePanel");
++		menuField->SetDivider(be_plain_font->StringWidth("Type:") + 7);
++		menuField->MenuBar()->ResizeToPreferred();
++		menuField->ResizeToPreferred();
+ 
+-		BMenuField *mf = new BMenuField(r, "mime", "Type:",
+-			m, B_FOLLOW_BOTTOM | B_FOLLOW_LEFT);
+-		FailNilMsg(mf, "Error building FilePanel");
+-		vw->AddChild(mf);
+-		mf->SetDivider(be_plain_font->StringWidth("Type:") + 4);
++		float height = menuField->Bounds().Height() + 8.0;
+ 
++		// find all the views that are in the way and
++		// move up them up the height of the menu field
++		BView *poseview = background->FindView("PoseView");
++		if (poseview)
++			poseview->ResizeBy(0, -height);
++
++		BScrollBar *hscrollbar = (BScrollBar *)background->FindView("HScrollBar");
++		if (hscrollbar)
++			hscrollbar->MoveBy(0, -height);
++
++		BScrollBar *vscrollbar = (BScrollBar *)background->FindView("VScrollBar");
++		if (vscrollbar)
++			vscrollbar->ResizeBy(0, -height);
++
++		BView *countvw = (BView *)background->FindView("CountVw");
++		if (countvw)
++			countvw->MoveBy(0, -height);
++
++		textview->MoveBy(0, -height);
++		textview->ResizeTo(textview->Bounds().Width() * 1.5,
++							textview->Bounds().Height());
++
++		background->AddChild(menuField);
++
++		// make sure the smallest window won't draw the "Type" menu over anything else
++		// we suppose the "Save" button to have the same width as the "Cancel" button
++		float minWindowWidth = textview->Bounds().Width()
++								+ cancel->Bounds().Width() * 2
++								+ 50;
++		savePanel->SetSizeLimits(minWindowWidth, 10000, 250, 10000);
++
+ 		int i = 0;
+ 		const char *p;
+ 
+ 		while ((p = gPrefs->GetIxPrefString(prf_X_Mimetype, i++)) != NULL)
+-			m->AddItem(new BMenuItem(p, NULL));
++			menu->AddItem(new BMenuItem(p, NULL));
+ 
+-		BMenuItem *item = m->FindItem(MimeType());
++		BMenuItem *item = menu->FindItem(MimeType());
+ 		if (item)
+ 			item->SetMarked(true);
+ 		else
+@@ -908,7 +945,7 @@
+ 			p = MimeType();
+ 			if (!p || !p[0])
+ 				p = "<undefined>";
+-			m->AddItem(item = new BMenuItem(p, NULL));
++			menu->AddItem(item = new BMenuItem(p, NULL));
+ 			item->SetMarked(true);
+ 		}
+ 	}
+
+
+
+From stippi at mail.berlios.de  Tue Apr 14 13:15:13 2009
+From: stippi at mail.berlios.de (stippi at mail.berlios.de)
+Date: Tue, 14 Apr 2009 13:15:13 +0200
+Subject: [pe-commits] r556 - trunk/Sources
+Message-ID: <200904141115.n3EBFDOG011191@sheep.berlios.de>
+
+Author: stippi
+Date: 2009-04-14 13:15:09 +0200 (Tue, 14 Apr 2009)
+New Revision: 556
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=556&view=rev
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+Fix the problem that functions at the top of the text cannot be jumped to via
+function popup. The vertical centering caused a negative top offset and that
+later prevented scrolling at all, since -1 usually means no scrolling necessary.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-04-13 17:15:41 UTC (rev 555)
++++ trunk/Sources/PText.cpp	2009-04-14 11:15:09 UTC (rev 556)
+@@ -1707,7 +1707,7 @@
+ 		if (cnt * fLineHeight < h)
+ 		{
+ 			cnt = (int)((h / fLineHeight) - cnt) / 2;
+-			top -= cnt;
++			top = max_c(0, top - cnt);
+ 		}
+ 		y = top * fLineHeight;
+ 	}
+
+
+
+From stippi at mail.berlios.de  Tue Apr 14 14:04:47 2009
+From: stippi at mail.berlios.de (stippi at mail.berlios.de)
+Date: Tue, 14 Apr 2009 14:04:47 +0200
+Subject: [pe-commits] r557 - in trunk: Resources Sources
+Message-ID: <200904141204.n3EC4lSB012647@sheep.berlios.de>
+
+Author: stippi
+Date: 2009-04-14 14:04:44 +0200 (Tue, 14 Apr 2009)
+New Revision: 557
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=557&view=rev
+
+Modified:
+   trunk/Resources/Jamfile
+   trunk/Resources/pe.types.rdef
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/PAbout.cpp
+Log:
+* Made MimeInfo.rsrc update properly when pe-types.rsrc has changed.
+* Updated Pe version info to 2.4.2
+
+
+Modified: trunk/Resources/Jamfile
+===================================================================
+--- trunk/Resources/Jamfile	2009-04-14 11:15:09 UTC (rev 556)
++++ trunk/Resources/Jamfile	2009-04-14 12:04:44 UTC (rev 557)
+@@ -26,5 +26,5 @@
+ 	;
+ # </pe-src>
+ 
+-Includes RMimeinfo.r : pe.types.rsrc ;
++Depends MimeInfo.rsrc : pe.types.rsrc ;
+ SEARCH on pe.types.rsrc = $(SUBDIR) ;
+
+Modified: trunk/Resources/pe.types.rdef
+===================================================================
+--- trunk/Resources/pe.types.rdef	2009-04-14 11:15:09 UTC (rev 556)
++++ trunk/Resources/pe.types.rdef	2009-04-14 12:04:44 UTC (rev 557)
+@@ -4,13 +4,13 @@
+ resource app_version {
+ 	major  = 2,
+ 	middle = 4,
+-	minor  = 1,
++	minor  = 2,
+ 
+-	variety = B_APPV_BETA,
++	variety = B_APPV_FINAL,
+ 	internal = 0,
+ 
+-	short_info = "Pe 2.4.1-rc3",
+-	long_info = "Pe 2.4.1 Release Candidate 3"
++	short_info = "Pe 2.4.2",
++	long_info = "Pe 2.4.2"
+ };
+ 
+ resource app_signature "application/x-vnd.beunited.pe";
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2009-04-14 11:15:09 UTC (rev 556)
++++ trunk/Sources/PAbout.cpp	2009-04-14 12:04:44 UTC (rev 557)
+@@ -46,9 +46,9 @@
+ const char
+ 	kAboutText[] =
+ #if __INTEL__
+-		"Pe 2.4.1 (x86) Open Source Version\n\n"
++		"Pe 2.4.2 (x86) Open Source Version\n\n"
+ #else
+-		"Pe 2.4.1 (PPC) Open Source Version\n\n"
++		"Pe 2.4.2 (PPC) Open Source Version\n\n"
+ #endif
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+@@ -56,7 +56,7 @@
+ 		"Copyright ? 1997, 1998, 2002.\n\n"
+ 		"-\n\n"
+ 		"This is the Open Source version of Pe,\n"
+-		"copyright ? 2003-2008, Team Pe,\n"
++		"copyright ? 2003-2009, Team Pe,\n"
+ 		"compiled on:\n%s\n\n"
+ 		"Pe is now hosted at BerliOS:\n"
+ 		"http://developer.berlios.de/projects/pe-editor\n\n"
+
+
+
+From mmu_man at mail.berlios.de  Sun Apr 26 18:47:45 2009
+From: mmu_man at mail.berlios.de (mmu_man at BerliOS)
+Date: Sun, 26 Apr 2009 18:47:45 +0200
+Subject: [pe-commits] r558 - trunk/Extensions
+Message-ID: <200904261647.n3QGljJS019963@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2009-04-26 18:47:44 +0200 (Sun, 26 Apr 2009)
+New Revision: 558
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=558&view=rev
+
+Modified:
+   trunk/Extensions/HeaderHeader.cpp
+Log:
+Fix warnings.
+
+
+Modified: trunk/Extensions/HeaderHeader.cpp
+===================================================================
+--- trunk/Extensions/HeaderHeader.cpp	2009-04-14 12:04:44 UTC (rev 557)
++++ trunk/Extensions/HeaderHeader.cpp	2009-04-26 16:47:44 UTC (rev 558)
+@@ -52,14 +52,15 @@
+ %COMME%
+ ";
+ 
++/*
+ static const char *sHaikuAddMeHeaderMatch = \
+ " * Authors:
+ ";
+ static const char *sHaikuAddMeHeaderTemplate = \
+ " *	 	%AUTHOR% <%AUTHORMAIL%>
+ ";
++*/
+ 
+-
+ static const char *sHaikuMeHeaderTemplate = "%COMMS%
+ %COMMC% Copyright %YEAR%, %AUTHOR%, <%AUTHORMAIL%>.
+ %COMMC% Distributed under the terms of the MIT License.
+@@ -326,7 +327,7 @@
+ 	BPopUpMenu *menu = new BPopUpMenu("menu", false);
+ 	//BMenuItem *item;
+ 	//BMessage *msg;
+-	status_t err;
++	//status_t err;
+ 
+ 	//menu->SetFont(be_plain_font);
+ 
+@@ -413,7 +414,7 @@
+ 			char *p;
+ 			p = tmp.LockBuffer(100);
+ 			memset(p, 0, 100);
+-			strftime(p, 100, "%F", tim);
++			strftime(p, 100, "%Y-%m-%d", tim);
+ 			tmp.UnlockBuffer();
+ 			header.ReplaceAll("%DATE%", tmp.String());
+ 			tmp.Truncate(0);
+
+
+
+From mmu_man at mail.berlios.de  Sun Apr 26 18:51:56 2009
+From: mmu_man at mail.berlios.de (mmu_man at BerliOS)
+Date: Sun, 26 Apr 2009 18:51:56 +0200
+Subject: [pe-commits] r559 - trunk/Sources
+Message-ID: <200904261651.n3QGpu5l023129@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2009-04-26 18:51:47 +0200 (Sun, 26 Apr 2009)
+New Revision: 559
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=559&view=rev
+
+Modified:
+   trunk/Sources/PCmd.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+Close the previous ErrorWindow when creating a new one instead of letting them stack up, which is painful.
+
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2009-04-26 16:47:44 UTC (rev 558)
++++ trunk/Sources/PCmd.cpp	2009-04-26 16:51:47 UTC (rev 559)
+@@ -821,7 +821,8 @@
+ 			fFD = pi[1];
+ 			resume_thread(spawn_thread(Piper, "Piper", B_NORMAL_PRIORITY, this));
+ 			
+-			new PErrorWindow(pe, cwd);
++			PErrorWindow *window = new PErrorWindow(pe, cwd);
++			fText->SetErrorWindow(window);
+ 			
+ 			if (fOldTextSize)
+ 				fText->Delete(fAnchor, fAnchor + fOldTextSize);
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-04-26 16:47:44 UTC (rev 558)
++++ trunk/Sources/PText.cpp	2009-04-26 16:51:47 UTC (rev 559)
+@@ -48,6 +48,7 @@
+ #include "CLanguageInterface.h"
+ #include "PDoc.h"
+ #include "PExec.h"
++#include "PErrorWindow.h"
+ #include "PToolBar.h"
+ #include "PMessages.h"
+ #include "HPreferences.h"
+@@ -745,6 +746,14 @@
+ 	}
+ } /* PText::SetCWD */
+ 
++void PText::SetErrorWindow(PErrorWindow *window)
++{
++	if (fErrorWindowMessenger.IsValid())
++		fErrorWindowMessenger.SendMessage(B_QUIT_REQUESTED);
++	
++	fErrorWindowMessenger = BMessenger(window, window);
++} /* PText::SetErrorWindow */
++
+ PDoc* PText::Doc() const
+ {
+ 	return dynamic_cast<PDoc*>(Window());
+@@ -4509,6 +4518,8 @@
+ 
+ 			if (gRedirectStdErr)
+ 				fErrorWindow = new PErrorWindow(efd, fWD);
++			if (fErrorWindow)
++				fText->SetErrorWindow(fErrorWindow);
+ 
+ 			bool prepared = false;
+ 			char buf[kBufferSize] = "", *pwd = NULL;
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2009-04-26 16:47:44 UTC (rev 558)
++++ trunk/Sources/PText.h	2009-04-26 16:51:47 UTC (rev 559)
+@@ -52,6 +52,7 @@
+ class CFunctionScanHandler;
+ class PSplitter;
+ class PDoc;
++class PErrorWindow;
+ 
+ struct LineInfo {
+ 	unsigned long start;
+@@ -261,6 +262,7 @@
+ 			void SetCWD(const char *cwd);
+ 			const char *GetCWD() const;
+ 			void SendTextToJob(const char *txt);
++			void SetErrorWindow(PErrorWindow *window);
+ 			
+ 			void SetSplitter(PSplitter *splitter);
+ 			void TrackSplitter(BPoint where);
+@@ -349,6 +351,7 @@
+ 			PCmd* fLastSavedStateCmd;
+ 			float fDefaultCharWidth;
+ 			BMessage *fPrintSettings;
++			BMessenger fErrorWindowMessenger;
+ 		
+ static		PText *sfDragSource;
+ 
+
+
+

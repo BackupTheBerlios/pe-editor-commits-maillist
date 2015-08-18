@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r442 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r442%20-%20trunk/Sources&In-Reply-To=%3C200608081036.k78AaGf1031916%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000036.html">
+   <LINK REL="Next"  HREF="000035.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r442 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r442%20-%20trunk/Sources&In-Reply-To=%3C200608081036.k78AaGf1031916%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r442 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug  8 12:36:16 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000036.html">[pe-commits] r441 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000035.html">[pe-commits] r443 - in trunk: . Extensions Resources Sources	rez/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#34">[ date ]</a>
+              <a href="thread.html#34">[ thread ]</a>
+              <a href="subject.html#34">[ subject ]</a>
+              <a href="author.html#34">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-08 12:36:13 +0200 (Tue, 08 Aug 2006)
+New Revision: 442
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=442&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=442&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDoc.h
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocWindow.cpp
+Log:
+* fixed an annoying bug when opening documents with encoding problems: Pe used
+  to show the alert on the application workspace and the document wasn't opened,
+  so that in the current workspace nothing seemed to happen.
+  Now the document is opened as expected in the current workspace and the alert
+  is shown next to it.
+
+
+Modified: trunk/Sources/CDoc.h
+===================================================================
+--- trunk/Sources/CDoc.h	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDoc.h	2006-08-08 10:36:13 UTC (rev 442)
+@@ -105,6 +105,11 @@
+ 			const entry_ref* EntryRef() const;
+ 			void SetEntryRef(const entry_ref* ref);
+ 			
++			bool HadError() const;
++			const char* ErrorMsg() const;
++			void SetErrorMsg(const char*);
++			void ClearErrorMsg();
++
+ 			const URLData* URL() const;
+ 			
+ 			void SetDocIO( CDocIO* docIO);
+@@ -129,7 +134,7 @@
+ 
+ 			void StartWatchingFile(void);
+ 			void StopWatchingFile(bool stopDirectory = true);
+-
++			
+ protected:
+ 			CDocIO* fDocIO;
+ 			BFilePanel *fSavePanel;
+@@ -141,6 +146,7 @@
+ 			bool fReadOnly;
+ 			int fEncoding;
+ 			int fLineEndType;
++			string fErrorMsg;
+ };
+ 
+ inline bool CDoc::IsDirty() const
+@@ -173,6 +179,26 @@
+ 	fLineEndType = lineEndType;
+ }
+ 
++inline bool CDoc::HadError() const
++{
++	return fErrorMsg.length() &gt; 0;
++}
++
++inline const char* CDoc::ErrorMsg() const
++{
++	return fErrorMsg.c_str();
++}
++
++inline void CDoc::SetErrorMsg(const char* errorMsg)
++{
++	fErrorMsg = errorMsg;
++}
++
++inline void CDoc::ClearErrorMsg()
++{
++	fErrorMsg.clear();
++}
++
+ inline const char *CDoc::MimeType() const
+ {
+ 	return fMimeType.c_str();
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDocIO.cpp	2006-08-08 10:36:13 UTC (rev 442)
+@@ -193,15 +193,17 @@
+ 		BString err;
+ 		if (fDoc-&gt;Encoding() != B_UNICODE_UTF8)
+ 			err = BString(&quot;An error occurred when converting the document &quot;)
+-					&lt;&lt; &quot;from its native encoding to UTF-8.\n&quot;
+-					&lt;&lt; &quot;Please use the 'Change Encoding'-dialog to select &quot;
+-					&lt;&lt; &quot;the correct encoding.&quot;;
++					&lt;&lt; &quot;from its native encoding to UTF-8. The first &quot;
++					&lt;&lt; &quot;problematic character is highlighted.\n&quot;
++					&lt;&lt; &quot;Please use the 'File Options'-dialog to select &quot;
++					&lt;&lt; &quot;the correct source encoding.&quot;;
+ 		else
+ 			err = BString(&quot;An error occurred when checking the document's &quot;)
+-					&lt;&lt; &quot;UTF-8 encoding.\n&quot;
+-					&lt;&lt; &quot;The first problematic character is highlighted.&quot;;
+-		MInfoAlert a(err.String(), &quot;I See&quot;);
+-		a.Go();
++					&lt;&lt; &quot;UTF-8 encoding. The first problematic character is &quot;
++					&lt;&lt; &quot;highlighted.\n&quot;
++					&lt;&lt; &quot;Please use the 'File Options'-dialog to select &quot;
++					&lt;&lt; &quot;the correct source encoding.&quot;;
++		fDoc-&gt;SetErrorMsg(err.String());
+ 		return false;
+ 	}
+ 
+@@ -223,8 +225,10 @@
+ 			fDoc-&gt;HighlightErrorPos(fConv.ErrorPos());
+ 			BString err = 
+ 				BString(&quot;An error occurred when converting the document &quot;)
+-					&lt;&lt; &quot;to the requested destination encoding.\n&quot;
+-					&lt;&lt; &quot;The first problematic character is highlighted.&quot;;
++					&lt;&lt; &quot;to the requested destination encoding. The first &quot;
++					&lt;&lt; &quot;problematic character is highlighted.\n&quot;
++					&lt;&lt; &quot;Please use the 'File Options'-dialog to select &quot;
++					&lt;&lt; &quot;another destination encoding.&quot;;
+ 			MInfoAlert a(err.String(), &quot;I See&quot;);
+ 			a.Go();
+ 			return false;
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2006-08-08 09:55:21 UTC (rev 441)
++++ trunk/Sources/CDocWindow.cpp	2006-08-08 10:36:13 UTC (rev 442)
+@@ -214,6 +214,14 @@
+ 
+ 	inheritedWindow::Show();
+ 	fInitialFrame = Frame();
++
++	// now that the window is shown, we might have to show any error alongside
++	// it that may have ocurred during load (conversion failure):
++	if (HadError()) {
++		MInfoAlert a(ErrorMsg(), &quot;I See&quot;);
++		a.Go();
++		ClearErrorMsg();
++	}
+ }
+ 
+ void CDocWindow::MessageReceived(BMessage *msg)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000036.html">[pe-commits] r441 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000035.html">[pe-commits] r443 - in trunk: . Extensions Resources Sources	rez/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#34">[ date ]</a>
+              <a href="thread.html#34">[ thread ]</a>
+              <a href="subject.html#34">[ subject ]</a>
+              <a href="author.html#34">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r471 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r471%20-%20trunk/Sources&In-Reply-To=%3C200611261720.kAQHK7rt015715%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000063.html">
+   <LINK REL="Next"  HREF="000065.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r471 - trunk/Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r471%20-%20trunk/Sources&In-Reply-To=%3C200611261720.kAQHK7rt015715%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r471 - trunk/Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 26 18:20:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000063.html">[pe-commits] r470 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000065.html">[pe-commits] r472 - in trunk: Languages/Sources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-26 18:20:06 +0100 (Sun, 26 Nov 2006)
+New Revision: 471
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=471&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=471&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/HAppResFile.h
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PText.cpp
+Log:
+* Removed support for BeOS &lt;= R4
+
+
+Modified: trunk/Sources/HAppResFile.h
+===================================================================
+--- trunk/Sources/HAppResFile.h	2006-11-26 17:09:38 UTC (rev 470)
++++ trunk/Sources/HAppResFile.h	2006-11-26 17:20:06 UTC (rev 471)
+@@ -43,16 +43,6 @@
+ 
+ namespace HResources {
+ 
+-#if (B_BEOS_VERSION &lt;= B_BEOS_VERSION_4)
+-// UGLY HACK WARNING!
+-// [zooey]:
+-// On BeOS R4, the first entry of this namespace - GetMenuBar() -
+-// is magically renamed into GetMenuBar_() by gcc. Why this is the
+-// case, I do not know. If anyone *does* know, please tell me!
+-// We fix (cough) this by introducing a dummy entry:
+-	void R4_Dummy();
+-#endif
+-
+ IMPEXP_LIBHEKKEL
+ BMenuBar* GetMenuBar(BRect frame, int id);
+ 
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-11-26 17:09:38 UTC (rev 470)
++++ trunk/Sources/PApp.cpp	2006-11-26 17:20:06 UTC (rev 471)
+@@ -872,9 +872,7 @@
+ 				break;
+ 			}
+ 
+-#if (B_BEOS_VERSION &gt; B_BEOS_VERSION_4)
+ 			case B_SILENT_RELAUNCH:
+-#endif
+ 			case msg_New:
+ 				NewWindow();
+ 				break;
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-11-26 17:09:38 UTC (rev 470)
++++ trunk/Sources/PText.cpp	2006-11-26 17:20:06 UTC (rev 471)
+@@ -2437,16 +2437,8 @@
+ 		functions.SortItems(MenuFunctionScanHandler::CompareFunc);
+ 	}
+ 
+-#if (B_BEOS_VERSION &lt;= B_BEOS_VERSION_4)
+-	// BeOS &lt; R4.5 has no AsyncAutoDestruct, so we simulate that (kind of):
+-	static BPopUpMenu * popup = NULL;
+-	if (popup)
+-		delete popup;
+-	popup = new BPopUpMenu(&quot;Funcs&quot;);
+-#else
+ 	BPopUpMenu *popup = new BPopUpMenu(&quot;Funcs&quot;);
+ 	popup-&gt;SetAsyncAutoDestruct(true);
+-#endif
+ 	popup-&gt;SetFont(be_plain_font);
+ 
+ 	if (includes.IsEmpty() &amp;&amp; functions.IsEmpty())
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000063.html">[pe-commits] r470 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000065.html">[pe-commits] r472 - in trunk: Languages/Sources Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r476 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r476%20-%20trunk/Sources&In-Reply-To=%3C200612171638.kBHGcGOk008024%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r476 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r476%20-%20trunk/Sources&In-Reply-To=%3C200612171638.kBHGcGOk008024%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r476 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 17 17:38:16 CET 2006</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-12-17 17:38:15 +0100 (Sun, 17 Dec 2006)
+New Revision: 476
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=476&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=476&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PText.cpp
+Log:
+* fixed bug reported by Chris Roberts about Pe selecting the wrong line
+  (+1) if asked to open a file and go to a line via RefsReceived().
+* fixed another (much harder to track down) bug along the way, that caused
+  to scroll-to-selection feature to not work reliably.
+
+
+Modified: trunk/Sources/PApp.cpp
+===================================================================
+--- trunk/Sources/PApp.cpp	2006-11-28 11:29:56 UTC (rev 475)
++++ trunk/Sources/PApp.cpp	2006-12-17 16:38:15 UTC (rev 476)
+@@ -614,7 +614,7 @@
+ 					{
+ 						BMessage m(msg_SelectLines);
+ 						m.AddInt32(&quot;from&quot;, lineNr);
+-						m.AddInt32(&quot;to&quot;, lineNr + 1);
++						m.AddInt32(&quot;to&quot;, lineNr - 1);
+ 						d-&gt;PostMessage(&amp;m, d-&gt;PreferredHandler());
+ 					}
+ 					break;
+@@ -644,7 +644,7 @@
+ 			FailOSErr (inMessage-&gt;FindRef(&quot;refs&quot;, i, &amp;doc));
+ 			PDoc *d = dynamic_cast&lt;PDoc*&gt;(OpenWindow(doc));
+ 			if (!d) continue;
+-
++			
+ 			if (inMessage-&gt;HasData(kTokenIdentifier, kTokenIDType))
+ 			{
+ 				TokenIdentifier *ident;
+@@ -681,7 +681,7 @@
+ 
+ 				BMessage msg(msg_SelectLines);
+ 				FailOSErr(msg.AddInt32(&quot;from&quot;, line));
+-				FailOSErr(msg.AddInt32(&quot;to&quot;, line));
++				FailOSErr(msg.AddInt32(&quot;to&quot;, line - 1));
+ 
+ 				BMessenger msgr(d-&gt;TextView());
+ 				FailOSErr(msgr.SendMessage(&amp;msg));
+@@ -858,8 +858,8 @@
+ 				if (w &amp;&amp; msg-&gt;FindInt32(&quot;line&quot;, &amp;lineNr) == B_OK)
+ 				{
+ 					BMessage m(msg_SelectLines);
+-					FailOSErr(m.AddInt32(&quot;from&quot;, lineNr - 1));
+-					FailOSErr(m.AddInt32(&quot;to&quot;, lineNr));
++					FailOSErr(m.AddInt32(&quot;from&quot;, lineNr));
++					FailOSErr(m.AddInt32(&quot;to&quot;, lineNr - 1));
+ 					w-&gt;PostMessage(&amp;m, w-&gt;PreferredHandler());
+ 				}
+ 
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-11-28 11:29:56 UTC (rev 475)
++++ trunk/Sources/PText.cpp	2006-12-17 16:38:15 UTC (rev 476)
+@@ -1578,6 +1578,8 @@
+ 	if (fVScrollBar1 == NULL || fVScrollBar2 == NULL || fHScrollBar == NULL)
+ 		return;
+ 
++	fBounds = Bounds();
++
+ 	g_unit_t h, y;
+ 
+ 	int lines = LineCount();
+@@ -1774,7 +1776,6 @@
+ void PText::FrameResized(float /*w*/, float /*h*/)
+ {
+ 	AdjustScrollBars();
+-	fBounds = Bounds();
+ 	SetupBitmap();
+ 
+ 	if (fSoftWrap &amp;&amp; fWrapType == 1 &amp;&amp;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

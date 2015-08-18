@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r449 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r449%20-%20trunk/Sources&In-Reply-To=%3C200611131712.kADHCgdj019103%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000041.html">
+   <LINK REL="Next"  HREF="000043.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r449 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r449%20-%20trunk/Sources&In-Reply-To=%3C200611131712.kADHCgdj019103%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r449 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 13 18:12:42 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000041.html">[pe-commits] r448 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000043.html">[pe-commits] r450 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-11-13 18:12:42 +0100 (Mon, 13 Nov 2006)
+New Revision: 449
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=449&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=449&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+Log:
+* allow Sync() to fail silently, as it always fails on CIFS
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-11-12 17:23:14 UTC (rev 448)
++++ trunk/Sources/CDocIO.cpp	2006-11-13 17:12:42 UTC (rev 449)
+@@ -189,7 +189,7 @@
+ 		}
+ 		CopyAttributes(srcFile, dstFile);
+ 		FailOSErr(dstFile.SetCreationTime(created));
+-		FailOSErr(dstFile.Sync());
++		dstFile.Sync();
+ 	}
+ 	catch (HErr&amp; e)
+ 	{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000041.html">[pe-commits] r448 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000043.html">[pe-commits] r450 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

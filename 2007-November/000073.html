@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r480 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r480%20-%20trunk/Sources&In-Reply-To=%3C200711111837.lABIbPNa028287%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000072.html">
+   <LINK REL="Next"  HREF="000074.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r480 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r480%20-%20trunk/Sources&In-Reply-To=%3C200711111837.lABIbPNa028287%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r480 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 11 19:37:25 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000072.html">[pe-commits] r479 - in trunk: Resources Sources
+</A></li>
+        <LI>Next message: <A HREF="000074.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#73">[ date ]</a>
+              <a href="thread.html#73">[ thread ]</a>
+              <a href="subject.html#73">[ subject ]</a>
+              <a href="author.html#73">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2007-11-11 19:37:25 +0100 (Sun, 11 Nov 2007)
+New Revision: 480
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=480&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=480&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CFindDialog.cpp
+   trunk/Sources/CRegex.cpp
+   trunk/Sources/PCmd.cpp
+Log:
+* fixed broken handling of \&lt;num&gt; references to regex submatches
+  during replace operations
+* added support for $&lt;num&gt; submatch references (so you can use $1, $2, ...
+  instead of \1, \2, ...)
+* as regex matching does not behave very well in combination with backwards
+  searching (unexpected non-greediness of .+ constructs), only one of these two 
+  can be active now
+
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/CFindDialog.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -58,7 +58,9 @@
+ 	msg_YASD			= 'SYAD',
+ 	msg_ChangedMFKind	= 'MFKn',
+ 	msg_FindPopup		= 'FnPp',
+-	msg_Collapse		= 'clps';
++	msg_Collapse		= 'clps',
++	msg_FlagBackward	= 'FnBk',
++	msg_FlagRegex		= 'FnRx';
+ 
+ enum {
+ 	METHOD_IDX_DIR	= 0,
+@@ -316,9 +318,11 @@
+ 	// Add Settings
+ 	fChkCase = new HCheckBox(fMainView, &quot;case&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWrap = new HCheckBox(fMainView, &quot;wrap&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkBack = new HCheckBox(fMainView, &quot;back&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
++	fChkBack = new HCheckBox(fMainView, &quot;back&quot;, new BMessage(msg_FlagBackward), 
++		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkWord = new HCheckBox(fMainView, &quot;word&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+-	fChkGrep = new HCheckBox(fMainView, &quot;regx&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
++	fChkGrep = new HCheckBox(fMainView, &quot;regx&quot;, new BMessage(msg_FlagRegex), 
++		H_FOLLOW_LEFT_BOTTOM);
+ 	fChkBtch = new HCheckBox(fMainView, &quot;btch&quot;, NULL, H_FOLLOW_LEFT_BOTTOM);
+ 	fChkCase-&gt;SetOn(gPrefs-&gt;GetPrefInt(prf_I_SearchIgnoreCase, 1));
+ 	fChkWrap-&gt;SetOn(gPrefs-&gt;GetPrefInt(prf_I_SearchWrap, 1));
+@@ -789,6 +793,20 @@
+ 				UpdateSearchDirMenu();
+ 				break;
+ 
++			case msg_FlagBackward:
++			{
++				fChkGrep-&gt;SetOn(false);
++				UpdateFields();
++				break;
++			}
++
++			case msg_FlagRegex:
++			{
++				fChkBack-&gt;SetOn(false);
++				UpdateFields();
++				break;
++			}
++
+ 			default:
+ 				HDialog::MessageReceived(msg);
+ 				break;
+
+Modified: trunk/Sources/CRegex.cpp
+===================================================================
+--- trunk/Sources/CRegex.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/CRegex.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -118,19 +118,22 @@
+ 	for(int i=0; i&lt;rl; ++i)
+ 	{
+ 		c = repl[i];
+-		if (c == '\\')
++		if (c == '\\' || c == '$')
+ 		{
+ 			c = repl[++i];
+ 			if (c &gt;= '1' &amp;&amp; c &lt;= '9')
+ 				replStr &lt;&lt; MatchStr(subject, c-'0');
+-			else if (c == 'n')
+-				replStr &lt;&lt; '\n';
+-			else if (c == 'r')
+-				replStr &lt;&lt; '\r';
+-			else if (c == 't')
+-				replStr &lt;&lt; '\t';
+-			else if (c == '\\')
+-				replStr &lt;&lt; '\\';
++			else if (c == '\\') 
++			{	// de-escape newline, carriage-return, tab and backslash:
++				if (c == 'n')
++					replStr &lt;&lt; '\n';
++				else if (c == 'r')
++					replStr &lt;&lt; '\r';
++				else if (c == 't')
++					replStr &lt;&lt; '\t';
++				else if (c == '\\')
++					replStr &lt;&lt; '\\';
++			}
+ 		}
+ 		else
+ 			replStr &lt;&lt; c;
+
+Modified: trunk/Sources/PCmd.cpp
+===================================================================
+--- trunk/Sources/PCmd.cpp	2007-11-07 16:50:46 UTC (rev 479)
++++ trunk/Sources/PCmd.cpp	2007-11-11 18:37:25 UTC (rev 480)
+@@ -537,7 +537,7 @@
+ 	
+ 	if (fGrep)
+ 	{
+-		fWith = gFindDialog-&gt;RxReplaceString(fWhat, size);
++		fWith = gFindDialog-&gt;RxReplaceString(txt-&gt;Text(), txt-&gt;Size());
+ 		fExpr = strdup(gFindDialog-&gt;FindString());
+ 	}
+ 	else
+@@ -636,12 +636,14 @@
+ 	while (fText-&gt;FindNext(fFind, offset, fIgnoreCase,	false, false, 
+ 		fEntireWord, fGrep, false, &amp;matchLen))
+ 	{
++		BString originalText(fText-&gt;Text(), fText-&gt;Size());
++
+ 		what.SetTo(fText-&gt;Text() + offset, matchLen);
+ 		fText-&gt;Delete(offset, offset + matchLen);
+ 		if (fGrep)
+ 		{
+ 			char* repStr 
+-				= gFindDialog-&gt;RxReplaceString(what.String(), what.Length());
++				= gFindDialog-&gt;RxReplaceString(originalText.String(), originalText.Length());
+ 			if (repStr)
+ 			{
+ 				rl = strlen(repStr);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000072.html">[pe-commits] r479 - in trunk: Resources Sources
+</A></li>
+	<LI>Next message: <A HREF="000074.html">[pe-commits] r481 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#73">[ date ]</a>
+              <a href="thread.html#73">[ thread ]</a>
+              <a href="subject.html#73">[ subject ]</a>
+              <a href="author.html#73">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r448 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r448%20-%20trunk/Sources&In-Reply-To=%3C200611121723.kACHNEJa016703%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000042.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r448 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r448%20-%20trunk/Sources&In-Reply-To=%3C200611121723.kACHNEJa016703%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r448 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 12 18:23:14 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000042.html">[pe-commits] r449 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-11-12 18:23:14 +0100 (Sun, 12 Nov 2006)
+New Revision: 448
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=448&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=448&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+Log:
+* applied code kindly supplied by Rainer that changes save-semantics to a double
+  write policy (first backup, then original file) in order to fix problems
+  related to icon-position of original file in Tracker and to circumvent renaming
+  problems in CIFS.
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2006-10-16 14:00:37 UTC (rev 447)
++++ trunk/Sources/CDocIO.cpp	2006-11-12 17:23:14 UTC (rev 448)
+@@ -87,6 +87,43 @@
+ 
+ static int32 DetermineEncoding(const BString&amp; str)
+ {
++	/* HACK: Get the first line and see if there's something like 
++	  &quot;[PE:ENC=&lt;encoding&gt;]&quot; in there. &lt;encoding&gt; is supported encodings
++	  with spaces replaced by &quot;-&quot;, eg.: &quot;ISO-8859-15&quot; */
++	int32			pos;
++	BString			line;
++	int32			enc_id = -1;
++	BString			enc_name;
++	CEncodingRoster	enc_roster;
++
++	// Get the first line
++	if ((pos = str.FindFirst('\n')) != B_ERROR ||
++	    (pos = str.FindFirst('\r')) != B_ERROR)
++	{
++		str.CopyInto(line, 0, pos);
++		// Cut down to begin of magic identifier, if there
++		if ((pos = line.IFindFirst(&quot;[PE:&quot;)) != B_ERROR)
++		{
++			line.Remove(0, pos+4);
++			// Find end of settings and cut the rest off
++			if ((pos = line.FindFirst(']')) != B_ERROR)
++			{
++				line.Remove(pos, line.Length()-pos);
++				// Check supported encodings
++				// (sofar no other settings allowed)
++				while (enc_roster.IsSupportedEncoding(++enc_id))
++				{
++					enc_name = enc_roster.EncodingNameByIdx(enc_id);
++					enc_name.ReplaceAll(' ', '-');
++					enc_name.Prepend(&quot;ENC=&quot;);
++					if (line.ICompare(enc_name) == 0)
++					{
++						return enc_id;
++					}
++				}
++			}
++		}
++	}
+ 	return B_UNICODE_UTF8;
+ }
+ 
+@@ -100,7 +137,7 @@
+ 		{
+ 			attr_info ai;
+ 			
+-			if (strcmp(name, &quot;BEOS:TYPE&quot;) == 0)
++			if (strcmp(name, &quot;_trk/_clipping_file_&quot;) == 0)
+ 				continue;
+ 			
+ 			FailOSErr(from.GetAttrInfo(name, &amp;ai));
+@@ -121,6 +158,47 @@
+ 	}
+ }
+ 
++static bool CopyFile(BEntry&amp; srcEntry, BEntry&amp; dstEntry)
++{
++	try
++	{
++		char srcName[B_FILE_NAME_LENGTH];
++
++		BFile srcFile;
++		BFile dstFile;
++		BDirectory dir;
++		const int bufSize = 1024;
++		char buf[bufSize];
++		ssize_t bytesRead;
++		time_t created;
++
++		// Create destination file
++		FailOSErr(srcEntry.GetCreationTime(&amp;created));
++		FailOSErr(srcEntry.GetName(srcName));
++		string dstName(srcName);
++		dstName += '~';
++		FailOSErr(srcEntry.GetParent(&amp;dir));
++		FailOSErr(dstEntry.SetTo(&amp;dir, dstName.c_str(), true));
++		FailOSErr(dstFile.SetTo(&amp;dstEntry, B_WRITE_ONLY|B_CREATE_FILE|B_ERASE_FILE));
++
++		// Copy file data, attributes and time
++		FailOSErr(srcFile.SetTo(&amp;srcEntry, B_READ_ONLY));
++		while ((bytesRead = srcFile.Read((void *)buf, bufSize)) &gt; 0)
++		{
++			dstFile.Write(buf, bytesRead);
++		}
++		CopyAttributes(srcFile, dstFile);
++		FailOSErr(dstFile.SetCreationTime(created));
++		FailOSErr(dstFile.Sync());
++	}
++	catch (HErr&amp; e)
++	{
++		e.DoError();
++		return false;
++	}
++	return true;
++}
++
+ bool operator&lt; (const node_ref&amp; left, const node_ref&amp; right)
+ {
+ 	if (left.node &lt; right.node)
+@@ -343,11 +421,12 @@
+ 
+ 	return result;
+ }
+-	
++
+ bool CLocalDocIO::WriteDoc()
+ {
+ 	char name[B_FILE_NAME_LENGTH];
+ 	BEntry e(fEntryRef, true);
++	BEntry backup;
+ 	bool existed = e.Exists();
+ 
+ 	try
+@@ -358,36 +437,27 @@
+ 		fDoc-&gt;GetText(docText);
+ 		if (!DoPostEditTextConversions(docText))
+ 			return false;
+-	
++
+ 		FailOSErr(e.GetName(name));
+-	
+-		time_t created;
+-		if (existed)
+-		{
+-			FailOSErr(e.GetCreationTime(&amp;created));
+ 
+-			string bname(name);
+-			bname += '~';
+-			FailOSErr(e.Rename(bname.c_str(), true));
++		if (existed) 
++		{	// Create a backup file
++			if (!CopyFile(e, backup))
++				return false;
+ 		}
+ 
++		// Write document
+ 		BFile file;
+ 		BDirectory dir;
+ 		FailOSErr(e.GetParent(&amp;dir));
+-		FailOSErr(dir.CreateFile(name, &amp;file, true));
++		FailOSErr(dir.CreateFile(name, &amp;file, false));
+ 		CheckedWrite(file, docText.String(), docText.Length());
+-		if (existed)
+-		{
+-			BFile old;
+-			FailOSErr(old.SetTo(&amp;e, B_READ_ONLY));
+-			CopyAttributes(old, file);
+-			FailOSErr(file.SetCreationTime(created));
+-		}
+ 		fDoc-&gt;WriteAttr(file, settingsMsg);
+ 		file.Sync();
+-
++		
++		// Remove backup file
+ 		if (existed &amp;&amp; !gPrefs-&gt;GetPrefInt(prf_I_Backup))
+-			FailOSErr(e.Remove());
++			FailOSErr(backup.Remove());
+ 
+ 		// Update MIME type info
+ 		e.SetTo(&amp;dir, name);
+@@ -408,10 +478,6 @@
+ 	catch (HErr&amp; err)
+ 	{
+ 		err.DoError();
+-		// Now don't check error codes anymore... hope this is right
+-		BEntry(fDoc-&gt;EntryRef(), true).Remove();
+-		if (existed)
+-			e.Rename(name);
+ 		return false;
+ 	}
+ 	return true;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000042.html">[pe-commits] r449 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#41">[ date ]</a>
+              <a href="thread.html#41">[ thread ]</a>
+              <a href="subject.html#41">[ subject ]</a>
+              <a href="author.html#41">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

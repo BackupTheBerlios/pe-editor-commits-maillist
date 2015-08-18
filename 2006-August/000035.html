@@ -1,0 +1,368 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r443 - in trunk: . Extensions Resources Sources	rez/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r443%20-%20in%20trunk%3A%20.%20Extensions%20Resources%20Sources%0A%09rez/Sources&In-Reply-To=%3C200608081108.k78B8wZU009186%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000034.html">
+   <LINK REL="Next"  HREF="000037.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r443 - in trunk: . Extensions Resources Sources	rez/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r443%20-%20in%20trunk%3A%20.%20Extensions%20Resources%20Sources%0A%09rez/Sources&In-Reply-To=%3C200608081108.k78B8wZU009186%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r443 - in trunk: . Extensions Resources Sources	rez/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug  8 13:08:58 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000034.html">[pe-commits] r442 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000037.html">[pe-commits] r444 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-08 13:08:53 +0200 (Tue, 08 Aug 2006)
+New Revision: 443
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=443&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=443&amp;view=rev</A>
+
+Modified:
+   trunk/Extensions/BeBookFetch.cpp
+   trunk/Extensions/CopyContaining.cpp
+   trunk/Extensions/CutContaining.cpp
+   trunk/Extensions/ImageToC.cpp
+   trunk/Extensions/Jamfile
+   trunk/Jamfile
+   trunk/Resources/pe.types.rsrc
+   trunk/Sources/CDocIO.h
+   trunk/Sources/CRegex.cpp
+   trunk/Sources/HDialogViews.cpp
+   trunk/Sources/HDialogViews.h
+   trunk/Sources/Jamfile
+   trunk/Sources/pe.h
+   trunk/Sources/pe.pch++
+   trunk/rez/Sources/Jamfile
+Log:
+* fixed several compilation issues on PPC
+
+
+Modified: trunk/Extensions/BeBookFetch.cpp
+===================================================================
+--- trunk/Extensions/BeBookFetch.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/BeBookFetch.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -12,6 +12,8 @@
+ 
+ #include &quot;PeAddOn.h&quot;
+ 
++#include &lt;vector&gt;
++
+ #define kTrackerSig		&quot;application/x-vnd.Be-TRAK&quot;
+ 
+ //------------------------------------------------------------------------------
+
+Modified: trunk/Extensions/CopyContaining.cpp
+===================================================================
+--- trunk/Extensions/CopyContaining.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/CopyContaining.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -34,7 +34,8 @@
+ */
+ 
+ #include &quot;PeAddOn.h&quot;
+-#include &lt;regex.h&gt;
++#include &lt;pcreposix.h&gt;
++#define REG_NOERROR 0
+ #include &quot;copycon.r.h&quot;
+ 
+ #if __INTEL__
+
+Modified: trunk/Extensions/CutContaining.cpp
+===================================================================
+--- trunk/Extensions/CutContaining.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/CutContaining.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -34,7 +34,8 @@
+ */
+ 
+ #include &quot;PeAddOn.h&quot;
+-#include &quot;regex.h&quot;
++#include &lt;pcreposix.h&gt;
++#define REG_NOERROR 0
+ #include &quot;copycon.r.h&quot;
+ 
+ #if __INTEL__
+
+Modified: trunk/Extensions/ImageToC.cpp
+===================================================================
+--- trunk/Extensions/ImageToC.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/ImageToC.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -156,6 +156,16 @@
+ 	baseName.Prepend(&quot;k&quot;);
+ 
+ 	char line[1024];
++#ifdef __MWERKS__
++	sprintf(line,
++		&quot;const %sWidth = %ld;\n&quot;
++		&quot;const %sHeight = %ld;\n&quot;
++		&quot;const %sColorSpace = %s;\n&quot;
++		&quot;const %sBytesPerRow = %ld;\n\n&quot;,
++		baseName.String(), bitmap-&gt;Bounds().IntegerWidth() + 1, baseName.String(),
++		bitmap-&gt;Bounds().IntegerHeight() + 1, baseName.String(), colorSpace,
++		baseName.String(), bitmap-&gt;BytesPerRow());
++#else
+ 	snprintf(line, sizeof(line),
+ 		&quot;const %sWidth = %ld;\n&quot;
+ 		&quot;const %sHeight = %ld;\n&quot;
+@@ -164,6 +174,7 @@
+ 		baseName.String(), bitmap-&gt;Bounds().IntegerWidth() + 1, baseName.String(),
+ 		bitmap-&gt;Bounds().IntegerHeight() + 1, baseName.String(), colorSpace,
+ 		baseName.String(), bitmap-&gt;BytesPerRow());
++#endif
+ 
+ 	text.Insert(line);
+ 
+@@ -181,8 +192,12 @@
+ 
+ 	int32 size = bitmap-&gt;BitsLength() / bytesPerPixel;
+ 
++#ifdef __MWERKS__
++	sprintf(line, &quot;const %sData[%ld] = {&quot;, baseName.String(), size);
++#else
+ 	snprintf(line, sizeof(line), &quot;const %sData[%ld] = {&quot;,
+ 		baseName.String(), size);
++#endif
+ 	text.Insert(line);
+ 
+ 	line[0] = '\0';
+
+Modified: trunk/Extensions/Jamfile
+===================================================================
+--- trunk/Extensions/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Extensions/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -2,10 +2,8 @@
+ 
+ SubDirHdrs $(TOP) Sources ;
+ 
+-if $(OSPLAT) = PPC {
+-	# include regex-subfolder as system header folder
+-	SubDirSysHdrs $(TOP) regex ;
+-}
++SubDirSysHdrs /boot/home/config/include ;
++LINKFLAGS += -L/boot/home/config/lib ;
+ 
+ # &lt;pe-src&gt;
+ PeExtension PrefixLines 
+@@ -25,7 +23,7 @@
+ # &lt;pe-src&gt;
+ PeExtension Copy\ Lines\ Containing 
+ 	: CopyContaining.cpp 
+-	: libhekkel.so $(RX_LIB) be $(STDC++LIB) 
++	: libhekkel.so pcreposix $(RX_LIB) be $(STDC++LIB) 
+ 	: copycon.r
+ 	;
+ # &lt;/pe-src&gt;
+@@ -33,7 +31,7 @@
+ # &lt;pe-src&gt;
+ PeExtension Cut\ Lines\ Containing 
+ 	: CutContaining.cpp 
+-	: libhekkel.so $(RX_LIB) be $(STDC++LIB) 
++	: libhekkel.so pcreposix $(RX_LIB) be $(STDC++LIB) 
+ 	;
+ # &lt;/pe-src&gt;
+ 
+
+Modified: trunk/Jamfile
+===================================================================
+--- trunk/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -1,10 +1,6 @@
+ SubDir TOP ;
+ 
+ SubInclude TOP rez ;
+-if $(OSPLAT) = PPC {
+-	# need to build regex-library on PPC, as BeOS doesn't provide one!
+-	SubInclude TOP regex ;
+-}
+ SubInclude TOP Sources ;
+ SubInclude TOP Extensions ;
+ SubInclude TOP Resources ;
+
+Modified: trunk/Resources/pe.types.rsrc
+===================================================================
+(Binary files differ)
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/CDocIO.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -53,6 +53,8 @@
+ 	return fLastSaved;
+ }
+ 
++bool operator&lt; (const node_ref&amp; left, const node_ref&amp; right);
++
+ class CLocalDocIO : public CDocIO
+ {
+ public:
+
+Modified: trunk/Sources/CRegex.cpp
+===================================================================
+--- trunk/Sources/CRegex.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/CRegex.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -53,7 +53,7 @@
+ 		return res;
+ 	infoCount++;
+ 	int vs = infoCount*3;
+-	int mvect[vs];
++	int *mvect = new int [vs];
+ 	res = pcre_exec(fRegex, NULL, subject, len, offset, options, mvect, vs);
+ 	fMatchInfos.clear();
+ 	if (res &gt;= 0)
+@@ -74,8 +74,9 @@
+ 			}
+ 			fMatchInfos.push_back(mi);
+ 		}
+-		return 0;
++		res = 0;
+ 	}
++	delete [] mvect;
+ 	return res;
+ }
+ 
+
+Modified: trunk/Sources/HDialogViews.cpp
+===================================================================
+--- trunk/Sources/HDialogViews.cpp	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/HDialogViews.cpp	2006-08-08 11:08:53 UTC (rev 443)
+@@ -272,11 +272,8 @@
+ 
+ 
+ HScrollView::HScrollView(BView* view, const char *name, BView *target,
+-				uint32 resizingMode = B_FOLLOW_LEFT|B_FOLLOW_TOP,
+-				uint32 flags = 0,
+-				bool horizontal = false,
+-				bool vertical = false,
+-				border_style border = B_FANCY_BORDER)
++				uint32 resizingMode, uint32 flags, bool horizontal, bool vertical,
++				border_style border)
+ : BScrollView(name, target, resizingMode, flags, horizontal, vertical, border)
+ {
+ 	if (view != NULL)
+@@ -286,10 +283,8 @@
+ #pragma mark - HBox
+ 
+ 
+-HBox::HBox(BView* view, const char *name = NULL,
+-			uint32 resizingMode,
+-			uint32 flags,
+-			border_style border)
++HBox::HBox(BView* view, const char *name, uint32 resizingMode, uint32 flags,
++			  border_style border)
+ : BBox(BRect(0, 0, 100, 50), name, resizingMode, flags, border)
+ {
+ 	if (view != NULL)
+
+Modified: trunk/Sources/HDialogViews.h
+===================================================================
+--- trunk/Sources/HDialogViews.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/HDialogViews.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -161,7 +161,7 @@
+ 			   uint32 resizingMode = H_FOLLOW_LEFT_TOP, bool fixedSize = false, float width = 100);
+ 	void ResizeLocalized(const char* label=NULL, const char* itemLabel=NULL);
+ 	BMenuItem *AddMenuItem(uint32 cmd, int32 index = -1);
+-	int32 HMenuField::FindMarkedIndex(void);
++	int32 FindMarkedIndex(void);
+ 	//
+ 	float Left(void)									{ return Frame().left; }
+ 	float Right(void)									{ return Frame().right; }
+
+Modified: trunk/Sources/Jamfile
+===================================================================
+--- trunk/Sources/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -10,8 +10,6 @@
+ 	Depends libhekkel.so : $(PREFIX_FILE) ;
+ 	PreCompile $(PREFIX_FILE) : [ FDirName $(TOP) Sources pe.pch++ ] ;
+ 	C++FLAGS += -prefix $(PREFIX_FILE) ;
+-
+-	SubDirSysHdrs $(TOP) regex ;
+ }
+ 
+ SAVED_DEFINES = $(DEFINES) ;
+
+Modified: trunk/Sources/pe.h
+===================================================================
+--- trunk/Sources/pe.h	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/pe.h	2006-08-08 11:08:53 UTC (rev 443)
+@@ -45,6 +45,7 @@
+ 
+ 	// include only subset of interfacekit
+ #include &lt;Alert.h&gt;
++#include &lt;Box.h&gt;
+ #include &lt;Bitmap.h&gt;
+ #include &lt;Button.h&gt;
+ #include &lt;CheckBox.h&gt;
+
+Modified: trunk/Sources/pe.pch++
+===================================================================
+--- trunk/Sources/pe.pch++	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/Sources/pe.pch++	2006-08-08 11:08:53 UTC (rev 443)
+@@ -41,6 +41,7 @@
+ 
+ 	// include only subset of interfacekit
+ #include &lt;Alert.h&gt;
++#include &lt;Box.h&gt;
+ #include &lt;Bitmap.h&gt;
+ #include &lt;Button.h&gt;
+ #include &lt;CheckBox.h&gt;
+
+Modified: trunk/rez/Sources/Jamfile
+===================================================================
+--- trunk/rez/Sources/Jamfile	2006-08-08 10:36:13 UTC (rev 442)
++++ trunk/rez/Sources/Jamfile	2006-08-08 11:08:53 UTC (rev 443)
+@@ -1,7 +1,7 @@
+ 
+ SubDir TOP rez Sources ;
+ 
+-SubDirHdrs $(OBJECTS_DIR) Sources ;
++# SubDirHdrs $(OBJECTS_DIR) Sources ;
+ 
+ if $(OSPLAT) = X86 {
+ 	C++FLAGS += -Wno-uninitialized -Wno-unused ;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000034.html">[pe-commits] r442 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000037.html">[pe-commits] r444 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

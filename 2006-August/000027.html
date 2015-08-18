@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r436 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r436%20-%20trunk/Sources&In-Reply-To=%3C200608071429.k77ETQHH024915%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000026.html">
+   <LINK REL="Next"  HREF="000028.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r436 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r436%20-%20trunk/Sources&In-Reply-To=%3C200608071429.k77ETQHH024915%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r436 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  7 16:29:26 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000026.html">[pe-commits] r435 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000028.html">[pe-commits] r437 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-07 16:29:26 +0200 (Mon, 07 Aug 2006)
+New Revision: 436
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=436&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=436&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CInfoDialog.cpp
+   trunk/Sources/CInfoDialog.h
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/CPrefsDialog.h
+   trunk/Sources/HTabSheet.cpp
+   trunk/Sources/HTabSheet.h
+Log:
+* added support for automatic resizing of panes and windows to tabsheets
+* made 'Preferences'- and 'File Options'-dialog use the auto-resizing feature
+  in order to fix layouting problems for larger fonts.
+
+
+
+Modified: trunk/Sources/CInfoDialog.cpp
+===================================================================
+--- trunk/Sources/CInfoDialog.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CInfoDialog.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -43,6 +43,7 @@
+ #include &quot;CLangIntf.h&quot;
+ #include &quot;HPreferences.h&quot;
+ #include &quot;HDefines.h&quot;
++#include &quot;HTabSheet.h&quot;
+ #include &quot;MAlert.h&quot;
+ #include &quot;Prefs.h&quot;
+ 
+@@ -187,7 +188,7 @@
+ 	lang-&gt;SetRadioMode(true);
+ 	int curLang = fDoc-&gt;TextView()-&gt;Language();
+ 	SetValue(&quot;language&quot;, curLang &gt;= 0 ? curLang + 3 : 1);
+-	
++
+ 	CancelClicked();
+ } /* CInfoDialog::CInfoDialog */
+ 		
+@@ -319,3 +320,22 @@
+ 	SetEnabled(&quot;ok&quot;, true);
+ 	SetEnabled(&quot;cancel&quot;, true);
+ } /* CInfoDialog::UpdateFields */
++
++void CInfoDialog::Show() 
++{
++	HDialog::Show();
++	if (LockLooper())
++	{
++		HTabSheet* tabBook = (HTabSheet*)FindView(&quot;tabbook&quot;);
++		BRect okFrame = FindView(&quot;ok&quot;)-&gt;Frame();
++		if (tabBook) {
++			BPoint bottomRight = tabBook-&gt;AdjustBottomRightOfAllPanes();
++			if (bottomRight.x &lt; okFrame.right)
++				bottomRight.x = okFrame.right;
++			if (bottomRight.y &lt; okFrame.bottom)
++				bottomRight.y = okFrame.bottom;
++			ResizeTo(bottomRight.x+5, bottomRight.y+5);
++		}
++		UnlockLooper();
++	}
++}
+
+Modified: trunk/Sources/CInfoDialog.h
+===================================================================
+--- trunk/Sources/CInfoDialog.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CInfoDialog.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -51,6 +51,8 @@
+ virtual	bool CancelClicked();
+ virtual	void UpdateFields();
+ 
++		void Show();
++
+ private:
+ 		BMenu *fTypes, *fMenu, *fSourceEncoding, *fEncoding, *fLineBreaks;
+ 		PDoc *fDoc;
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CPrefsDialog.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -50,6 +50,7 @@
+ #include &quot;HColorControl.h&quot;
+ #include &quot;HPreferences.h&quot;
+ #include &quot;HDefines.h&quot;
++#include &quot;HTabSheet.h&quot;
+ #include &quot;MAlert.h&quot;
+ #include &quot;CMimeBox.h&quot;
+ #include &quot;CGrepBox.h&quot;
+@@ -1046,3 +1047,22 @@
+ 		}
+ 	}
+ } /* CPrefsDialog::DeleteKeybinding */
++
++void CPrefsDialog::Show() 
++{
++	HDialog::Show();
++	if (LockLooper())
++	{
++		HTabSheet* tabBook = (HTabSheet*)FindView(&quot;tabB&quot;);
++		BRect okFrame = FindView(&quot;ok  &quot;)-&gt;Frame();
++		if (tabBook) {
++			BPoint bottomRight = tabBook-&gt;AdjustBottomRightOfAllPanes();
++			if (bottomRight.x &lt; okFrame.right)
++				bottomRight.x = okFrame.right;
++			if (bottomRight.y &lt; okFrame.bottom)
++				bottomRight.y = okFrame.bottom;
++			ResizeTo(bottomRight.x+5, bottomRight.y+5);
++		}
++		UnlockLooper();
++	}
++}
+
+Modified: trunk/Sources/CPrefsDialog.h
+===================================================================
+--- trunk/Sources/CPrefsDialog.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/CPrefsDialog.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -59,6 +59,7 @@
+ virtual bool CancelClicked();
+ virtual void UpdateFields();
+ virtual void MessageReceived(BMessage *msg);
++virtual	void Show();
+ 	void GetDefPageSetup();
+ 
+ 	static void CreateField(int kind, BPositionIO&amp; data, BView*&amp; inside);
+
+Modified: trunk/Sources/HTabSheet.cpp
+===================================================================
+--- trunk/Sources/HTabSheet.cpp	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/HTabSheet.cpp	2006-08-07 14:29:26 UTC (rev 436)
+@@ -43,7 +43,7 @@
+ 	kListWidth = 80;
+ 
+ HTabSheet::HTabSheet(BRect frame, const char *name)
+-	: BView(frame, name, B_FOLLOW_ALL_SIDES, B_WILL_DRAW | B_NAVIGABLE)
++	: BView(frame, name, B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
+ {
+ 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+ 	SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+@@ -56,9 +56,9 @@
+ 	fListArea.OffsetTo(f, f);
+ 	fListArea.right = fListArea.left + kListWidth * gFactor;
+ 	
+-	fEntries = new BListView(fListArea, &quot;entries&quot;);
++	fEntries = new BListView(fListArea, &quot;entries&quot;, B_SINGLE_SELECTION_LIST, B_FOLLOW_TOP_BOTTOM);
+ 	fEntries-&gt;SetSelectionMessage(new BMessage(msg_Flip));
+-	AddChild(new BScrollView(&quot;scroller&quot;, fEntries, B_FOLLOW_ALL_SIDES, 0, false, true));
++	AddChild(new BScrollView(&quot;scroller&quot;, fEntries, B_FOLLOW_TOP_BOTTOM, 0, false, true));
+ 	
+ 	fListArea.right += B_V_SCROLL_BAR_WIDTH;
+ 
+@@ -126,6 +126,50 @@
+ 	EndLineArray();
+ } /* HTabSheet::Draw */
+ 
++BPoint HTabSheet::AdjustBottomRightOfAllPanes()
++{
++	BPoint overallBottomRight(0.0, 0.0);
++	for(int i=0; i&lt;fPanes.CountItems(); ++i)
++	{
++		BView* pane = (BView*)fPanes.ItemAt(i);
++		if (!pane)
++			continue;
++		BPoint paneBottomRight = DetermineBottomRightOfPane(pane);
++		if (overallBottomRight.x &lt; paneBottomRight.x)
++			overallBottomRight.x = paneBottomRight.x;
++		if (overallBottomRight.y &lt; paneBottomRight.y)
++			overallBottomRight.y = paneBottomRight.y;
++	}
++	BPoint paneLeftTop;
++	for(int i=0; i&lt;fPanes.CountItems(); ++i)
++	{
++		BView* pane = (BView*)fPanes.ItemAt(i);
++		if (!pane)
++			continue;
++		if (i == 0)
++			paneLeftTop = pane-&gt;Frame().LeftTop();
++		pane-&gt;ResizeTo(overallBottomRight.x + 51, overallBottomRight.y + 51);
++	}
++	return overallBottomRight+paneLeftTop;
++}
++
++BPoint HTabSheet::DetermineBottomRightOfPane(BView* pane)
++{
++	BPoint bottomRight(0, 0);
++	for(int i=0; i&lt;pane-&gt;CountChildren(); ++i)
++	{
++		BView* child = pane-&gt;ChildAt(i);
++		if (!child)
++			continue;
++		BRect childFrame = child-&gt;Frame();
++		if (bottomRight.x &lt; childFrame.right)
++			bottomRight.x = childFrame.right;
++		if (bottomRight.y &lt; childFrame.bottom)
++			bottomRight.y = childFrame.bottom;
++	}
++	return bottomRight;
++}
++
+ BRect HTabSheet::ClientArea()
+ {
+ 	return fClientArea;
+
+Modified: trunk/Sources/HTabSheet.h
+===================================================================
+--- trunk/Sources/HTabSheet.h	2006-08-07 14:20:07 UTC (rev 435)
++++ trunk/Sources/HTabSheet.h	2006-08-07 14:29:26 UTC (rev 436)
+@@ -48,17 +48,20 @@
+ virtual void MouseDown(BPoint where);
+ virtual void Draw(BRect update);
+ 	
+-BRect ClientArea();
++		void MessageReceived(BMessage *msg);
++		void AttachedToWindow();
++
++		BPoint AdjustBottomRightOfAllPanes();
++
++		BRect ClientArea();
+ 	
+-BView* AddSheet(const char *name, const char *desc = NULL);
++		BView* AddSheet(const char *name, const char *desc = NULL);
+ 	
+ 		int CurrentTab()	{ return fCurrent; };
+-	
+ private:
+ 		
+ 		void FlipTo(int page);
+-		void MessageReceived(BMessage *msg);
+-		void AttachedToWindow();
++		BPoint DetermineBottomRightOfPane(BView* pane);
+ 
+ 		BRect fClientArea, fListArea;
+ 		BList fPanes;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000026.html">[pe-commits] r435 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000028.html">[pe-commits] r437 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

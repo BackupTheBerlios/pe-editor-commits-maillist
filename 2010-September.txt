@@ -1,0 +1,56 @@
+From mmu_man at mail.berlios.de  Tue Sep 28 21:25:39 2010
+From: mmu_man at mail.berlios.de (mmu_man at mail.berlios.de)
+Date: Tue, 28 Sep 2010 21:25:39 +0200 (CEST)
+Subject: [pe-commits] r600 - in trunk: Resources Sources
+Message-ID: <20100928192539.DC816480FD0@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2010-09-28 21:25:39 +0200 (Tue, 28 Sep 2010)
+New Revision: 600
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=600&view=rev
+
+Modified:
+   trunk/Resources/pe.types.rdef
+   trunk/Sources/PAbout.cpp
+Log:
+Prepare for a new official build.
+
+
+Modified: trunk/Resources/pe.types.rdef
+===================================================================
+--- trunk/Resources/pe.types.rdef	2010-08-15 00:47:56 UTC (rev 599)
++++ trunk/Resources/pe.types.rdef	2010-09-28 19:25:39 UTC (rev 600)
+@@ -4,13 +4,13 @@
+ resource app_version {
+ 	major  = 2,
+ 	middle = 4,
+-	minor  = 2,
++	minor  = 3,
+ 
+ 	variety = B_APPV_FINAL,
+ 	internal = 0,
+ 
+-	short_info = "Pe 2.4.2",
+-	long_info = "Pe 2.4.2"
++	short_info = "Pe 2.4.3",
++	long_info = "Pe 2.4.3"
+ };
+ 
+ resource app_signature "application/x-vnd.beunited.pe";
+
+Modified: trunk/Sources/PAbout.cpp
+===================================================================
+--- trunk/Sources/PAbout.cpp	2010-08-15 00:47:56 UTC (rev 599)
++++ trunk/Sources/PAbout.cpp	2010-09-28 19:25:39 UTC (rev 600)
+@@ -44,7 +44,7 @@
+ #endif
+ 
+ const char kAboutText[] =
+-		"Pe 2.4.2 Open Source Version\n\n"
++		"Pe 2.4.3 Open Source Version\n\n"
+ 		"a high performance editor\n"
+ 		"created by Maarten Hekkelman.\n"
+ 		"Hekkelman Programmatuur B.V.\n"
+
+
+

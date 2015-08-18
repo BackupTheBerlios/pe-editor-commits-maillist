@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r462 - trunk/Languages/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r462%20-%20trunk/Languages/Sources&In-Reply-To=%3C200611221850.kAMIo0C0013088%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000054.html">
+   <LINK REL="Next"  HREF="000056.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r462 - trunk/Languages/Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r462%20-%20trunk/Languages/Sources&In-Reply-To=%3C200611221850.kAMIo0C0013088%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r462 - trunk/Languages/Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 22 19:50:00 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000054.html">[pe-commits] r461 - in trunk: Extensions Sources
+</A></li>
+        <LI>Next message: <A HREF="000056.html">[pe-commits] r463 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#55">[ date ]</a>
+              <a href="thread.html#55">[ thread ]</a>
+              <a href="subject.html#55">[ subject ]</a>
+              <a href="author.html#55">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-22 19:49:59 +0100 (Wed, 22 Nov 2006)
+New Revision: 462
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=462&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=462&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+Log:
+* HTML-JS-PHP function popup is now able to handle:
+- headings over multiple lines
+- headings with attributes
+- tags inside the heading
+- attributes enclosed with single-quotes
+- attributes without quotes
+
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Popup.cpp	2006-11-22 11:56:16 UTC (rev 461)
++++ trunk/Languages/Sources/HtmlJsPhp_Popup.cpp	2006-11-22 18:49:59 UTC (rev 462)
+@@ -129,140 +129,138 @@
+ 	return txt;
+ } /* skip_white */
+ 
+-const char *Anchor(const char *txt, CLanguageProxy&amp; ao)
++bool get_attribute(const char *&amp;ptr, const char *&amp;namBeg, int&amp; namLen, const char *&amp;valBeg, int&amp; valLen)
+ {
+-	char name[PATH_MAX];
++	const char *namEnd=0, *valEnd=0;
+ 
+-	txt = skip_white(txt);
+-
+-	while (*txt != 0)
++	namBeg = valBeg = 0;
++	ptr = skip_white(ptr);
++	if (*ptr != 0 &amp;&amp; *ptr != '&gt;')
+ 	{
+-		if (strncasecmp(txt, &quot;HREF&quot;, 4) == 0)
+-		{
+-
+-			txt = skip_white(txt + 4);
+-
+-			if (*txt != '=')
+-				break;
+-
+-			txt = skip_white(txt + 1);
+-
+-			if (*txt != '&quot;')
+-				break;
+-
+-			const char *file = ++txt;
+-
+-			while (*txt &amp;&amp; *txt != '&quot;' &amp;&amp; *txt != '#')
+-				++txt;
+-
+-			if (*txt == 0)
+-				break;
+-
+-			int l = min((long)PATH_MAX - 1, txt - file - 1);
+-			if (l &gt; 0)
++		// Search for attribue name
++		namBeg = namEnd = ptr;
++		// Gracefully also accept non alphanumeric characters
++		while (*namEnd != 0 &amp;&amp; *namEnd != '=' &amp;&amp; !isspace(*namEnd))
++			namEnd++;
++		ptr = skip_white(namEnd);
++		// Search for attribue value
++		if (*ptr == '=') {
++			ptr = skip_white(ptr+1);
++			if (*ptr == '&quot;' || *ptr == '\'')
+ 			{
+-				strncpy(name, file, l);
+-				name[l] = 0;
+-				ao.AddInclude(name, name);
++				// Value is enclosed
++				const char *encl = ptr;
++				valBeg = valEnd = (ptr + 1);
++				while (*valEnd != 0 &amp;&amp; *valEnd != *encl)
++					valEnd++;
++				ptr = valEnd+1;
+ 			}
+-			break;
++			else
++			{
++				// Value is not enclosed
++				valBeg = valEnd = ptr;
++				while (isalnum(*valEnd) || *valEnd == '_')
++					valEnd++;
++				ptr = valEnd;
++			}
+ 		}
+-		else if (strncasecmp(txt, &quot;NAME&quot;, 4) == 0)
+-		{
+-			txt = skip_white(txt + 4);
+-			
+-			if (*txt != '=')
+-				break;
+-			
+-			txt = skip_white(txt + 1);
+-			
+-			if (*txt != '&quot;')
+-				break;
++		//
++		namLen = namEnd - namBeg;
++		valLen = valEnd - valBeg;
++		return true;
++	} else {
++		return false;
++	}
++}
+ 
+-			int offset = txt - ao.Text();
+-			const char *anchor = txt + 1;
+-			
+-			txt = skip(txt + 1, '&quot;');
+-			
+-			if (*txt == 0)
+-				break;
+-			char *p = name + kMaxNameSize;
+-			int l = min(kMaxNameSize - 1, txt - anchor - 1);
+-			strncpy(name, anchor, l);
+-			name[l] = 0;
++void skip_attributes(const char *&amp;ptr)
++{
++	const char *nam, *val;
++	int namLen, valLen, len;
+ 
+-			sprintf(p, &quot;A: %s&quot;, name);
++	// Skip tagname
++	if (*(++ptr) != 0 &amp;&amp; *ptr == '/')
++		ptr++;
++	while (*ptr != 0 &amp;&amp; isalnum(*ptr))
++		ptr++;
++	// Skip attributes
++	while (get_attribute(ptr, nam, namLen, val, valLen)) ;
++	// skip &quot;&gt;&quot;
++	ptr++;
++}
+ 
+-			ao.AddFunction(p, name, offset);
++const char *Anchor(const char *txt, CLanguageProxy&amp; ao)
++{
++	const char *nam, *val;
++	int namLen, valLen, len;
+ 
+-			break;
+-		}
+-		else
++	while (get_attribute(txt, nam, namLen, val, valLen))
++	{
++		if (valLen &gt; 0)
+ 		{
+-			while (isalnum(*txt))
+-				++txt;
+-
+-			txt = skip_white(txt);
+-			
+-			if (*txt == '=')
++			if (strncasecmp(nam, &quot;HREF&quot;, 4) == 0)
+ 			{
+-				txt = skip_white(txt + 1);
+-				if (*txt == '&quot;')
+-					txt = skip(txt + 1, '&quot;');
++				if (*val != '#')
++				{
++					BString label(&quot;HREF:  &quot;), include(val, valLen);
++					label &lt;&lt; include;
++					ao.AddInclude(label.String(), include.String());
++				}
+ 			}
+-			
+-			txt = skip_white(txt);
+-			
+-			if (*txt == '&gt;')
+-				return txt + 1;
+-
+-			continue;
++			else if (strncasecmp(nam, &quot;NAME&quot;, 4) == 0)
++			{
++				BString label(&quot;A:  &quot;), function(val, valLen);
++				label &lt;&lt; function;
++				ao.AddFunction(label.String(), function.String(), txt - ao.Text());
++			}
+ 		}
+-	}
+-	
+-	return skip(txt, '&gt;');
++
++	};
++	return txt;
+ } /* Anchor */
+ 
+ const char *Heading(const char *txt, CLanguageProxy&amp; ao)
+ {
+-	const char *hName;
+-	int level = *txt - '0';
+-	
+-	txt = skip(txt + 1, '&gt;');
+-	
+-	while (*txt == '&lt;')
+-		txt = skip(txt + 1, '&gt;');
+-	
+-	if (*txt == 0)
+-		return txt;
+-	
+-	hName = txt;
+-	
+-	txt = skip(txt + 1, '&lt;');
+-	
+-	char name[kMaxNameSize];
+-	int l = min(txt - hName - 1, kMaxNameSize - 1);
+-	int offset = hName - ao.Text();
+-	
+-	strncpy(name, hName, l);
+-	name[l] = 0;
+-	
+-	char* p = strtok(name, &quot;\n\t\r&quot;);
+-	
+-	while (p)
+-	{
+-		int l = std::min((int)strlen(p), (int)kMaxNameSize);
+-		if (l &gt; 0)
+-		{
+-			char label[kMaxNameSize + 10];
+-			std::snprintf(label, kMaxNameSize + 10, &quot;H%d: %s&quot;, level, p);
+-			ao.AddFunction(label, p, offset);
+-			break;
++	char endTag[6];
++	bool wasSpace = false;
++	const char *ptr = txt;
++	BString label(&quot;H&quot;), heading;
++
++	label &lt;&lt; (*txt - '0') &lt;&lt; &quot;:  &quot;;
++	skip_attributes(ptr);
++	sprintf(endTag, &quot;&lt;/h%c&gt;&quot;, *txt);
++	txt = ptr;
++	while (*ptr != 0) {
++		if (*ptr == '&lt;') {
++			if (strncasecmp(ptr, endTag, 5) == 0)
++			{
++				break;
++			}
++			skip_attributes(ptr);
++		} else {
++			if (isspace(*ptr))
++			{
++				if (!wasSpace)
++					label &lt;&lt; *ptr;
++				wasSpace = true;
++			}
++			else
++			{
++				label &lt;&lt; *ptr;
++				wasSpace = false;
++			}
++			ptr++;
+ 		}
+-		p = strtok(NULL, &quot;\n\r\t&quot;);
+ 	}
+-	
+-	return txt;
++	if (label.Length() &gt; 100)
++	{
++		label.Truncate(100);
++		label &lt;&lt; &quot;&#8230;&quot;;
++	}
++	heading.SetTo(txt, ptr-txt);
++	ao.AddFunction(label.String(), heading.String(), txt - ao.Text());
++
++	return ptr;
+ } /* Heading */
+ 
+ const char *JavaScript(const char *txt, CLanguageProxy&amp; ao)
+@@ -325,7 +323,7 @@
+ 					*n = 0;
+ 					
+ 					char label[kMaxNameSize + 3];
+-					strcpy(label, &quot;JS: &quot;);
++					strcpy(label, &quot;JS:  &quot;);
+ 					strcat(label, name);
+ 
+ 					ao.AddFunction(label, name, offset);
+@@ -403,7 +401,7 @@
+ 					*n = 0;
+ 					
+ 					char label[kMaxNameSize + 6];
+-					strcpy(label, &quot;PHP: &quot;);
++					strcpy(label, &quot;PHP:  &quot;);
+ 					strcat(label, name);
+ 
+ 					ao.AddFunction(label, name, offset);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000054.html">[pe-commits] r461 - in trunk: Extensions Sources
+</A></li>
+	<LI>Next message: <A HREF="000056.html">[pe-commits] r463 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#55">[ date ]</a>
+              <a href="thread.html#55">[ thread ]</a>
+              <a href="subject.html#55">[ subject ]</a>
+              <a href="author.html#55">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

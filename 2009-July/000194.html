@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r589 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-July/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r589%20-%20trunk/Sources&In-Reply-To=%3C200907252058.n6PKwrHm022005%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000193.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r589 - trunk/Sources</H1>
+    <B>stippi at mail.berlios.de</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r589%20-%20trunk/Sources&In-Reply-To=%3C200907252058.n6PKwrHm022005%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r589 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul 25 22:58:53 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000193.html">[pe-commits] r588 - trunk/Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2009-07-25 22:58:49 +0200 (Sat, 25 Jul 2009)
+New Revision: 589
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=589&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=589&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PText.cpp
+Log:
+bonefish + stippi:
+When shifting lines and calculating the part that needs to be invalidated, don't
+include parts that could be blitted already, it will later allow to draw, where
+no man should draw. This would cause a display glitch with the new highlight
+code, when highlights have not yet been adjusted for changes in the text when
+drawing synchronously.
+
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2009-07-05 15:04:23 UTC (rev 588)
++++ trunk/Sources/PText.cpp	2009-07-25 20:58:49 UTC (rev 589)
+@@ -5472,9 +5472,9 @@
+ 		CopyBits(src, dst);
+ 
+ 		if (dy &gt; 0)
+-			src.bottom = dst.top;
++			src.bottom = dst.top - 1;
+ 		else
+-			src.top = dst.bottom;
++			src.top = dst.bottom + 1;
+ 
+ 		Invalidate(src);
+ 		Window()-&gt;UpdateIfNeeded();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000193.html">[pe-commits] r588 - trunk/Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

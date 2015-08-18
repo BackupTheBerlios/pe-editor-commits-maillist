@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r499 - in trunk: Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r499%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200803281058.m2SAwkcE007001%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000092.html">
+   <LINK REL="Next"  HREF="000094.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r499 - in trunk: Resources Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r499%20-%20in%20trunk%3A%20Resources%20Sources&In-Reply-To=%3C200803281058.m2SAwkcE007001%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r499 - in trunk: Resources Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 28 11:58:46 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000092.html">[pe-commits] r498 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000094.html">[pe-commits] r500 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2008-03-28 11:58:46 +0100 (Fri, 28 Mar 2008)
+New Revision: 499
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=499&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=499&amp;view=rev</A>
+
+Modified:
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/PrefControls.h
+Log:
+* Made the number of context lines/chars at top/bottom resp. left/right
+  edge of window configurable via the prefs dialog.
+
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Resources/Dialog-Preferences.r	2008-03-28 10:58:46 UTC (rev 499)
+@@ -141,14 +141,21 @@
+ 				CheckBox		{{   0,  80, 140,  96 }, pnm_Edi_X_SmartWorkspaces,		&quot;Smart Workspaces&quot;					},
+ 				CheckBox		{{ 150,  80, 290,  96 }, pnm_Edi_X_AlternateHome,		&quot;Alternate Home&quot;					},
+ 
+-				Line			{{   0, 103, 290, 104 }},
++				Edit			{{   0, 100, 290, 117 }, pnm_Edi_T_ContextLines,		
++									&quot;Context Lines at Top/Bottom Edge:&quot;,	&quot;&quot;, &quot;0123456789&quot;, 2, 240
++								},
+ 
+-				PopupMenu		{{   0, 111, 190, 127 }, pnm_Edi_P_Font1Face,			&quot;Font:&quot;,				rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 111, 290, 127 }, pnm_Edi_T_Font1Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++				Edit			{{   0, 120, 290, 137 }, pnm_Edi_T_ContextChars,
++									&quot;Context Chars at Left/Right Edge:&quot;,	&quot;&quot;, &quot;0123456789&quot;, 2, 240		},
+ 
+-				PopupMenu		{{   0, 131, 190, 147 }, pnm_Edi_P_Font2Face,			&quot;Alt. Font:&quot;,			rid_Popu_PrfFont, 50		},
+-				Edit			{{ 200, 131, 290, 147 }, pnm_Edi_T_Font2Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++				Line			{{   0, 143, 290, 144 }},
+ 
++				PopupMenu		{{   0, 151, 190, 167 }, pnm_Edi_P_Font1Face,			&quot;Font:&quot;,				rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 151, 290, 167 }, pnm_Edi_T_Font1Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++
++				PopupMenu		{{   0, 171, 190, 187 }, pnm_Edi_P_Font2Face,			&quot;Alt. Font:&quot;,			rid_Popu_PrfFont, 50		},
++				Edit			{{ 200, 171, 290, 187 }, pnm_Edi_T_Font2Size,			&quot;Size:&quot;,				&quot;&quot;, &quot;0123456789&quot;, 2, 40		},
++
+ 			TabSheetEnd			{																							},
+ 
+ 			TabSheet			{ &quot;File Types&quot;, &quot;These types show up in the Save Dialogbox&quot;									},
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Sources/CPrefsDialog.cpp	2008-03-28 10:58:46 UTC (rev 499)
+@@ -318,6 +318,9 @@
+ 	strcpy(gControlChar, GetText(pnm_Inv_T_ControlChar));
+ 	gPrefs-&gt;SetPrefString(prf_S_ControlChar, gControlChar);
+ 
++	gPrefs-&gt;SetPrefInt(prf_I_ContextLines, atoi(GetText(pnm_Edi_T_ContextLines)));
++	gPrefs-&gt;SetPrefInt(prf_I_ContextChars, atoi(GetText(pnm_Edi_T_ContextChars)));
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_SpacesPerTab, gSpacesPerTab = atoi(GetText(pnm_Edi_T_SpacesPerTab)));
+ 
+ 	CntrlGetChkbx(pnm_Edi_X_AutoIndent,				prf_I_AutoIndent,				gAutoIndent);
+@@ -562,6 +565,12 @@
+ 	sprintf(s, &quot;%d&quot;, gSpacesPerTab);
+ 	SetText(pnm_Edi_T_SpacesPerTab, s);
+ 
++	sprintf(s, &quot;%d&quot;, gPrefs-&gt;GetPrefInt(prf_I_ContextLines, 3));
++	SetText(pnm_Edi_T_ContextLines, s);
++
++	sprintf(s, &quot;%d&quot;, gPrefs-&gt;GetPrefInt(prf_I_ContextChars, 5));
++	SetText(pnm_Edi_T_ContextChars, s);
++
+ 	bool sw;
+ 	SetOn(pnm_Wrp_X_SoftWrapFiles,	sw = gPrefs-&gt;GetPrefInt(prf_I_SoftWrap, false));
+ 
+
+Modified: trunk/Sources/PrefControls.h
+===================================================================
+--- trunk/Sources/PrefControls.h	2008-03-01 16:42:55 UTC (rev 498)
++++ trunk/Sources/PrefControls.h	2008-03-28 10:58:46 UTC (rev 499)
+@@ -59,6 +59,8 @@
+ #define pnm_Edi_X_SmartWorkspaces		&quot;smwo&quot;
+ #define pnm_Edi_X_AlternateHome			&quot;alho&quot;
+ #define pnm_Edi_T_SpacesPerTab			&quot;tabs&quot;	/* TODO: Check other occurences */
++#define pnm_Edi_T_ContextLines			&quot;ctxl&quot;
++#define pnm_Edi_T_ContextChars			&quot;ctxc&quot;
+ #define pnm_Edi_T_Font1Size				&quot;fons&quot;
+ #define pnm_Edi_T_Font2Size				&quot;alfs&quot;
+ #define pnm_Edi_P_Font1Face				&quot;font&quot;	/* TODO: Check other occurences */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000092.html">[pe-commits] r498 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000094.html">[pe-commits] r500 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

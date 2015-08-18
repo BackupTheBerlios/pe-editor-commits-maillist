@@ -1,0 +1,1083 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r460 - in trunk: Languages/Sources Resources Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r460%20-%20in%20trunk%3A%20Languages/Sources%20Resources%20Sources&In-Reply-To=%3C200611212024.kALKOZgI006971%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000052.html">
+   <LINK REL="Next"  HREF="000054.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r460 - in trunk: Languages/Sources Resources Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r460%20-%20in%20trunk%3A%20Languages/Sources%20Resources%20Sources&In-Reply-To=%3C200611212024.kALKOZgI006971%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r460 - in trunk: Languages/Sources Resources Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 21 21:24:35 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000052.html">[pe-commits] r459 - in trunk: Languages/Sources Sources
+</A></li>
+        <LI>Next message: <A HREF="000054.html">[pe-commits] r461 - in trunk: Extensions Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-21 21:24:34 +0100 (Tue, 21 Nov 2006)
+New Revision: 460
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=460&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=460&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+   trunk/Resources/Dialog-Preferences.r
+   trunk/Sources/CPrefsDialog.cpp
+   trunk/Sources/CPrefsDialog.h
+   trunk/Sources/HColorUtils.h
+   trunk/Sources/PApp.cpp
+   trunk/Sources/PApp.h
+   trunk/Sources/Prefs.h
+Log:
+* Added new prefs color &quot;Attribute&quot; that complements &quot;Tag&quot; color
+* Added SetColor() to PApp to make code more readible
+* Added SetColor() and GetColor() to CPrefsDialog to make code more readible
+
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Language.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-21 18:12:48 UTC (rev 459)
++++ trunk/Languages/Sources/HtmlJsPhp_Language.cpp	2006-11-21 20:24:34 UTC (rev 460)
+@@ -107,7 +107,7 @@
+ 	kColHtmlComment					= kColorComment1,
+ 	kColHtmlDtd						= kColorComment2,
+ 	kColHtmlEntity					= kColorCharConst,
+-	kColHtmlAttribute				= kColorKeyword2,
++	kColHtmlAttribute				= kColorAttribute,
+ 	kColHtmlTagStringDoubleQuotes	= kColorString1,
+ 	kColHtmlTagStringSingleQuotes	= kColorString2,
+ 	//
+
+Modified: trunk/Resources/Dialog-Preferences.r
+===================================================================
+--- trunk/Resources/Dialog-Preferences.r	2006-11-21 18:12:48 UTC (rev 459)
++++ trunk/Resources/Dialog-Preferences.r	2006-11-21 20:24:34 UTC (rev 460)
+@@ -100,7 +100,8 @@
+ 				ColorControl	{{   0, 112, 145, 128 }, &quot;sidc&quot;,		&quot;System Identifiers&quot;								},
+ 				ColorControl	{{ 155, 112, 290, 128 }, &quot;chcc&quot;,		&quot;Char Constants&quot;									},
+ 				ColorControl	{{   0, 128, 145, 144 }, &quot;uidc&quot;,		&quot;User Identifiers&quot;									},
+-				ColorControl	{{ 155, 128, 290, 144 }, &quot;tagc&quot;,		&quot;HTML Tags&quot;											},
++				ColorControl	{{ 155, 128, 255, 144 }, &quot;tagc&quot;,		&quot;Tags/Attribut.&quot;									},
++				ColorControl	{{ 255, 128, 290, 144 }, &quot;attr&quot;,		&quot;&quot;													},
+ 				
+ 				Line			{{   0, 148, 290, 149 }																		},
+ 
+
+Modified: trunk/Sources/CPrefsDialog.cpp
+===================================================================
+--- trunk/Sources/CPrefsDialog.cpp	2006-11-21 18:12:48 UTC (rev 459)
++++ trunk/Sources/CPrefsDialog.cpp	2006-11-21 20:24:34 UTC (rev 460)
+@@ -1,8 +1,8 @@
+ /*	$Id$
+-	
++
+ 	Copyright 1996, 1997, 1998, 2002
+ 	        Hekkelman Programmatuur B.V.  All rights reserved.
+-	
++
+ 	Redistribution and use in source and binary forms, with or without
+ 	modification, are permitted provided that the following conditions are met:
+ 	1. Redistributions of source code must retain the above copyright notice,
+@@ -12,13 +12,13 @@
+ 	   and/or other materials provided with the distribution.
+ 	3. All advertising materials mentioning features or use of this software
+ 	   must display the following acknowledgement:
+-	   
++
+ 	    This product includes software developed by Hekkelman Programmatuur B.V.
+-	
++
+ 	4. The name of Hekkelman Programmatuur B.V. may not be used to endorse or
+ 	   promote products derived from this software without specific prior
+ 	   written permission.
+-	
++
+ 	THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ 	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ 	FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+@@ -28,7 +28,7 @@
+ 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ 	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+-	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 	
++	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 	Created: 10/20/97 20:28:28
+ */
+@@ -72,17 +72,17 @@
+ 	msg_ChangeTarget = 'ChTr',
+ 	msg_DefPageSetup = 'Page',
+ 	msg_StoreSuffix = 'sufx',
+-	
++
+ 	msg_SelectSearchFolder = 'SlsF',
+ 	msg_AddSearchFolder = 'AdsF',
+ 	msg_ChangeSearchFolder = 'CnsF',
+ 	msg_DeleteSearchFolder = 'DlsF',
+-	
++
+ 	msg_SelectedKBCommand = 'KBCm',
+ 	msg_SelectedKBBinding = 'KBBn',
+ 	msg_AddKB = 'AddK',
+ 	msg_DeleteKB = 'DelK',
+-	
++
+ 	msg_SelectToolServer = 'seto',
+ 	msg_LanguageSelected = 'lang';
+ 
+@@ -106,7 +106,7 @@
+ 
+ 	BMenuField *mf = dynamic_cast&lt;BMenuField*&gt;(FindView(&quot;font&quot;));
+ 	FailNil(mf);
+-	
++
+ 	fFont = mf-&gt;Menu();
+ 	FailNil(fFont);
+ 
+@@ -117,18 +117,18 @@
+ 		FailNil(fontItem);
+ 		fFont-&gt;AddItem(new BMenuItem(fontItem, new BMessage(msg_FieldChanged)));
+ 		fontItem-&gt;SetFont(be_plain_font);
+-		
++
+ 		for (int j = 0; j &lt; count_font_styles(ff); j++)
+ 		{
+ 			get_font_style(ff, j, &amp;fs);
+-			
++
+ 			BMessage *msg = new BMessage(msg_FieldChanged);
+ 			msg-&gt;AddString(&quot;family&quot;, ff);
+ 			msg-&gt;AddString(&quot;style&quot;, fs);
+ 			fontItem-&gt;AddItem(new BMenuItem(fs, msg));
+ 		}
+ 	}
+-	
++
+ 	fFont-&gt;SetRadioMode(true);
+ 
+ 	be_fixed_font-&gt;GetFamilyAndStyle(&amp;ff, &amp;fs);
+@@ -139,7 +139,7 @@
+ 
+ 	mf = dynamic_cast&lt;BMenuField*&gt;(FindView(&quot;alfo&quot;));
+ 	FailNil(mf);
+-	
++
+ 	fAltFont = mf-&gt;Menu();
+ 	FailNil(fAltFont);
+ 
+@@ -150,18 +150,18 @@
+ 		FailNil(fontItem);
+ 		fAltFont-&gt;AddItem(new BMenuItem(fontItem, new BMessage(msg_FieldChanged)));
+ 		fontItem-&gt;SetFont(be_plain_font);
+-		
++
+ 		for (int j = 0; j &lt; count_font_styles(ff); j++)
+ 		{
+ 			get_font_style(ff, j, &amp;fs);
+-			
++
+ 			BMessage *msg = new BMessage(msg_FieldChanged);
+ 			msg-&gt;AddString(&quot;altfamily&quot;, ff);
+ 			msg-&gt;AddString(&quot;altstyle&quot;, fs);
+ 			fontItem-&gt;AddItem(new BMenuItem(fs, msg));
+ 		}
+ 	}
+-	
++
+ 	fAltFont-&gt;SetRadioMode(true);
+ 
+ 	fLanguage = static_cast&lt;BMenuField*&gt;(FindView(&quot;lang&quot;))-&gt;Menu();
+@@ -182,39 +182,39 @@
+ 
+ 	fLang = -1; // mark as unitialized, will be initialized when &quot;lang&quot; is set
+ 	SetValue(&quot;lang&quot;, 1);
+-	
++
+ 	BTextControl *c = static_cast&lt;BTextControl*&gt;(FindView(&quot;sufx&quot;));
+ 	c-&gt;SetModificationMessage(new BMessage(msg_StoreSuffix));
+-	
++
+ 	fState = static_cast&lt;BMenuField*&gt;(FindView(&quot;sast&quot;))-&gt;Menu();
+ 	fState-&gt;SetRadioMode(true);
+ 	fState-&gt;ItemAt(gSavedState)-&gt;SetMarked(true);
+-	
++
+ 	fSearchPaths = dynamic_cast&lt;CPathsBox*&gt;(FindView(&quot;srcP&quot;));
+ 	FailNil(fSearchPaths);
+ 	fSearchPaths-&gt;SetPrefName(prf_X_SearchPath);
+-	
++
+ 	fIncludePaths = dynamic_cast&lt;CPathsBox*&gt;(FindView(&quot;incP&quot;));
+ 	FailNil(fIncludePaths);
+ 	fIncludePaths-&gt;SetPrefName(prf_X_IncludePath);
+-	
++
+ 	fStdErrBox = dynamic_cast&lt;CStdErrBox*&gt;(FindView(&quot;StEb&quot;));
+ 	FailNil(fStdErrBox);
+-	
++
+ 	fMimetypes = dynamic_cast&lt;CMimeBox*&gt;(FindView(&quot;mimetypes&quot;));
+-	
++
+ 	fKBCommands = dynamic_cast&lt;BOutlineListView*&gt;(FindView(&quot;kact&quot;));
+ 	fKBKeys = dynamic_cast&lt;BListView*&gt;(FindView(&quot;keys&quot;));
+ 
+ 	FailNil(fKBCommands);
+ 	FailNil(fKBKeys);
+-	
++
+ 	fCap = dynamic_cast&lt;CKeyCapturer*&gt;(FindView(&quot;kebi&quot;));
+ 	FailNil(fCap);
+-	
++
+ 	fGrepBox = dynamic_cast&lt;CGrepBox*&gt;(FindView(&quot;grls&quot;));
+ 	FailNil(fGrepBox);
+-	
++
+ 	InitKeybindingPage();
+ 
+ 	CancelClicked();
+@@ -223,7 +223,7 @@
+ CPrefsDialog::~CPrefsDialog()
+ {
+ //	if (fPageSetup) free(fPageSetup);
+-	
++
+ 	fKeymap.erase(fKeymap.begin(), fKeymap.end());
+ } /* CPrefsDialog::~CPrefsDialog */
+ 
+@@ -234,7 +234,7 @@
+ 	{
+ 		MWarningAlert a(&quot;The preferences have changed. Save changes before closing?&quot;, &quot;Save&quot;, &quot;Discard&quot;);
+ 		if (a == 1)
+-			OKClicked();
++			OkClicked();
+ 		else
+ 			CancelClicked();
+ 	}
+@@ -243,7 +243,7 @@
+ 	return CDoc::CountDocs() == 0;
+ } /* CPrefsDialog::QuitRequested */
+ 
+-bool CPrefsDialog::OKClicked()
++bool CPrefsDialog::OkClicked()
+ {
+ 	BMenuItem *item = fFont-&gt;FindMarked();
+ 	if (item)
+@@ -252,7 +252,7 @@
+ 		item = item-&gt;Submenu()-&gt;FindMarked();
+ 		if (item) strcpy(fFontStyle, item-&gt;Label());
+ 	}
+-	
++
+ 	fFontSize = atof(GetText(&quot;fons&quot;));
+ 
+ 	item = fAltFont-&gt;FindMarked();
+@@ -262,83 +262,46 @@
+ 		item = item-&gt;Submenu()-&gt;FindMarked();
+ 		if (item) strcpy(fAltFontStyle, item-&gt;Label());
+ 	}
+-	
++
+ 	fAltFontSize = atof(GetText(&quot;alfs&quot;));
+ 
+-	HColorControl *cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;lowc&quot;));
+-	if (cc) { gColor[kColorLow] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Low, gColor[kColorLow]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;txtc&quot;));
+-	if (cc) { gColor[kColorText] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Text, gColor[kColorText]); }
++	GetColor(&quot;lowc&quot;, kColorLow,				prf_C_Low);
++	GetColor(&quot;txtc&quot;, kColorText,			prf_C_Text);
++	GetColor(&quot;selc&quot;, kColorSelection,		prf_C_Selection);
++	GetColor(&quot;mrkc&quot;, kColorMark,			prf_C_Mark);
++	GetColor(&quot;keyc&quot;, kColorKeyword1,		prf_C_Keyword);
++	GetColor(&quot;ke2c&quot;, kColorKeyword2,		prf_C_AltKeyword);
++	GetColor(&quot;cmtc&quot;, kColorComment1,		prf_C_Comment);
++	GetColor(&quot;cm2c&quot;, kColorComment2,		prf_C_AltComment);
++	GetColor(&quot;strc&quot;, kColorString1,			prf_C_String);
++	GetColor(&quot;tgsc&quot;, kColorString2,			prf_C_Tagstring);
++	GetColor(&quot;numc&quot;, kColorNumber1,			prf_C_Number);
++	GetColor(&quot;nu2c&quot;, kColorNumber2,			prf_C_AltNumber);
++	GetColor(&quot;opec&quot;, kColorOperator1,		prf_C_Operator);
++	GetColor(&quot;op2c&quot;, kColorOperator2,		prf_C_AltOperator);
++	GetColor(&quot;sepc&quot;, kColorSeparator1,		prf_C_Separator);
++	GetColor(&quot;se2c&quot;, kColorSeparator2,		prf_C_AltSeparator);
++	GetColor(&quot;proc&quot;, kColorPreprocessor1,	prf_C_Preprocessor);
++	GetColor(&quot;pr2c&quot;, kColorPreprocessor2,	prf_C_AltProcessor);
++	GetColor(&quot;errc&quot;, kColorError1,			prf_C_Error);
++	GetColor(&quot;er2c&quot;, kColorError2,			prf_C_AltError);
++	GetColor(&quot;sidc&quot;, kColorIdentifierSystem,prf_C_SystemIdentifier);
++	GetColor(&quot;chcc&quot;, kColorCharConst,		prf_C_CharConstant);
++	GetColor(&quot;uidc&quot;, kColorIdentifierUser,	prf_C_UserIdentifier);
++	GetColor(&quot;tagc&quot;, kColorTag,				prf_C_Tag);
++	GetColor(&quot;attr&quot;, kColorAttribute,		prf_C_Attribute);
++	GetColor(&quot;us1c&quot;, kColorUserSet1,		prf_C_User1);
++	GetColor(&quot;us2c&quot;, kColorUserSet2,		prf_C_User2);
++	GetColor(&quot;us3c&quot;, kColorUserSet3,		prf_C_User3);
++	GetColor(&quot;us4c&quot;, kColorUserSet4,		prf_C_User4);
++	GetColor(&quot;invc&quot;, kColorInvisibles,		prf_C_Invisibles);
+ 
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;selc&quot;));
+-	if (cc) { gColor[kColorSelection] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Selection, gColor[kColorSelection]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;mrkc&quot;));
+-	if (cc) { gColor[kColorMark] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Mark, gColor[kColorMark]); }
+-	
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;keyc&quot;));
+-	if (cc) { gColor[kColorKeyword1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Keyword, gColor[kColorKeyword1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;ke2c&quot;));
+-	if (cc) { gColor[kColorKeyword2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltKeyword, gColor[kColorKeyword2]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;cmtc&quot;));
+-	if (cc) { gColor[kColorComment1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Comment, gColor[kColorComment1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;cm2c&quot;));
+-	if (cc) { gColor[kColorComment2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltComment, gColor[kColorComment2]); }
+-	
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;strc&quot;));
+-	if (cc) { gColor[kColorString1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_String, gColor[kColorString1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;tgsc&quot;));
+-	if (cc) { gColor[kColorString2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Tagstring, gColor[kColorString2]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;numc&quot;));
+-	if (cc) { gColor[kColorNumber1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Number, gColor[kColorNumber1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;nu2c&quot;));
+-	if (cc) { gColor[kColorNumber2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltNumber, gColor[kColorNumber2]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;opec&quot;));
+-	if (cc) { gColor[kColorOperator1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Operator, gColor[kColorOperator1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;op2c&quot;));
+-	if (cc) { gColor[kColorOperator2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltOperator, gColor[kColorOperator2]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;sepc&quot;));
+-	if (cc) { gColor[kColorSeparator1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Separator, gColor[kColorSeparator1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;se2c&quot;));
+-	if (cc) { gColor[kColorSeparator2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltSeparator, gColor[kColorSeparator2]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;proc&quot;));
+-	if (cc) { gColor[kColorPreprocessor1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Preprocessor, gColor[kColorPreprocessor1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;pr2c&quot;));
+-	if (cc) { gColor[kColorPreprocessor2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltProcessor, gColor[kColorPreprocessor2]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;errc&quot;));
+-	if (cc) { gColor[kColorError1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Error, gColor[kColorError1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;er2c&quot;));
+-	if (cc) { gColor[kColorError2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_AltError, gColor[kColorError2]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;sidc&quot;));
+-	if (cc) { gColor[kColorIdentifierSystem] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_SystemIdentifier, gColor[kColorIdentifierSystem]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;chcc&quot;));
+-	if (cc) { gColor[kColorCharConst] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_CharConstant, gColor[kColorCharConst]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;uidc&quot;));
+-	if (cc) { gColor[kColorIdentifierUser] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_UserIdentifier, gColor[kColorIdentifierUser]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;tagc&quot;));
+-	if (cc) { gColor[kColorTag] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Tag, gColor[kColorTag]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us1c&quot;));
+-	if (cc) { gColor[kColorUserSet1] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_User1, gColor[kColorUserSet1]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us2c&quot;));
+-	if (cc) { gColor[kColorUserSet2] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_User2, gColor[kColorUserSet2]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us3c&quot;));
+-	if (cc) { gColor[kColorUserSet3] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_User3, gColor[kColorUserSet3]); }
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us4c&quot;));
+-	if (cc) { gColor[kColorUserSet4] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_User4, gColor[kColorUserSet4]); }
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;invc&quot;));
+-	if (cc) { gColor[kColorInvisibles] = cc-&gt;Color(); gPrefs-&gt;SetPrefColor(prf_C_Invisibles, gColor[kColorInvisibles]); }
+-
+ 	DefineInvColors(gColor[kColorSelection]);
+ 
+ 	gPrefs-&gt;SetPrefString(prf_S_FontFamily, fFontFamily);
+ 	gPrefs-&gt;SetPrefString(prf_S_FontStyle, fFontStyle);
+ 	gPrefs-&gt;SetPrefDouble(prf_D_FontSize, fFontSize);
+-	
++
+ 	gPrefs-&gt;SetPrefString(prf_S_AltFontFamily, fAltFontFamily);
+ 	gPrefs-&gt;SetPrefString(prf_S_AltFontStyle, fAltFontStyle);
+ 	gPrefs-&gt;SetPrefDouble(prf_D_AltFontSize, fAltFontSize);
+@@ -351,7 +314,7 @@
+ 	gPrefs-&gt;SetPrefString(prf_S_ReturnChar, gReturnChar);
+ 	strcpy(gControlChar, GetText(&quot;scca&quot;));
+ 	gPrefs-&gt;SetPrefString(prf_S_ControlChar, gControlChar);
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_AutoIndent, gAutoIndent = IsOn(&quot;auin&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SyntaxColoring, gSyntaxColoring = IsOn(&quot;syco&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SpacesPerTab, gSpacesPerTab = atoi(GetText(&quot;tabs&quot;)));
+@@ -367,7 +330,7 @@
+ 	gPrefs-&gt;SetPrefInt(prf_I_DiffWhite, IsOn(&quot;diwh&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_SoftWrap, IsOn(&quot;sowr&quot;));
+-	
++
+ 	if (IsOn(&quot;wrwi&quot;))
+ 		gPrefs-&gt;SetPrefInt(prf_I_WrapType, 1);
+ 	else if (IsOn(&quot;wrpa&quot;))
+@@ -381,7 +344,7 @@
+ 	gPrefs-&gt;SetPrefInt(prf_I_Protos, gPopupProtos = IsOn(&quot;shpr&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_Types, gPopupFuncs = IsOn(&quot;shty&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SortPopup, IsOn(&quot;sopo&quot;));
+-	
++
+ 	if (IsOn(&quot;swne&quot;))
+ 		gPrefs-&gt;SetPrefInt(prf_I_Startup, 1);
+ 	else if (IsOn(&quot;swop&quot;))
+@@ -391,16 +354,16 @@
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_RedirectStdErr, gRedirectStdErr = IsOn(&quot;rdse&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_Worksheet, gUseWorksheet = IsOn(&quot;wosh&quot;));
+-	
++
+ 	int cookie = 0;
+ 	CLanguageInterface *intf;
+ 	while ((intf = CLanguageInterface::NextIntf(cookie)) != NULL)
+ 		intf-&gt;SetExtensions(fSuffixes[cookie - 1].c_str());
+-	
++
+ 	item = fDefLanguage-&gt;FindMarked();
+ 	gPrefs-&gt;SetPrefString(prf_S_DefLang, item ? item-&gt;Label() : &quot;None&quot;);
+ 	CLanguageInterface::ChooseDefault();
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_RestorePosition, gRestorePosition = IsOn(&quot;repo&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_RestoreFont, gRestoreFont = IsOn(&quot;refo&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_RestoreSelection, gRestoreSelection = IsOn(&quot;rese&quot;));
+@@ -408,45 +371,45 @@
+ 	gPrefs-&gt;SetPrefInt(prf_I_RestoreCwd, gRestoreCWD = IsOn(&quot;recw&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_SavedState, gSavedState = fState-&gt;IndexOf(fState-&gt;FindMarked()));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_RecentSize, gRecentBufferSize = atoi(GetText(&quot;resi&quot;)));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SkipTmp, IsOn(&quot;sktm&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_ZoomOpen, IsOn(&quot;zoop&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_FullPath, IsOn(&quot;fupa&quot;));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_Parent, IsOn(&quot;sepa&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_BeIncludes, IsOn(&quot;incl&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_Backup, IsOn(&quot;maba&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_NlAtEof, IsOn(&quot;fonl&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_Verify, IsOn(&quot;vofm&quot;));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_IdeMenu, IsOn(&quot;idmn&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_MwPlugins, IsOn(&quot;mwpl&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_PassiveFtp, IsOn(&quot;pftp&quot;));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_ShowGlossary, IsOn(&quot;shgl&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SingleClickGlossary, IsOn(&quot;sigl&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_ShowHtmlPalette, IsOn(&quot;shtp&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_ShowHtmlpaletteForHtml, IsOn(&quot;shtP&quot;));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_IsearchIgncase, IsOn(&quot;isic&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_CenterFound, IsOn(&quot;cesf&quot;));
+-	
++
+ 	gPrefs-&gt;SetPrefInt(prf_I_RelativeGroupPaths, IsOn(&quot;rlgp&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_SortGroup, IsOn(&quot;sogr&quot;));
+ 
+ 	gPrefs-&gt;SetPrefInt(prf_I_SortProject, IsOn(&quot;prso&quot;));
+ 	gPrefs-&gt;SetPrefInt(prf_I_AutodetectProjects, IsOn(&quot;prad&quot;));
+-	
++
+ 	fSearchPaths-&gt;DoOK();
+ 	fIncludePaths-&gt;DoOK();
+ 	fMimetypes-&gt;DoOK();
+ 	fGrepBox-&gt;DoOK();
+ 	fStdErrBox-&gt;DoOK();
+-	
++
+ 	SetEnabled(&quot;ok  &quot;, false);
+ 	SetEnabled(&quot;cncl&quot;, false);
+ 
+@@ -456,8 +419,25 @@
+ 	CKeyMapper::Instance().WriteKeymap(fKeymap);
+ 
+ 	return false;
+-} /* CPrefsDialog::OKClicked */
++} /* CPrefsDialog::OkClicked */
+ 
++void CPrefsDialog::SetColor(const char* const viewName, int colorId)
++{
++	HColorControl *cc;
++	if ((cc = dynamic_cast&lt;HColorControl*&gt;(FindView(viewName))))
++		cc-&gt;SetColor(gColor[colorId]);
++} /* CPrefsDialog::SetColor */
++
++void CPrefsDialog::GetColor(const char* const viewName, int colorId, const char* const prefName)
++{
++	HColorControl *cc;
++	if ((cc = dynamic_cast&lt;HColorControl*&gt;(FindView(viewName))))
++	{
++		gColor[colorId] = cc-&gt;Color();
++		gPrefs-&gt;SetPrefColor(prefName, gColor[colorId]);
++	}
++} /* CPrefsDialog::GetColor */
++
+ bool CPrefsDialog::CancelClicked()
+ {
+ 	BMenuItem *item = fFont-&gt;FindMarked();
+@@ -467,7 +447,7 @@
+ 		if (item) item-&gt;SetMarked(false);
+ 		fFont-&gt;FindMarked()-&gt;SetMarked(false);
+ 	}
+-	
++
+ 	item = fFont-&gt;FindItem(fFontFamily);
+ 	if (item)
+ 	{
+@@ -483,7 +463,7 @@
+ 		if (item) item-&gt;SetMarked(false);
+ 		fAltFont-&gt;FindMarked()-&gt;SetMarked(false);
+ 	}
+-	
++
+ 	item = fAltFont-&gt;FindItem(fAltFontFamily);
+ 	if (item)
+ 	{
+@@ -501,74 +481,38 @@
+ 
+ //	if (fPageSetup) free(fPageSetup);
+ //	fPageSetup = (char *)Hex2Bin(gPrefs-&gt;GetPrefString(prf_S_DefaultPageSetup, &quot;&quot;), fPageSetupSize);
+-	
+-	HColorControl *cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;lowc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorLow]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;txtc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorText]);
+-	
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;selc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorSelection]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;mrkc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorMark]);
+ 
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;keyc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorKeyword1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;ke2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorKeyword2]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;cmtc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorComment1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;cm2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorComment2]);
+-	
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;strc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorString1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;tgsc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorString2]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;numc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorNumber1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;nu2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorNumber2]);
++	SetColor(&quot;lowc&quot;, kColorLow);
++	SetColor(&quot;txtc&quot;, kColorText);
++	SetColor(&quot;selc&quot;, kColorSelection);
++	SetColor(&quot;mrkc&quot;, kColorMark);
++	SetColor(&quot;keyc&quot;, kColorKeyword1);
++	SetColor(&quot;ke2c&quot;, kColorKeyword2);
++	SetColor(&quot;cmtc&quot;, kColorComment1);
++	SetColor(&quot;cm2c&quot;, kColorComment2);
++	SetColor(&quot;strc&quot;, kColorString1);
++	SetColor(&quot;tgsc&quot;, kColorString2);
++	SetColor(&quot;numc&quot;, kColorNumber1);
++	SetColor(&quot;nu2c&quot;, kColorNumber2);
++	SetColor(&quot;opec&quot;, kColorOperator1);
++	SetColor(&quot;op2c&quot;, kColorOperator2);
++	SetColor(&quot;sepc&quot;, kColorSeparator1);
++	SetColor(&quot;se2c&quot;, kColorSeparator2);
++	SetColor(&quot;proc&quot;, kColorPreprocessor1);
++	SetColor(&quot;pr2c&quot;, kColorPreprocessor2);
++	SetColor(&quot;errc&quot;, kColorError1);
++	SetColor(&quot;er2c&quot;, kColorError2);
++	SetColor(&quot;sidc&quot;, kColorIdentifierSystem);
++	SetColor(&quot;chcc&quot;, kColorCharConst);
++	SetColor(&quot;uidc&quot;, kColorIdentifierUser);
++	SetColor(&quot;tagc&quot;, kColorTag);
++	SetColor(&quot;attr&quot;, kColorAttribute);
++	SetColor(&quot;us1c&quot;, kColorUserSet1);
++	SetColor(&quot;us2c&quot;, kColorUserSet2);
++	SetColor(&quot;us3c&quot;, kColorUserSet3);
++	SetColor(&quot;us4c&quot;, kColorUserSet4);
++	SetColor(&quot;invc&quot;, kColorInvisibles);
+ 
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;opec&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorOperator1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;op2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorOperator2]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;sepc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorSeparator1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;se2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorSeparator2]);
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;proc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorPreprocessor1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;pr2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorPreprocessor2]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;errc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorError1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;er2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorError2]);
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;sidc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorIdentifierSystem]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;chcc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorCharConst]);
+-
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;uidc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorIdentifierUser]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;tagc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorTag]);
+-	
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us1c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorUserSet1]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us2c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorUserSet2]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us3c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorUserSet3]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;us4c&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorUserSet4]);
+-	cc = dynamic_cast&lt;HColorControl*&gt;(FindView(&quot;invc&quot;));
+-	if (cc) cc-&gt;SetColor(gColor[kColorInvisibles]);
+-	
+ 	SetOn(&quot;auin&quot;, gPrefs-&gt;GetPrefInt(prf_I_AutoIndent, 1));
+ 	SetOn(&quot;syco&quot;, gPrefs-&gt;GetPrefInt(prf_I_SyntaxColoring, 1));
+ 	SetOn(&quot;baty&quot;, gPrefs-&gt;GetPrefInt(prf_I_Balance, 1));
+@@ -584,10 +528,10 @@
+ 
+ 	SetOn(&quot;dica&quot;, gPrefs-&gt;GetPrefInt(prf_I_DiffCase, false));
+ 	SetOn(&quot;diwh&quot;, gPrefs-&gt;GetPrefInt(prf_I_DiffWhite, false));
+-	
++
+ 	bool sw;
+ 	SetOn(&quot;sowr&quot;, sw = gPrefs-&gt;GetPrefInt(prf_I_SoftWrap, false));
+-	
++
+ 	int wrap = gPrefs-&gt;GetPrefInt(prf_I_WrapType, 3);
+ 	switch (wrap)
+ 	{
+@@ -600,7 +544,7 @@
+ 	SetText(&quot;wrft&quot;, s);
+ 
+ 	SetEnabled(&quot;wrft&quot;, /*sw &amp;&amp; */wrap == 3);
+-	
++
+ 	SetText(&quot;stca&quot;, gTabChar);
+ 	SetText(&quot;ssca&quot;, gSpaceChar);
+ 	SetText(&quot;srca&quot;, gReturnChar);
+@@ -617,12 +561,12 @@
+ 		case 2: SetOn(&quot;swop&quot;, true); break;
+ 		case 3: SetOn(&quot;swno&quot;, true); break;
+ 	}
+-	
++
+ 	SetOn(&quot;rdse&quot;, gPrefs-&gt;GetPrefInt(prf_I_RedirectStdErr, 1));
+ 	SetOn(&quot;wosh&quot;, gPrefs-&gt;GetPrefInt(prf_I_Worksheet, 1));
+ 
+ 	fSuffixes.erase(fSuffixes.begin(), fSuffixes.end());
+-	
++
+ 	CLanguageInterface *intf;
+ 	int cookie = 0, i = 0;
+ 	const char *defLang = gPrefs-&gt;GetPrefString(prf_S_DefLang, &quot;None&quot;);
+@@ -648,17 +592,17 @@
+ 	SetOn(&quot;sktm&quot;, gPrefs-&gt;GetPrefInt(prf_I_SkipTmp, 1));
+ 	SetOn(&quot;zoop&quot;, gPrefs-&gt;GetPrefInt(prf_I_ZoomOpen, 0));
+ 	SetOn(&quot;fupa&quot;, gPrefs-&gt;GetPrefInt(prf_I_FullPath, 1));
+-	
++
+ 	SetOn(&quot;sepa&quot;, gPrefs-&gt;GetPrefInt(prf_I_Parent, 1));
+ 	SetOn(&quot;incl&quot;, gPrefs-&gt;GetPrefInt(prf_I_BeIncludes, 1));
+ 
+ 	SetOn(&quot;maba&quot;, gPrefs-&gt;GetPrefInt(prf_I_Backup, 0));
+ 	SetOn(&quot;fonl&quot;, gPrefs-&gt;GetPrefInt(prf_I_NlAtEof, 1));
+ 	SetOn(&quot;vofm&quot;, gPrefs-&gt;GetPrefInt(prf_I_Verify, 1));
+-	
++
+ 	SetOn(&quot;idmn&quot;, gPrefs-&gt;GetPrefInt(prf_I_IdeMenu, 1));
+ 	SetOn(&quot;mwpl&quot;, gPrefs-&gt;GetPrefInt(prf_I_MwPlugins, 1));
+-	
++
+ 	SetOn(&quot;pftp&quot;, gPrefs-&gt;GetPrefInt(prf_I_PassiveFtp, 1));
+ 
+ 	SetOn(&quot;shgl&quot;, gPrefs-&gt;GetPrefInt(prf_I_ShowGlossary, 0));
+@@ -666,12 +610,12 @@
+ 
+ 	SetOn(&quot;shtp&quot;, gPrefs-&gt;GetPrefInt(prf_I_ShowHtmlPalette, 1));
+ 	SetOn(&quot;shtP&quot;, gPrefs-&gt;GetPrefInt(prf_I_ShowHtmlpaletteForHtml, 1));
+-	
++
+ 	SetEnabled(&quot;shtP&quot;, IsOn(&quot;shtp&quot;));
+ 
+ 	SetOn(&quot;isic&quot;, gPrefs-&gt;GetPrefInt(prf_I_IsearchIgncase, 1));
+ 	SetOn(&quot;cesf&quot;, gPrefs-&gt;GetPrefInt(prf_I_CenterFound, 0));
+-	
++
+ 	SetOn(&quot;sogr&quot;, gPrefs-&gt;GetPrefInt(prf_I_SortGroup, 1));
+ 	SetOn(&quot;rlgp&quot;, gPrefs-&gt;GetPrefInt(prf_I_RelativeGroupPaths, 0));
+ 
+@@ -686,10 +630,10 @@
+ 
+ 	SetEnabled(&quot;ok  &quot;, false);
+ 	SetEnabled(&quot;cncl&quot;, false);
+-	
++
+ 	CKeyMapper::Instance().ReadKeymap(fKeymap);
+ 	fKBCommands-&gt;DeselectAll();
+-	
++
+ 	return false;
+ } /* CPrefsDialog::CancelClicked */
+ 
+@@ -708,7 +652,7 @@
+ 			if (item) item-&gt;SetMarked(false);
+ 			fFont-&gt;FindMarked()-&gt;SetMarked(false);
+ 		}
+-		
++
+ 		item = fFont-&gt;FindItem(ff);
+ 		if (item)
+ 		{
+@@ -730,7 +674,7 @@
+ 			if (item) item-&gt;SetMarked(false);
+ 			fAltFont-&gt;FindMarked()-&gt;SetMarked(false);
+ 		}
+-		
++
+ 		item = fAltFont-&gt;FindItem(ff);
+ 		if (item)
+ 		{
+@@ -739,32 +683,32 @@
+ 			if (item) item-&gt;SetMarked(true);
+ 		}
+ 	}
+-	
++
+ 	bool statePe = (fState-&gt;IndexOf(fState-&gt;FindMarked()) == 0);
+ 	SetEnabled(&quot;restore scrollbar&quot;, statePe);
+ 	SetEnabled(&quot;restore cwd&quot;, statePe);
+-	
++
+ 	SetEnabled(&quot;wrft&quot;, IsOn(&quot;wrfi&quot;));
+ 
+ 	SetEnabled(&quot;shtP&quot;, IsOn(&quot;shtp&quot;));
+ 
+ 	UpdateKBPage();
+-	
++
+ } /* CPrefsDialog::UpdateFields */
+ 
+ void CPrefsDialog::GetDefPageSetup()
+ {
+ //	BPrintJob prJob(&quot;a page setup job&quot;);
+-//	
++//
+ //	if (fPageSetup)
+ //	{
+ //		BMessage *s = new BMessage;
+ //		if (s &amp;&amp; s-&gt;Unflatten(fPageSetup) == B_NO_ERROR)
+ //			prJob.SetSettings(s);
+ //	}
+-//	
++//
+ //	int result = prJob.ConfigPage();
+-//	
++//
+ //	if (result == B_NO_ERROR)
+ //	{
+ //		BMessage s(prJob.Settings());
+@@ -775,15 +719,15 @@
+ //		FailNil(fPageSetup);
+ //		result = s.Flatten(fPageSetup, fPageSetupSize);
+ //		FailOSErrMsg(result, &quot;error flattening (%d)&quot;);
+-//		
++//
+ //		UpdateFields();
+ //	}
+ } /* CPrefsDialog::GetDefPageSetup */
+-	
++
+ void CPrefsDialog::MessageReceived(BMessage *msg)
+ {
+ 	long what = msg-&gt;what;
+-	
++
+ 	switch (what)
+ 	{
+ 		case msg_ReloadGlossary:
+@@ -792,33 +736,33 @@
+ 			if (gGlossyWindow)
+ 				gGlossyWindow-&gt;PostMessage(msg_ReloadGlossary);
+ 			break;
+-	
++
+ 		case msg_SelectedKBCommand:
+ 			UpdateKBPage();
+ 			break;
+-	
++
+ 		case msg_SelectedKBBinding:
+ 			UpdateKBCapturer();
+ 			break;
+-		
++
+ 		case msg_AddKB:
+ 			AddKeybinding();
+ 			SetEnabled(&quot;ok  &quot;, true);
+ 			SetEnabled(&quot;cncl&quot;, true);
+ 			break;
+-	
++
+ 		case msg_DeleteKB:
+ 			DeleteKeybinding();
+ 			SetEnabled(&quot;ok  &quot;, true);
+ 			SetEnabled(&quot;cncl&quot;, true);
+ 			break;
+-		
++
+ 		case 'addP':
+ 			fGrepBox-&gt;DoCancel();
+ 			SetEnabled(&quot;ok  &quot;, true);
+ 			SetEnabled(&quot;cncl&quot;, true);
+ 			break;
+-		
++
+ 		case msg_StoreSuffix:
+ 			if (fSuffixes.size()) {
+ 				fSuffixes[GetValue(&quot;lang&quot;) - 1] = GetText(&quot;sufx&quot;);
+@@ -830,7 +774,7 @@
+ 				}
+ 			}
+ 			break;
+-		
++
+ 		case msg_LanguageSelected:
+ 			fLang = GetValue(&quot;lang&quot;) - 1;
+ 			{
+@@ -848,7 +792,7 @@
+ 				SetText(&quot;sufx&quot;, fSuffixes[fLang].c_str());
+ 			}
+ 			break;
+-	
++
+ 		case msg_FieldChanged:
+ 			SetEnabled(&quot;ok  &quot;, true);
+ 			SetEnabled(&quot;cncl&quot;, true);
+@@ -863,7 +807,7 @@
+ 	dRect r;
+ 	char name[256];
+ 	BView *v;
+-	
++
+ 	switch (kind)
+ 	{
+ 		case 'pbox':
+@@ -902,7 +846,7 @@
+ void CPrefsDialog::InitKeybindingPage()
+ {
+ 	int resID = rid_Cmnd_Editing;
+-	
++
+ 	while (true)
+ 	{
+ 		long cnt, cmd;
+@@ -916,16 +860,16 @@
+ 
+ 		BMemoryIO buf(p, size);
+ 		buf &gt;&gt; cnt;
+-		
++
+ 		MyItem *mom = new MyItem(name, 0);
+ 		fKBCommands-&gt;AddItem(mom);
+-		
++
+ 		if (resID == rid_Cmnd_Extensions)
+ 		{
+ 			BPopUpMenu menu(&quot;hoi&quot;);
+ 			PDoc::BuildExtensionsMenu(&amp;menu);
+ 			cmd = 'ex\0\0';
+-		
++
+ 			for (int i = 0; i &lt; menu.CountItems(); i++) {
+ 				uint16 extHash = HashString16(menu.ItemAt(i)-&gt;Label());
+ 				fKBCommands-&gt;AddUnder(new MyItem(menu.ItemAt(i)-&gt;Label(), cmd|extHash), mom);
+@@ -936,18 +880,18 @@
+ 			while (cnt--)
+ 			{
+ 				buf &gt;&gt; cmd;
+-		
++
+ 				int i = 0;
+ 				do	buf &gt;&gt; s[i];
+ 				while (s[i++]);
+-				
++
+ 				fKBCommands-&gt;AddUnder(new MyItem(s, cmd), mom);
+ 			}
+ 		}
+ 		fKBCommands-&gt;Collapse(mom);
+ 		resID++;
+ 	}
+-	
++
+ 	fKBCommands-&gt;SetSelectionMessage(new BMessage(msg_SelectedKBCommand));
+ 	fKBKeys-&gt;SetSelectionMessage(new BMessage(msg_SelectedKBBinding));
+ } /* CPrefsDialog::InitKeybindingsPage */
+@@ -956,28 +900,28 @@
+ {
+ 	if (fKBKeys == NULL)
+ 		return;
+-	
++
+ 	MyItem *mi;
+-	
++
+ 	while (fKBKeys-&gt;CountItems() &gt; 0)
+ 		delete fKBKeys-&gt;RemoveItem((int32)0);
+-	
++
+ 	fCap-&gt;SetShortcut(KeyShortcut());
+-	
++
+ 	mi = static_cast&lt;MyItem *&gt;(fKBCommands-&gt;ItemAt(fKBCommands-&gt;CurrentSelection()));
+-	
++
+ 	if (mi &amp;&amp; mi-&gt;fOne)
+ 	{
+ 		keymap::iterator ki;
+-		
++
+ 		for (ki = fKeymap.begin(); ki != fKeymap.end(); ki++)
+ 		{
+ 			if ((*ki).second == mi-&gt;fOne)
+ 			{
+ 				char s[256];
+-	
++
+ 				CKeyCapturer::DescribeKeys((*ki).first, s);
+-				
++
+ 				fKBKeys-&gt;AddItem(new MyItem(s, (*ki).first.prefix, (*ki).first.combo));
+ 			}
+ 		}
+@@ -987,7 +931,7 @@
+ void CPrefsDialog::UpdateKBCapturer()
+ {
+ 	MyItem *mi = static_cast&lt;MyItem*&gt;(fKBKeys-&gt;ItemAt(fKBKeys-&gt;CurrentSelection()));
+-	
++
+ 	KeyShortcut ks;
+ 
+ 	if (mi)
+@@ -996,15 +940,15 @@
+ 		ks.combo = mi-&gt;fTwo;
+ 	}
+ 
+-	fCap-&gt;SetShortcut(ks);	
++	fCap-&gt;SetShortcut(ks);
+ } /* CPrefsDialog::UpdateKBCapturer */
+ 
+ void CPrefsDialog::AddKeybinding()
+ {
+ 	MyItem *mi;
+-	
++
+ 	mi = static_cast&lt;MyItem *&gt;(fKBCommands-&gt;ItemAt(fKBCommands-&gt;CurrentSelection()));
+-	
++
+ 	if (mi &amp;&amp; mi-&gt;fOne)
+ 	{
+ 		KeyShortcut ks = fCap-&gt;Shortcut();
+@@ -1020,9 +964,9 @@
+ 			if (a.Go() != 1)
+ 				return;
+ 		}
+-	
++
+ 		fKeymap[ks] = mi-&gt;fOne;
+-		
++
+ 		UpdateFields();
+ 	}
+ } /* CPrefsDialog::AddKeybinding */
+@@ -1030,16 +974,16 @@
+ void CPrefsDialog::DeleteKeybinding()
+ {
+ 	MyItem *mi;
+-	
++
+ 	mi = static_cast&lt;MyItem *&gt;(fKBKeys-&gt;ItemAt(fKBKeys-&gt;CurrentSelection()));
+-	
++
+ 	if (mi)
+ 	{
+ 		KeyShortcut ks;
+-		
++
+ 		ks.prefix = mi-&gt;fOne &amp; BINDINGMASK;
+ 		ks.combo = mi-&gt;fTwo &amp; BINDINGMASK;
+-		
++
+ 		if (fKeymap.find(ks) != fKeymap.end())
+ 		{
+ 			fKeymap.erase(fKeymap.find(ks));
+@@ -1048,7 +992,7 @@
+ 	}
+ } /* CPrefsDialog::DeleteKeybinding */
+ 
+-void CPrefsDialog::Show() 
++void CPrefsDialog::Show()
+ {
+ 	HDialog::Show();
+ 	if (LockLooper())
+@@ -1065,4 +1009,4 @@
+ 		}
+ 		UnlockLooper();
+ 	}
+-}
++} /* CPrefsDialog::Show */
+
+
+[... truncated: 1143 lines follow ...]
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000052.html">[pe-commits] r459 - in trunk: Languages/Sources Sources
+</A></li>
+	<LI>Next message: <A HREF="000054.html">[pe-commits] r461 - in trunk: Extensions Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

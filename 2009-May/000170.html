@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r573 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2009-May/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r573%20-%20trunk/Sources&In-Reply-To=%3C200905041446.n44Ekp0h025631%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000169.html">
+   <LINK REL="Next"  HREF="000171.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r573 - trunk/Sources</H1>
+    <B>bonefish at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r573%20-%20trunk/Sources&In-Reply-To=%3C200905041446.n44Ekp0h025631%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r573 - trunk/Sources">bonefish at mail.berlios.de
+       </A><BR>
+    <I>Mon May  4 16:46:51 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000169.html">[pe-commits] r572 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000171.html">[pe-commits] r574 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#170">[ date ]</a>
+              <a href="thread.html#170">[ thread ]</a>
+              <a href="subject.html#170">[ subject ]</a>
+              <a href="author.html#170">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bonefish
+Date: 2009-05-04 16:46:49 +0200 (Mon, 04 May 2009)
+New Revision: 573
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=573&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=573&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocIO.cpp
+   trunk/Sources/CDocIO.h
+Log:
+CLocalDocIO: When handling a node monitoring message for the document, before
+bothering the user with an alert first check whether the file contents differs
+from the text in memory.
+
+
+Modified: trunk/Sources/CDocIO.cpp
+===================================================================
+--- trunk/Sources/CDocIO.cpp	2009-05-04 12:48:19 UTC (rev 572)
++++ trunk/Sources/CDocIO.cpp	2009-05-04 14:46:49 UTC (rev 573)
+@@ -722,7 +722,7 @@
+ 			&amp;&amp; name == fEntryRef-&gt;name)
+ 			return true;
+ 	}
+-		
++
+ 	return false;
+ }
+ 
+@@ -738,7 +738,8 @@
+ 
+ 			time_t t;
+ 			FailOSErr(file.GetModificationTime(&amp;t));
+-			if (fLastSaved &amp;&amp; t &gt; fLastSaved + 1)
++			if (fLastSaved &amp;&amp; t &gt; fLastSaved + 1
++				&amp;&amp; _HasFileContentsChanged(file))
+ 			{
+ 				char s[PATH_MAX + 20];
+ 				sprintf(s, &quot;File %s was modified by another application, reload it?&quot;, fEntryRef-&gt;name);
+@@ -769,6 +770,67 @@
+ 	return result;
+ }
+ 
++bool CLocalDocIO::_HasFileContentsChanged(BPositionIO&amp; file)
++{
++	// We determine whether the file contents changed by preparing the current
++	// text for saving and compare it with the file. If anything fails, we
++	// return true to be on the safe side.
++
++	try
++	{
++		// get the text and convert it for writing
++		BMessage settingsMsg;
++		fDoc-&gt;CollectSettings(settingsMsg);
++		BString docText;
++		fDoc-&gt;GetText(docText);
++		if (!DoPostEditTextConversions(docText, settingsMsg))
++			return true;
++
++		// compare the file size
++		off_t fileSize;
++		if (file.GetSize(&amp;fileSize) != B_OK || fileSize != docText.Length())
++			return true;
++
++		// allocate a read buffer
++		static const size_t kBufferSize = 64 * 1024;
++		struct Buffer {
++			char*	buffer;
++
++			Buffer()	{ buffer = new char[kBufferSize]; }
++			~Buffer()	{ delete[] buffer; }
++		} _buffer;
++		char* buffer = _buffer.buffer;
++
++		// compare the text
++		const char* text = docText.String();
++		size_t textSize = docText.Length();
++		size_t offset = 0;
++		while (offset &lt; textSize)
++		{
++			// read the next chunk
++			size_t toRead = std::min(textSize - offset, kBufferSize);
++			ssize_t bytesRead = file.ReadAt(offset, buffer, toRead);
++			if (bytesRead &lt;= 0)
++				return true;
++
++			if (memcmp(text, buffer, bytesRead) != 0)
++				return true;
++
++			offset += bytesRead;
++		}
++
++		// the texts are equal
++		return false;
++	}
++	catch (...)
++	{
++		// We're not interested in any error. Just assume the file contents
++		// changed.
++		return true;
++	}
++}
++
++
+ // #pragma mark - CFtpDocIO
+ 
+ CFtpDocIO::CFtpDocIO(CDoc* doc, const URLData&amp; url)
+
+Modified: trunk/Sources/CDocIO.h
+===================================================================
+--- trunk/Sources/CDocIO.h	2009-05-04 12:48:19 UTC (rev 572)
++++ trunk/Sources/CDocIO.h	2009-05-04 14:46:49 UTC (rev 573)
+@@ -1,6 +1,6 @@
+ /*
+ 	Copyright 2005 Oliver Tappe
+-	
++
+ 	Distributed under the MIT License
+ */
+ 
+@@ -87,6 +87,8 @@
+ 	virtual	void StartWatchingFolder(void);
+ 	virtual	void StopWatchingFolder(void);
+ 
++			bool _HasFileContentsChanged(BPositionIO&amp; file);
++
+ 			entry_ref *fEntryRef;
+ 			node_ref fNodeRef;
+ 			BLooper* fTarget;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000169.html">[pe-commits] r572 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000171.html">[pe-commits] r574 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#170">[ date ]</a>
+              <a href="thread.html#170">[ thread ]</a>
+              <a href="subject.html#170">[ subject ]</a>
+              <a href="author.html#170">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

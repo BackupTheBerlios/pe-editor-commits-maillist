@@ -1,0 +1,384 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r464 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r464%20-%20trunk/Sources&In-Reply-To=%3C200611222010.kAMKAGU7021232%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000056.html">
+   <LINK REL="Next"  HREF="000058.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r464 - trunk/Sources</H1>
+    <B>stippi at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r464%20-%20trunk/Sources&In-Reply-To=%3C200611222010.kAMKAGU7021232%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r464 - trunk/Sources">stippi at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 22 21:10:16 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000056.html">[pe-commits] r463 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000058.html">[pe-commits] r465 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#57">[ date ]</a>
+              <a href="thread.html#57">[ thread ]</a>
+              <a href="subject.html#57">[ subject ]</a>
+              <a href="author.html#57">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: stippi
+Date: 2006-11-22 21:10:15 +0100 (Wed, 22 Nov 2006)
+New Revision: 464
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=464&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=464&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/PDoc.cpp
+   trunk/Sources/PText.cpp
+   trunk/Sources/PText.h
+Log:
+changed the way font settings work:
+* PText is configured to use one of three &quot;font kinds&quot;:
+  - normal
+  - alternative
+  - individual
+* the actual font is no longer saved unless the kind is &quot;individual&quot;,
+  however the presence of the &quot;fontkind&quot; setting is mandatory, old
+  font settings will be ignored
+* when the normal or the alternative font is changed in the global
+  preference dialog, all open text documents will adopt it instantly
+* no longer flickers for no reason when the the preferences change
+* an individual font can be achieved through the documents info dialog
+* the popup menu is changed to display &quot;Individual Font&quot;, unchecking
+  it will switch back to the normal font (TODO: when the info dialog
+  is still showing, it doesn't re-enable it's Apply button in this
+  moment)
+* text documents no longer pretend to use the Alternative Font when
+  they really use just some other font than the normal font
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2006-11-22 20:03:19 UTC (rev 463)
++++ trunk/Sources/PDoc.cpp	2006-11-22 20:10:15 UTC (rev 464)
+@@ -1247,8 +1247,14 @@
+ 			}
+ 			
+ 			case msg_PrefsChanged:
+-				fText-&gt;SetViewColor(gPrefs-&gt;GetPrefColor(prf_C_Low, ui_color(B_PANEL_BACKGROUND_COLOR)));
+-				fText-&gt;Invalidate();
++				rgb_color viewColor = gPrefs-&gt;GetPrefColor(
++					prf_C_Low, ui_color(B_PANEL_BACKGROUND_COLOR));
++				rgb_color oldViewColor = fText-&gt;ViewColor();
++				if (*(uint32*)&amp;viewColor != *(uint32*)&amp;oldViewColor) {
++					fText-&gt;SetViewColor(viewColor);
++					fText-&gt;Invalidate();
++				}
++				fText-&gt;FontChanged();
+ 
+ 				fStatus-&gt;Draw(fStatus-&gt;Bounds());
+ 				ResetMenuShortcuts();
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-11-22 20:03:19 UTC (rev 463)
++++ trunk/Sources/PText.cpp	2006-11-22 20:10:15 UTC (rev 464)
+@@ -175,6 +175,7 @@
+ 		B_WILL_DRAW | B_NAVIGABLE | B_PULSE_NEEDED | B_FRAME_EVENTS)
+ 	, fText(txt)
+ 	, fSplitCursorShown(false)
++	, fFontKind(kNormalFont)
+ {
+ 	fAnchor = fCaret = 0;
+ 	fBlockSelect = false;
+@@ -452,11 +453,21 @@
+ 			fTabStops = i;
+ 		if (msg.FindBool(&quot;show tabs&quot;, &amp;b) == B_OK)
+ 			ShowTabStops(b);
+-		if (msg.FindFloat(&quot;fontsize&quot;, &amp;f) == B_OK)
+-			fFont.SetSize(f);
+-		if (msg.FindString(&quot;fontfamily&quot;, &amp;s1) == B_OK 
+-			&amp;&amp; msg.FindString(&quot;fontstyle&quot;, &amp;s2) == B_OK)
+-			fFont.SetFamilyAndStyle(s1, s2);
++
++		if (msg.FindInt32(&quot;fontkind&quot;, &amp;i) == B_OK) {
++			fFontKind = i;
++		}
++
++		if (fFontKind == kIndividualFont) {
++			if (msg.FindFloat(&quot;fontsize&quot;, &amp;f) == B_OK)
++				fFont.SetSize(f);
++			if (msg.FindString(&quot;fontfamily&quot;, &amp;s1) == B_OK 
++				&amp;&amp; msg.FindString(&quot;fontstyle&quot;, &amp;s2) == B_OK)
++				fFont.SetFamilyAndStyle(s1, s2);
++		} else {
++			FontChanged(false);
++		}
++
+ 		if (msg.FindBool(&quot;syntaxcoloring&quot;, &amp;b) == B_OK)
+ 			fSyntaxColoring = b;
+ 
+@@ -513,14 +524,16 @@
+ {
+ 	FailOSErr(msg.AddInt32(&quot;tabstop&quot;, fTabStops));
+ 	FailOSErr(msg.AddBool(&quot;show tabs&quot;, Doc()-&gt;ToolBar()-&gt;ShowsTabs()));
+-	FailOSErr(msg.AddFloat(&quot;fontsize&quot;, fFont.Size()));
+-	
+-	font_family ff;
+-	font_style fs;
+-	fFont.GetFamilyAndStyle(&amp;ff, &amp;fs);
+ 
+-	FailOSErr(msg.AddString(&quot;fontfamily&quot;, ff));
+-	FailOSErr(msg.AddString(&quot;fontstyle&quot;, fs));
++	FailOSErr(msg.AddInt32(&quot;fontkind&quot;, fFontKind));
++	if (fFontKind == kIndividualFont) {
++		font_family ff;
++		font_style fs;
++		fFont.GetFamilyAndStyle(&amp;ff, &amp;fs);
++		FailOSErr(msg.AddString(&quot;fontfamily&quot;, ff));
++		FailOSErr(msg.AddString(&quot;fontstyle&quot;, fs));
++		FailOSErr(msg.AddFloat(&quot;fontsize&quot;, fFont.Size()));
++	}
+ 
+ 	FailOSErr(msg.AddInt32(&quot;anchor&quot;, fAnchor));
+ 	FailOSErr(msg.AddInt32(&quot;caret&quot;, fCaret));
+@@ -597,6 +610,67 @@
+ 	catch (...) {}
+ } /* PText::SetSettingsMW */
+ 
++void PText::SetFontKind(int kind)
++{
++	if (fFontKind == kind)
++		return;
++
++	fFontKind = kind;
++
++	FontChanged();
++} /* PText::SetFontKind */
++
++void PText::FontChanged(bool reInit)
++{
++printf(&quot;PText::FontChanged(%d)\n&quot;, reInit);
++	const char* fontFamilyKey = NULL;
++	const char* fontStyleKey = NULL;
++	const char* fontSizeKey = NULL;
++
++	switch (fFontKind) {
++		case kAltFont:
++			fontFamilyKey = prf_S_AltFontFamily;
++			fontStyleKey = prf_S_AltFontStyle;
++			fontSizeKey = prf_D_AltFontSize;
++			break;
++
++		case kNormalFont:
++			fontFamilyKey = prf_S_FontFamily;
++			fontStyleKey = prf_S_FontStyle;
++			fontSizeKey = prf_D_FontSize;
++			break;
++
++		case kIndividualFont:
++		default:
++			break;
++	}
++
++	if (!fontFamilyKey) {
++printf(&quot;  individual font\n&quot;);
++		// don't adopt font from preferences
++		return;
++	}
++
++	BFont font;
++	font.SetFamilyAndStyle(gPrefs-&gt;GetPrefString(fontFamilyKey),
++						   gPrefs-&gt;GetPrefString(fontStyleKey));
++	font.SetSize(gPrefs-&gt;GetPrefDouble(fontSizeKey));
++
++	if (fFont != font) {
++printf(&quot;  font changed\n&quot;);
++		fFont = font;
++		if (reInit) {
++			ReInit();
++			Invalidate();
++		}
++	}
++} /* PText::FontChanged */
++
++int PText::FontKind() const
++{
++	return fFontKind;
++} /* PText::FontKind */
++
+ void PText::SelectLine(int lineNr)
+ {
+ 	if (lineNr &lt; 0) lineNr = 0;
+@@ -2456,34 +2530,31 @@
+ 		fMainPopUp-&gt;FindItem(B_SELECT_ALL)-&gt;SetEnabled(abs(fCaret - fAnchor) &lt; fText.Size());
+ 		fMainPopUp-&gt;FindItem(msg_ToggleShowInvisibles)-&gt;SetMarked(fShowInvisibles);
+ 		fMainPopUp-&gt;FindItem(msg_SoftWrap)-&gt;SetMarked(fSoftWrap);
+-	
+-		BFont f;
+-		f.SetFamilyAndStyle(gPrefs-&gt;GetPrefString(prf_S_FontFamily), gPrefs-&gt;GetPrefString(prf_S_FontStyle));
+-		f.SetSize(gPrefs-&gt;GetPrefDouble(prf_D_FontSize));
+-		
+-		BFont af;
+-		af.SetFamilyAndStyle(gPrefs-&gt;GetPrefString(prf_S_AltFontFamily), gPrefs-&gt;GetPrefString(prf_S_AltFontStyle));
+-		af.SetSize(gPrefs-&gt;GetPrefDouble(prf_D_AltFontSize));
+ 
+-		if (af == f)
+-			fMainPopUp-&gt;FindItem(msg_ToggleFont)-&gt;SetEnabled(false);
+-			
+-		if (f == fFont)
+-		{
+-			f = af;
+-			fMainPopUp-&gt;FindItem(msg_ToggleFont)-&gt;SetMarked(false);
++		BMenuItem* fontItem = fMainPopUp-&gt;FindItem(msg_ToggleFont);
++		int fontKind = kAltFont;
++		// TODO: what about localized item names?!?
++		switch (fFontKind) {
++			case kNormalFont:
++				fontItem-&gt;SetLabel(&quot;Alternate Font&quot;);
++				fontItem-&gt;SetMarked(false);
++				fontKind = kAltFont;
++				break;
++			case kAltFont:
++				fontItem-&gt;SetLabel(&quot;Alternate Font&quot;);
++				fontItem-&gt;SetMarked(true);
++				fontKind = kNormalFont;
++				break;
++			case kIndividualFont:
++			default:
++				fontItem-&gt;SetLabel(&quot;Individual Font&quot;);
++				fontItem-&gt;SetMarked(true);
++				fontKind = kNormalFont;
++				break;
+ 		}
+-		else
+-			fMainPopUp-&gt;FindItem(msg_ToggleFont)-&gt;SetMarked(true);
+-
+ 		BMessage *msg = new BMessage(msg_ToggleFont);
+-		font_family ff;
+-		font_style fs;
+-		f.GetFamilyAndStyle(&amp;ff, &amp;fs);
+-		msg-&gt;AddString(&quot;family&quot;, ff);
+-		msg-&gt;AddString(&quot;style&quot;, fs);
+-		msg-&gt;AddFloat(&quot;size&quot;, f.Size());
+-		fMainPopUp-&gt;FindItem(msg_ToggleFont)-&gt;SetMessage(msg);
++		msg-&gt;AddInt32(&quot;fontkind&quot;, fontKind);
++		fontItem-&gt;SetMessage(msg);
+ 	
+ 		be_clipboard-&gt;Lock();
+ 		fMainPopUp-&gt;FindItem(B_PASTE)-&gt;SetEnabled(be_clipboard-&gt;Data()-&gt;HasData(&quot;text/plain&quot;, B_MIME_DATA));
+@@ -5524,10 +5595,10 @@
+ 				break;
+ 
+ 			case msg_ChangeFontAndTabs:
+- //				RegisterCommand(new PFontTabsCmd(this, msg));
++//				RegisterCommand(new PFontTabsCmd(this, msg));
+ 				ChangedInfo(msg);
+ 				break;
+-			
++
+ 			case msg_FindInNextFile:
+ 				gFindDialog-&gt;PostMessage(msg_FindInNextFile);
+ 				break;
+@@ -6086,14 +6157,27 @@
+ 	int32 i;
+ 	float f;
+ 	bool b, dirty = false;
+-	
++
++	if (msg-&gt;FindInt32(&quot;fontkind&quot;, &amp;i) == B_OK)
++		fFontKind = i;
++
++	BFont newFont = fFont;
+ 	if (msg-&gt;FindString(&quot;family&quot;, &amp;family) == B_OK &amp;&amp;
+ 				msg-&gt;FindString(&quot;style&quot;, &amp;style) == B_OK)
+-		fFont.SetFamilyAndStyle(family, style);
++		newFont.SetFamilyAndStyle(family, style);
+ 	
+ 	if (msg-&gt;FindFloat(&quot;size&quot;, &amp;f) == B_OK)
+-		fFont.SetSize(f);
+-	
++		newFont.SetSize(f);
++
++	if (newFont != fFont) {
++		// this message came from the CInfoDialog,
++		// configuring an individual font
++		fFontKind = kIndividualFont;
++		fFont = newFont;
++	}
++
++	FontChanged(false);
++
+ 	if (msg-&gt;FindInt32(&quot;tabs&quot;, &amp;i) == B_OK)
+ 		fTabStops = i;
+ 	
+
+Modified: trunk/Sources/PText.h
+===================================================================
+--- trunk/Sources/PText.h	2006-11-22 20:03:19 UTC (rev 463)
++++ trunk/Sources/PText.h	2006-11-22 20:10:15 UTC (rev 464)
+@@ -80,6 +80,12 @@
+ 
+ //friend class PFontTabsCmd;	// lets keep life simple
+ 
++enum {
++	kNormalFont			= 0,
++	kAltFont			= 1,
++	kIndividualFont		= 2,
++};
++
+ public:
+ 			PText(BRect frame, PTextBuffer&amp; txt, BScrollBar *bars[], 
+ 				  const char *ext);
+@@ -122,6 +128,10 @@
+ 			void GetSettingsMW(BPositionIO&amp; set);
+ 			void SetSettingsMW(BPositionIO&amp; set);
+ 
++			void SetFontKind(int kind);
++			int FontKind() const;
++			void FontChanged(bool reInit = true);
++
+ 			void ChangedInfo(BMessage *msg);
+ 			
+ 			void GetSelectedText(char*&amp; s, bool extend = false);
+@@ -347,6 +357,7 @@
+ 			bool fSoftWrap;
+ 			int fWrapType;
+ 			int fWrapWidth;
++			int fFontKind;
+ };
+ 
+ inline void PText::HideCaret() {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000056.html">[pe-commits] r463 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000058.html">[pe-commits] r465 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#57">[ date ]</a>
+              <a href="thread.html#57">[ thread ]</a>
+              <a href="subject.html#57">[ subject ]</a>
+              <a href="author.html#57">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

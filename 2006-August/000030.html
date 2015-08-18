@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r439 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r439%20-%20trunk/Sources&In-Reply-To=%3C200608072249.k77Mn9nt010249%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000029.html">
+   <LINK REL="Next"  HREF="000031.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r439 - trunk/Sources</H1>
+    <B>zooey at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r439%20-%20trunk/Sources&In-Reply-To=%3C200608072249.k77Mn9nt010249%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r439 - trunk/Sources">zooey at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug  8 00:49:09 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000029.html">[pe-commits] r438 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000031.html">[pe-commits] r440 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#30">[ date ]</a>
+              <a href="thread.html#30">[ thread ]</a>
+              <a href="subject.html#30">[ subject ]</a>
+              <a href="author.html#30">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zooey
+Date: 2006-08-08 00:49:02 +0200 (Tue, 08 Aug 2006)
+New Revision: 439
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=439&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=439&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CFindDialog.cpp
+   trunk/Sources/CFindDialog.h
+   trunk/Sources/PText.cpp
+Log:
+* fixed replace not working with regular expression searches (used to always
+  replace with the empty string)
+
+
+Modified: trunk/Sources/CFindDialog.cpp
+===================================================================
+--- trunk/Sources/CFindDialog.cpp	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/CFindDialog.cpp	2006-08-07 22:49:02 UTC (rev 439)
+@@ -503,7 +503,7 @@
+ 	if (CRecentPatternController::ActiveController()-&gt;AddCurrentPattern())
+ 		AddCurrentPatternToFindPopup(cmd != msg_Find);
+ 
+-	if (fChkGrep-&gt;IsOn())
++	if (fChkGrep-&gt;IsOn() &amp;&amp; (cmd == msg_Find || cmd == msg_ReplaceAll))
+ 	{
+ 		status_t res = fRegex.SetTo(fEdiFind-&gt;Text(), fChkCase-&gt;IsOn(), 
+ 									fChkWord-&gt;IsOn());
+
+Modified: trunk/Sources/CFindDialog.h
+===================================================================
+--- trunk/Sources/CFindDialog.h	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/CFindDialog.h	2006-08-07 22:49:02 UTC (rev 439)
+@@ -78,6 +78,8 @@
+ 	bool Grep();
+ 	bool IsInMultiFileState() const;
+ 	
++	CRegex* Regex();
++	
+ 	void GetPatternInfo(BMessage* patternMsg);
+ 	void SetPatternInfo(const BMessage* patternMsg);
+ 	bool PatternInfoDiffersFrom(const BMessage* patternMsg);
+@@ -189,6 +191,11 @@
+ 	return fCurrentDir != NULL || fOpenWindowIndex &gt;= 0;
+ }
+ 
++inline CRegex* CFindDialog::Regex()
++{
++	return &fRegex;
++}
++
+ #pragma mark - Find
+ 
+ void initskip(const char *p, int skip[], bool ignoreCase);
+
+Modified: trunk/Sources/PText.cpp
+===================================================================
+--- trunk/Sources/PText.cpp	2006-08-07 22:48:08 UTC (rev 438)
++++ trunk/Sources/PText.cpp	2006-08-07 22:49:02 UTC (rev 439)
+@@ -4037,15 +4037,12 @@
+ 		return false;
+ 	}
+ 	
+-	CRegex rx;
++	CRegex* rx = NULL;
+ 	if (regx)
+ 	{
+-		if (rx.SetTo(what, ignoreCase, entireWord, backward) != B_OK)
+-		{
+-			MWarningAlert a(rx.ErrorStr().String());
+-			a.Go();
++		rx = gFindDialog-&gt;Regex();
++		if (!rx)
+ 			return false;
+-		}
+ 	}
+ 	else
+ 	{
+@@ -4065,9 +4062,9 @@
+ 							: krx_NotBOL;
+  
+ 			if (backward)
+-				r = rx.Match(fText.Buffer(), offset, 0, options);
++				r = rx-&gt;Match(fText.Buffer(), offset, 0, options);
+ 			else
+-				r = rx.Match(fText.Buffer(), fText.Size(), offset, options);
++				r = rx-&gt;Match(fText.Buffer(), fText.Size(), offset, options);
+ 			
+ 			if (r == krx_NoMatch)
+ 			{
+@@ -4076,8 +4073,8 @@
+ 			}
+ 			else 
+ 			{
+-				offset = rx.MatchStart();
+-				wl = rx.MatchLen();
++				offset = rx-&gt;MatchStart();
++				wl = rx-&gt;MatchLen();
+ 			}
+ 		}
+ 		else if (backward)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000029.html">[pe-commits] r438 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000031.html">[pe-commits] r440 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#30">[ date ]</a>
+              <a href="thread.html#30">[ thread ]</a>
+              <a href="subject.html#30">[ subject ]</a>
+              <a href="author.html#30">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r486 - trunk/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r486%20-%20trunk/Sources&In-Reply-To=%3C200801171733.m0HHXH4r022402%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000079.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r486 - trunk/Sources</H1>
+    <B>axeld at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r486%20-%20trunk/Sources&In-Reply-To=%3C200801171733.m0HHXH4r022402%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r486 - trunk/Sources">axeld at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 17 18:33:17 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000079.html">[pe-commits] r485 - trunk/Sources
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: axeld
+Date: 2008-01-17 18:33:16 +0100 (Thu, 17 Jan 2008)
+New Revision: 486
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=486&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=486&amp;view=rev</A>
+
+Modified:
+   trunk/Sources/CDocWindow.cpp
+Log:
+Fixed the &quot;window is shrinking by one pixel with every new open&quot; bug.
+Ingo could have done that months earlier, though :-)
+
+
+Modified: trunk/Sources/CDocWindow.cpp
+===================================================================
+--- trunk/Sources/CDocWindow.cpp	2008-01-17 17:22:24 UTC (rev 485)
++++ trunk/Sources/CDocWindow.cpp	2008-01-17 17:33:16 UTC (rev 486)
+@@ -110,8 +110,8 @@
+ 		fLastStoredFrame.OffsetTo(newLeft, newTop);
+ 		float newWidth = MIN(sw-newLeft-5, fLastStoredFrame.Width());
+ 		float newHeight = MIN(sh-newTop-5, fLastStoredFrame.Height());
+-		fLastStoredFrame.right = fLastStoredFrame.left + newWidth - 1;
+-		fLastStoredFrame.bottom = fLastStoredFrame.top + newHeight - 1;
++		fLastStoredFrame.right = fLastStoredFrame.left + newWidth;
++		fLastStoredFrame.bottom = fLastStoredFrame.top + newHeight;
+ 		MoveTo(fLastStoredFrame.left, fLastStoredFrame.top);
+ 		ResizeTo(fLastStoredFrame.Width(), fLastStoredFrame.Height());
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000079.html">[pe-commits] r485 - trunk/Sources
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

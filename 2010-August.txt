@@ -1,0 +1,52 @@
+From mmu_man at mail.berlios.de  Sun Aug 15 02:47:56 2010
+From: mmu_man at mail.berlios.de (mmu_man at mail.berlios.de)
+Date: Sun, 15 Aug 2010 02:47:56 +0200 (CEST)
+Subject: [pe-commits] r599 - trunk/Sources
+Message-ID: <20100815004757.1050A480F3D@sheep.berlios.de>
+
+Author: mmu_man
+Date: 2010-08-15 02:47:56 +0200 (Sun, 15 Aug 2010)
+New Revision: 599
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=599&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+Make the error string view use updated ViewColor on B_UI_SETTINGS_CHANGED on Dano. It's visually disturbing when using themes. Haiku should likely also broadcast this message someday.
+Btw, do we really use this view at all ???
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2010-06-01 19:52:14 UTC (rev 598)
++++ trunk/Sources/PDoc.cpp	2010-08-15 00:47:56 UTC (rev 599)
+@@ -223,6 +223,7 @@
+ 	r.left = fButtonBar->Frame().right + 4;
+ 	fToolBar->AddChild(fError = new BStringView(r, "error", "", B_FOLLOW_LEFT_RIGHT));
+ 	fError->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++	fError->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+ 	fError->SetFont(be_plain_font);
+ 	fError->SetHighColor(kBlack);
+ 
+@@ -1239,6 +1240,18 @@
+ 	int caret = fText->Caret();
+ 	int changeCounter = fText->TextBuffer().ChangeCounter();
+ 
++
++	switch (message->what) {
++		/* handle Dano-style color changes */
++		case '_UIC':
++		{
++			fError->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++			fError->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR));
++			break;
++		}
++	}
++
++
+ 	inherited::DispatchMessage(message, handler);
+ 
+ 	if (fText->Anchor() != anchor || fText->Caret() != caret)
+
+
+

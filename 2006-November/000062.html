@@ -1,0 +1,726 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pe-commits] r469 - trunk/Languages/Sources
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pe-editor-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r469%20-%20trunk/Languages/Sources&In-Reply-To=%3C200611261611.kAQGBcUN004980%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000061.html">
+   <LINK REL="Next"  HREF="000063.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pe-commits] r469 - trunk/Languages/Sources</H1>
+    <B>hoern at BerliOS</B> 
+    <A HREF="mailto:pe-editor-commits%40lists.berlios.de?Subject=Re%3A%20%5Bpe-commits%5D%20r469%20-%20trunk/Languages/Sources&In-Reply-To=%3C200611261611.kAQGBcUN004980%40sheep.berlios.de%3E"
+       TITLE="[pe-commits] r469 - trunk/Languages/Sources">hoern at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 26 17:11:38 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000061.html">[pe-commits] r468 - trunk/Sources
+</A></li>
+        <LI>Next message: <A HREF="000063.html">[pe-commits] r470 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hoern
+Date: 2006-11-26 17:11:38 +0100 (Sun, 26 Nov 2006)
+New Revision: 469
+ViewCVS: <A HREF="http://svn.berlios.de/viewcvs/pe-editor?rev=469&amp;view=rev">http://svn.berlios.de/viewcvs/pe-editor?rev=469&amp;view=rev</A>
+
+Modified:
+   trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+Log:
+* Added detection of PHP classes
+* Added detection of PHP class member functions
+* Added detection of PHP function parameters
+* Added nicer formatted function popup in non-sort mode
+* Lot's of other small changes
+
+
+Modified: trunk/Languages/Sources/HtmlJsPhp_Popup.cpp
+===================================================================
+--- trunk/Languages/Sources/HtmlJsPhp_Popup.cpp	2006-11-26 16:06:18 UTC (rev 468)
++++ trunk/Languages/Sources/HtmlJsPhp_Popup.cpp	2006-11-26 16:11:38 UTC (rev 469)
+@@ -35,21 +35,75 @@
+ 
+ /* TODO:
+ 	- AddInclude() for include, include_once, require and require_once
+-	- Support for x='attribute'
+ 	- PHP class support
+ */
++#include &lt;string&gt;
+ #include &quot;CLanguageAddOn.h&quot;
+-#include &lt;string&gt;
+ 
+ const long kMaxNameSize = 256;
+ 
++const char* const SORT_PREFIX_PHP	= &quot;PHP:  &quot;;
++const char* const SORT_PREFIX_JS	= &quot;JS:  &quot;;
++const char* const SORT_PREFIX_NAME	= &quot;A:  &quot;;
++const char* const SORT_PREFIX_HREF	= &quot;HREF:  &quot;;
++const char* const SORT_PREFIX_HEAD1	= &quot;H&quot;;
++const char* const SORT_PREFIX_HEAD2	= &quot;:  &quot;;
++
++struct PopupMenu
++{
++	BString label;
++	BString text;
++	const char * position;
++	bool italic;
++	
++//	PopupMenu (const char *lab, const char *txt, const char * pos)
++//		: label(lab), text(txt), position(pos) {}
++	
++	PopupMenu (BString &amp;lab, BString &amp;txt, const char * pos, bool ita=false)
++		: label(lab), text(txt), position(pos), italic(ita) {}
++};
++typedef vector&lt;PopupMenu&gt; PopupList;
++
++void add_to_popup(const char* name, PopupList &amp;pul, CLanguageProxy&amp; proxy);
++bool isident(char ch);
+ const char *skip(const char *txt, int ch);
+ const char *skip_nc(const char *txt, int ch);
+-const char *Anchor(const char *txt, CLanguageProxy&amp; ao);
+-const char *Heading(const char *txt, CLanguageProxy&amp; ao);
+-const char *JavaScript(const char *txt, CLanguageProxy&amp; ao);
+-const char *PhpScript(const char *txt, CLanguageProxy&amp; ao);
++void skip_string(const char *&amp;txt);
++const char *skip_block(const char *txt, char open, char close);
++const char *skip_whitespace(const char *txt);
++void skip_attributes(const char *&amp;ptr);
++const char *anchor(const char *txt, CLanguageProxy&amp; proxy, PopupList &amp;pul, bool sorted);
++const char *heading(const char *txt, PopupList &amp;pul, bool sorted);
++bool get_attribute(const char *&amp;ptr, const char *&amp;namBeg, int&amp; namLen, const char *&amp;valBeg, int&amp; valLen);
++void php_function(const char *&amp;txt, PopupList &amp;pul, BString &amp;className, bool sorted);
++void php_class(const char *&amp;txt, PopupList &amp;pul, BString &amp;className, bool sorted);
++const char *JavaScript(const char *txt, PopupList &amp;lstJsFunctions, PopupList &amp;lstJsClasses, bool sorted);
++const char *PhpScript(const char *txt, PopupList &amp;lstPhpFunctions, PopupList &amp;lstPhpClasses, bool sorted);
+ 
++
++#pragma mark Support Functions
++
++
++void add_to_popup(const char* name, PopupList &amp;pul, CLanguageProxy&amp; proxy)
++{
++	if (pul.size() &gt; 0)
++	{
++		proxy.AddSeparator(name);
++		for (uint i=0; i&lt;pul.size(); i++)
++		{
++			proxy.AddFunction(pul[i].label.String(), pul[i].text.String(),
++				pul[i].position - proxy.Text(), pul[i].italic);
++		}
++	}
++}
++
++
++bool isident(char ch)
++{
++	return isalnum(ch) || ch == '_';
++} /* isident */
++
++
+ const char *skip(const char *txt, int ch)
+ {
+ 	while (*txt)
+@@ -65,6 +119,7 @@
+ 	return txt;
+ } /* skip */
+ 
++
+ const char *skip_nc(const char *txt, int ch)
+ {
+ 	while (*txt)
+@@ -83,58 +138,70 @@
+ 	return txt;
+ } /* skip_nc */
+ 
+-const char *block(const char *txt, int open)
++
++void skip_string(const char *&amp;txt)
+ {
+-	int close = 0;
+-	switch (open)
+-	{
+-		case '(':
+-			close = ')';
+-			break;
+-		case '{':
+-			close = '}';
+-			break;
+-		default:
+-			assert(false);
+-	}
+-	
++	char quote = *txt;
++
++	while (*++txt &amp;&amp; *txt != quote)
++		if (*txt == '\\')
++			txt++;
++} /* skip_string */
++
++
++const char *skip_block(const char *txt, char open, char close)
++{
+ 	while (*txt)
+ 	{
+ 		if (*txt == open)
+-			txt = block(txt + 1, open);
++			txt = skip_block(txt + 1, open, close);
++
+ 		else if (*txt == close)
+ 			return txt + 1;
+-		else if (*txt == '&quot;')
++
++		else if (*txt == '&quot;' || *txt == '\'')
+ 		{
+-			while (*++txt)
+-			{
+-				if (*txt == '\\')
+-					++txt;
+-				else if (*txt == '&quot;')
+-					break;
+-			}
++			skip_string(txt);
+ 			++txt;
+ 		}
+ 		else
+ 			++txt;
+ 	}
+-	
+ 	return txt;
+-}
++} /* block */
+ 
+-inline const char *skip_white(const char *txt)
++
++inline const char *skip_whitespace(const char *txt)
+ {
+ 	while (isspace(*txt))
+ 		txt++;
+ 	return txt;
+ } /* skip_white */
+ 
++
++void skip_attributes(const char *&amp;ptr)
++{
++	const char *nam = 0, *val = 0;
++	int namLen = 0, valLen = 0;
++
++	// Skip tagname
++	if (*(++ptr) != 0 &amp;&amp; *ptr == '/')
++		ptr++;
++	while (*ptr != 0 &amp;&amp; isalnum(*ptr))
++		ptr++;
++	// Skip attributes
++	while (get_attribute(ptr, nam, namLen, val, valLen)) ;
++	// skip &quot;&gt;&quot;
++	ptr++;
++}
++
++
+ bool get_attribute(const char *&amp;ptr, const char *&amp;namBeg, int&amp; namLen, const char *&amp;valBeg, int&amp; valLen)
+ {
+ 	const char *namEnd=0, *valEnd=0;
+ 
+ 	namBeg = valBeg = 0;
+-	ptr = skip_white(ptr);
++	ptr = skip_whitespace(ptr);
+ 	if (*ptr != 0 &amp;&amp; *ptr != '&gt;')
+ 	{
+ 		// Search for attribue name
+@@ -142,10 +209,10 @@
+ 		// Gracefully also accept non alphanumeric characters
+ 		while (*namEnd != 0 &amp;&amp; *namEnd != '=' &amp;&amp; !isspace(*namEnd))
+ 			namEnd++;
+-		ptr = skip_white(namEnd);
++		ptr = skip_whitespace(namEnd);
+ 		// Search for attribue value
+ 		if (*ptr == '=') {
+-			ptr = skip_white(ptr+1);
++			ptr = skip_whitespace(ptr+1);
+ 			if (*ptr == '&quot;' || *ptr == '\'')
+ 			{
+ 				// Value is enclosed
+@@ -171,26 +238,72 @@
+ 	} else {
+ 		return false;
+ 	}
+-}
++} /* get_attribute */
+ 
+-void skip_attributes(const char *&amp;ptr)
++
++void php_function(const char *&amp;txt, PopupList &amp;pul, BString &amp;className, bool sorted)
+ {
+-	const char *nam, *val;
+-	int namLen, valLen, len;
++	BString label, function, params;
++	txt = skip_whitespace(txt+8);
+ 
+-	// Skip tagname
+-	if (*(++ptr) != 0 &amp;&amp; *ptr == '/')
+-		ptr++;
+-	while (*ptr != 0 &amp;&amp; isalnum(*ptr))
+-		ptr++;
+-	// Skip attributes
+-	while (get_attribute(ptr, nam, namLen, val, valLen)) ;
+-	// skip &quot;&gt;&quot;
+-	ptr++;
+-}
++	const char *beg = txt;
++	while (isident(*++txt)) ;
++	function.SetTo(beg, txt-beg);
+ 
+-const char *Anchor(const char *txt, CLanguageProxy&amp; ao)
++	txt = skip_whitespace(txt);
++	if (*txt == '(') {
++		const char* ptr = txt;
++		txt = skip_block(txt+1, '(', ')');
++		params.SetTo(ptr+1, txt-ptr-2);
++		params.Prepend(&quot;  (&quot;);
++		params.Append(&quot;)&quot;);
++	}
++	if (sorted)
++	{
++		label &lt;&lt; SORT_PREFIX_PHP;
++		if (className != &quot;&quot;)
++		{
++			label &lt;&lt; className &lt;&lt; &quot;::&quot;;
++		}
++	}
++	else
++	{
++		if (className != &quot;&quot;)
++		{
++			label &lt;&lt; &quot;&#8226; &quot;;
++		}
++	}
++	label &lt;&lt; function &lt;&lt; params;
++	pul.insert(pul.end(), PopupMenu(label, function, beg));
++} /* php_function */
++
++
++void php_class(const char *&amp;txt, PopupList &amp;pul, BString &amp;className, bool sorted)
+ {
++	BString label;
++
++	txt = skip_whitespace(txt+5);
++	const char *beg = txt;
++	while (isident(*++txt)) ;
++	className.SetTo(beg, txt-beg);
++
++	while (*++txt &amp;&amp; *txt != '{') ;
++
++//	txt = skip_whitespace(txt);
++//	if (*txt == '(') {
++//		const char* beg = txt;
++//		txt = skip_block(txt+1, '(', ')');
++//		params.SetTo(beg+1, txt-beg-2);
++//		params.Prepend(&quot;  (&quot;);
++//		params.Append(&quot;)&quot;);
++//	}
++	if (!sorted)
++		pul.insert(pul.end(), PopupMenu(className, className, beg, true));
++} /* php_class */
++
++
++const char *anchor(const char *txt, CLanguageProxy&amp; proxy, PopupList &amp;pul, bool sorted)
++{
+ 	const char *nam, *val;
+ 	int namLen, valLen, len;
+ 
+@@ -202,16 +315,17 @@
+ 			{
+ 				if (*val != '#')
+ 				{
+-					BString label(&quot;HREF:  &quot;), include(val, valLen);
++					BString label(SORT_PREFIX_HREF), include(val, valLen);
+ 					label &lt;&lt; include;
+-					ao.AddInclude(label.String(), include.String());
++					proxy.AddInclude(label.String(), include.String());
+ 				}
+ 			}
+ 			else if (strncasecmp(nam, &quot;NAME&quot;, 4) == 0)
+ 			{
+-				BString label(&quot;A:  &quot;), function(val, valLen);
++				BString function(val, valLen);
++				BString label(sorted ? SORT_PREFIX_NAME : &quot;&quot;);
+ 				label &lt;&lt; function;
+-				ao.AddFunction(label.String(), function.String(), txt - ao.Text());
++				pul.insert(pul.end(), PopupMenu(label, function, txt));
+ 			}
+ 		}
+ 
+@@ -219,14 +333,26 @@
+ 	return txt;
+ } /* Anchor */
+ 
+-const char *Heading(const char *txt, CLanguageProxy&amp; ao)
++
++const char *heading(const char *txt, PopupList &amp;pul, bool sorted)
+ {
+ 	char endTag[6];
+ 	bool wasSpace = false;
+ 	const char *ptr = txt;
+-	BString label(&quot;H&quot;), heading;
++	BString label, heading;
++	int level = (*txt - '0');
+ 
+-	label &lt;&lt; (*txt - '0') &lt;&lt; &quot;:  &quot;;
++	if (sorted)
++	{
++		label &lt;&lt; SORT_PREFIX_HEAD1 &lt;&lt; level &lt;&lt; SORT_PREFIX_HEAD2;
++	}
++	else
++	{
++		for (int i=1; i&lt;level; i++)
++			label &lt;&lt; &quot;       &quot;;
++		label &lt;&lt; &quot;(&quot; &lt;&lt; level &lt;&lt; &quot;)  &quot;;
++	}
++	
+ 	skip_attributes(ptr);
+ 	sprintf(endTag, &quot;&lt;/h%c&gt;&quot;, *txt);
+ 	txt = ptr;
+@@ -258,12 +384,17 @@
+ 		label &lt;&lt; &quot;&#8230;&quot;;
+ 	}
+ 	heading.SetTo(txt, ptr-txt);
+-	ao.AddFunction(label.String(), heading.String(), txt - ao.Text());
+ 
++	pul.insert(pul.end(), PopupMenu(label, heading, txt));
++
+ 	return ptr;
+ } /* Heading */
+ 
+-const char *JavaScript(const char *txt, CLanguageProxy&amp; ao)
++
++#pragma mark Main Functions
++
++
++const char *JavaScript(const char *txt, PopupList &amp;lstJsFunctions, PopupList &amp;lstJsClasses, bool sorted)
+ {
+ 	txt = skip_nc(txt, '&gt;');
+ 	
+@@ -275,58 +406,43 @@
+ 				if (*(txt + 1) == '/')
+ 					txt = skip(txt, '\n') - 1;
+ 				break;
++
+ 			case '&quot;':
+-			{
+-				while (*++txt)
+-				{
+-					if (*txt == '\\')
+-						txt++;
+-					else if (*txt == '&quot;')
+-						break;
+-				}
+-				break;
+-			}
+ 			case '\'':
+-			{
+-				while (*++txt)
+-				{
+-					if (*txt == '\\')
+-						txt++;
+-					else if (*txt == '\'')
+-						break;
+-				}
++				skip_string(txt);
+ 				break;
+-			}
+-			case '{':
++
+ 			case '(':
+-				txt = block(txt + 1, *txt);
++				txt = skip_block(txt + 1, '(', ')');
+ 				break;
++
++			case '{':
++				txt = skip_block(txt + 1, '{', '}');
++				break;
++
+ 			case '&lt;':
+ 				if (strncasecmp(txt, &quot;&lt;/script&quot;, 8) == 0)
+ 					return txt + 9;
+ 				break;
++
+ 			default:
+ 				if (strncasecmp(txt, &quot;function&quot;, 8) == 0)
+ 				{
+ 					txt += 8;
+ 					while (isspace(*txt)) txt++;
+ 					
+-					int offset = txt - ao.Text();
+-					
+-					char name[kMaxNameSize];
+-					char *n = name;
+-					while ((isalnum(*txt) || *txt == '.' || *txt == '_') &amp;&amp;
+-							(n - name) &lt; kMaxNameSize - 1)
++					const char *beg = txt;
++					while ((isalnum(*txt) || *txt == '.' || *txt == '_'))
+ 					{
+-						*n++ = *txt++;
++						txt++;
+ 					}
+-					*n = 0;
+-					
+-					char label[kMaxNameSize + 3];
+-					strcpy(label, &quot;JS:  &quot;);
+-					strcat(label, name);
+ 
+-					ao.AddFunction(label, name, offset);
++					BString label, function(beg, txt-beg);
++					if (sorted)
++						label &lt;&lt; SORT_PREFIX_JS;
++					label &lt;&lt; function;
++
++					lstJsFunctions.insert(lstJsFunctions.end(), PopupMenu(label, function, beg));
+ 				}
+ 				break;
+ 		}
+@@ -334,136 +450,150 @@
+ 	}
+ 	
+ 	return txt;
+-} // JavaScript
++} /* JavaScript */
+ 
+-const char *PhpScript(const char *txt, CLanguageProxy&amp; ao)
++
++const char *PhpScript(const char *txt, PopupList &amp;lstPhpFunctions, PopupList &amp;lstPhpClasses, bool sorted)
+ {
++	map &lt;int,int,int&gt; headings;
++	BString class_name;
+ 	while (*txt)
+ 	{
++//printf(&quot;%c&quot;, *txt);
+ 		switch (*txt)
+ 		{
+ 			case '/':
++				// Comment: &quot;//...&quot;
+ 				if (*(txt + 1) == '/')
+ 					txt = skip(txt + 2, '\n') - 1;
++				// Comment: &quot;/*...&quot;
+ 				else if (*(txt + 1) == '*')
+ 				{
+-					++txt;
+-					
++					txt++;
+ 					while ( *++txt &amp;&amp;
+ 							!(*txt == '?' &amp;&amp; *(txt + 1) == '&gt;') &amp;&amp;
+ 							!(*txt == '*' &amp;&amp; *(txt + 1) == '/'))
+ 						;
+-					++txt;
++					txt++;
+ 				}
+ 				break;
++
+ 			case '&quot;':
+-			{
+-				while (*++txt)
+-				{
+-					if (*txt == '\\')
+-						txt++;
+-					else if (*txt == '&quot;')
+-						break;
+-				}
+-				break;
+-			}
+ 			case '\'':
+-			{
+-				while (*++txt)
+-				{
+-					if (*txt == '\\')
+-						txt++;
+-					else if (*txt == '\'')
+-						break;
+-				}
++				skip_string(txt);
+ 				break;
+-			}
++
++			case '}':
++				//printf(&quot;\nCLASSEND FOUND\n&quot;);
++				class_name = &quot;&quot;;
++				break;
++
+ 			case '{':
++				txt = skip_block(txt + 1, '{', '}');
++				break;
++
+ 			case '(':
+-				txt = block(txt + 1, *txt);
++				txt = skip_block(txt + 1, '(', ')');
+ 				break;
++
+ 			case '?':
+ 				if (*++txt == '&gt;')
+ 					return txt + 1;
+ 				break;
++
+ 			default:
+-				if (strncasecmp(txt, &quot;function&quot;, 8) == 0)
+-				{
+-					txt += 8;
+-					while (isspace(*txt)) txt++;
+-					
+-					int offset = txt - ao.Text();
+-					
+-					char name[kMaxNameSize];
+-					char *n = name;
+-					while ((isalnum(*txt) || *txt == '_') &amp;&amp; (n - name) &lt; kMaxNameSize)
+-						*n++ = *txt++;
+-					*n = 0;
+-					
+-					char label[kMaxNameSize + 6];
+-					strcpy(label, &quot;PHP:  &quot;);
+-					strcat(label, name);
++//printf(&quot; &lt;%c%c%c%c&gt; &quot;, *(txt+0), *(txt+1), *(txt+2), *(txt+3));
++				if (isident(*txt)) {
++					const char *ptr = txt-1;
++					while (*++ptr &amp;&amp; isident(*ptr)) ;
++					int len = ptr - txt;
+ 
+-					ao.AddFunction(label, name, offset);
++					if (len == 8 &amp;&amp; strncasecmp(txt, &quot;function&quot;, 8) == 0)
++					{
++						php_function(txt, class_name == &quot;&quot; ? lstPhpFunctions : lstPhpClasses, class_name, sorted);
++					}
++					else if (len == 5 &amp;&amp; strncasecmp(txt, &quot;class&quot;, 5) == 0)
++					{
++						php_class(txt, lstPhpClasses, class_name, sorted);
++					}
++					else
++					{
++						//printf(&quot;[[&quot;);for (const char* p=txt; p&lt;ptr; p++)printf(&quot;%c&quot;, *p);printf(&quot;:%li]]&quot;, ptr - txt);
++						txt = ptr;
++					}
+ 				}
+ 				break;
+ 		}
+ 		txt++;
+ 	}
+-	
++//printf(&quot;\n&quot;);
+ 	return txt;
+-} // PhpScript
++} /* PhpScript */
+ 
++
+ void ScanForFunctions(CLanguageProxy&amp; proxy)
+ {
++	bool sorted = proxy.Sorted();
++	PopupList lstHeadings, lstAnchors, lstPhpFunctions, lstPhpClasses, lstJsFunctions, lstJsClasses;
++
+ 	const char *text = proxy.Text(), *max = text + proxy.Size();
+ 	if (*max != 0)
+ 		return;
+ 
+ 	if (strncasecmp(text, &quot;&lt;!--:javascript&quot;, 15) == 0)
+-		text = JavaScript(text, proxy);
++		text = JavaScript(text, lstJsFunctions, lstJsClasses, sorted);
+ 	else if (strncasecmp(text, &quot;&lt;!--:php&quot;, 8) == 0)
+-		text = PhpScript(text + 11, proxy);
++		text = PhpScript(text + 11, lstPhpFunctions, lstPhpClasses, sorted);
+ 
+-	while (text &lt; max)
++	while (*text &amp;&amp; text &lt; max)
+ 	{
+ 		text = skip(text, '&lt;');
+-		text = skip_white(text);
++		text = skip_whitespace(text);
+ 		
+ 		switch (toupper(*text))
+ 		{
+-			case 0:
+-				return;
+ 			case '?':
+-				text = PhpScript(text, proxy);
++				text = PhpScript(text, lstPhpFunctions, lstPhpClasses, sorted);
+ 				break;
++
+ 			case 'A':
+ 				if (isspace(*++text))
+-					text = Anchor(text, proxy);
++					text = anchor(text, proxy, lstAnchors, sorted);
+ 				else
+ 					text = skip_nc(text, '&gt;');
+ 				break;
++
+ 			case 'L':
+ 				if (strncasecmp(text, &quot;LINK&quot;, 4) == 0)
+-					text = Anchor(text + 4, proxy);
++					text = anchor(text + 4, proxy, lstAnchors, sorted);
+ 				else
+ 					text = skip_nc(text, '&gt;');
+ 				break;
++
+ 			case 'H':
+ 				if (*++text &gt;= '1' &amp;&amp; *text &lt;= '6')
+ 				{
+-					text = Heading(text, proxy);
++					text = heading(text, lstHeadings, sorted);
+ 				}
+ 				else
+ 					text = skip_nc(text, '&gt;');
+ 				break;
++
+ 			case 'S':
+ 				if (strncasecmp(text, &quot;SCRIPT&quot;, 6) == 0)
+-					text = JavaScript(text, proxy);
++					text = JavaScript(text, lstJsFunctions, lstJsClasses, sorted);
+ 				break;
++
+ 			default:
+ 				text = skip_nc(text + 1, '&gt;');
+ 				break;
+ 		}
+ 	}
++
++	add_to_popup(&quot;PHP-Classes&quot;,   lstPhpClasses,   proxy);
++	add_to_popup(&quot;PHP-Functions&quot;, lstPhpFunctions, proxy);
++	add_to_popup(&quot;JS-Classes&quot;,    lstJsClasses,    proxy);
++	add_to_popup(&quot;JS-Functions&quot;,  lstJsFunctions,  proxy);
++	add_to_popup(&quot;HTML-Anchors&quot;,  lstAnchors,      proxy);
++	add_to_popup(&quot;HTML-Headings&quot;, lstHeadings,     proxy);
+ } /* ScanForFunctions */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000061.html">[pe-commits] r468 - trunk/Sources
+</A></li>
+	<LI>Next message: <A HREF="000063.html">[pe-commits] r470 - trunk/Sources
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pe-editor-commits">More information about the pe-editor-commits
+mailing list</a><br>
+</body></html>

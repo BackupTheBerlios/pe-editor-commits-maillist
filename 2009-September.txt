@@ -1,0 +1,72 @@
+From zooey at mail.berlios.de  Wed Sep  2 14:56:40 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Wed, 2 Sep 2009 14:56:40 +0200
+Subject: [pe-commits] r593 - trunk/Sources
+Message-ID: <200909021256.n82Cuedq025625@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-09-02 14:56:40 +0200 (Wed, 02 Sep 2009)
+New Revision: 593
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=593&view=rev
+
+Modified:
+   trunk/Sources/CDoc.cpp
+Log:
+closing pe-bug #16094
+* SaveAs wasn't actually saving the file, unless it was dirty to begin with.
+  Now we explicitly set the doc dirty when saving it under a different name.
+  
+
+
+Modified: trunk/Sources/CDoc.cpp
+===================================================================
+--- trunk/Sources/CDoc.cpp	2009-08-08 10:06:23 UTC (rev 592)
++++ trunk/Sources/CDoc.cpp	2009-09-02 12:56:40 UTC (rev 593)
+@@ -236,6 +236,9 @@
+ 		FailOSErr(e.GetRef(&eref));
+ 		fDocIO->SetEntryRef(&eref);
+ 
++		if (!IsDirty())
++			SetDirty(true);
++
+ 		Save();
+ 		NameChanged();
+ 
+
+
+
+From zooey at mail.berlios.de  Fri Sep 18 20:02:33 2009
+From: zooey at mail.berlios.de (zooey at BerliOS)
+Date: Fri, 18 Sep 2009 20:02:33 +0200
+Subject: [pe-commits] r594 - trunk/Sources
+Message-ID: <200909181802.n8II2XiK007723@sheep.berlios.de>
+
+Author: zooey
+Date: 2009-09-18 20:02:32 +0200 (Fri, 18 Sep 2009)
+New Revision: 594
+ViewCVS: http://svn.berlios.de/viewcvs/pe-editor?rev=594&view=rev
+
+Modified:
+   trunk/Sources/PDoc.cpp
+Log:
+closing pe-bug#16265:
+* fixed clashing shortcuts for first window and Worksheet (both used 0)
+
+
+
+Modified: trunk/Sources/PDoc.cpp
+===================================================================
+--- trunk/Sources/PDoc.cpp	2009-09-02 12:56:40 UTC (rev 593)
++++ trunk/Sources/PDoc.cpp	2009-09-18 18:02:32 UTC (rev 594)
+@@ -1640,7 +1640,7 @@
+ 			   strcmp(fWindows->ItemAt(insertId)->Label(), w->Title()) < 0) ;
+ 		// Finally insert
+ 		fWindows->AddItem(new BMenuItem(w->Title(), msg,
+-			(doc && doc->fShortcut < 10) ? '0' + doc->fShortcut : 0), insertId);
++			(doc && doc->fShortcut < 10) ? '1' + doc->fShortcut : 0), insertId);
+ 	}
+ 
+ 	// Disable "Save" menuitem on non-dirty/new files
+
+
+
